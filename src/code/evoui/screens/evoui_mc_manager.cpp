@@ -76,10 +76,17 @@ void GuiMcManager::pencilRight() {
     }
 }
 
+// the grids' distance from the panel's edges: 60 on the 1280x720 canvas; the 4:3 (CRT) canvas is 800 wide, where the
+// two 256 px grids leave the middle (the save's title, id and code) the room it needs only with a 20 px margin
+int GuiMcManager::gridMargin(const ableem::Rect &content) {
+    return content.w < 900 ? 20 : 60;
+}
+
 ableem::Rect GuiMcManager::gridRect(int card) const {
     const ableem::Rect content = Gui::getInstance()->classicContent();
-    const int y = content.y + 44; // the card's name goes in the band above
-    const int margin = 60;
+    const int y = content.y +
+                  (content.w < 900 ? 38 : 44); // the card's name goes in the band above (the 4:3 canvas has less room)
+    const int margin = gridMargin(content);
     return ableem::Rect(card == 1 ? content.x + margin : content.x + content.w - margin - GridW, y, GridW, GridH);
 }
 
@@ -190,8 +197,9 @@ void GuiMcManager::renderMetaInfo() {
     // the save under the pencil: its title (in the Japanese-capable font), game id and product code as
     // label/value pairs in the middle, between the grids
     const ableem::Rect left = gridRect(1), right = gridRect(2);
-    const int midX = left.x + left.w + 24;
-    const int midW = right.x - 24 - midX;
+    const int midGap = gridMargin(gui->classicContent()) < 60 ? 10 : 24;
+    const int midX = left.x + left.w + midGap;
+    const int midW = right.x - midGap - midX;
     int y = left.y + 20;
     auto fact = [&](const string &label, const string &value, const ableem::Font &valueFont) {
         centred(fonts[FONT_15_BOLD], label, midX + midW / 2, y, style.secondary);

@@ -33,9 +33,10 @@ enum {
     CFG_DISPLAY,
     CFG_COVER_SHINE,
     CFG_SPLASH_SCREEN,
-    CFG_ANIMATIONS
+    CFG_ANIMATIONS,
+    CFG_CRT_MARGIN // the CRT 4:3 mode's safe margin (config.ini crtmargin)
 };
-#define CFG_LAST CFG_ANIMATIONS
+#define CFG_LAST CFG_CRT_MARGIN
 #define CFG_SIZE (CFG_LAST + 1)
 #define CFG_HEADING (-1) // a group heading row: not an option, never selected
 

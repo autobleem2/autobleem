@@ -15,6 +15,7 @@
 #include "../controls/evoui_zoom_btn.h"
 #include "../controls/evoui_meta.h"
 #include "../carousel.h"
+#include "../evoui_layout.h"
 #include "../controls/evoui_move_btn.h"
 #include "../controls/evoui_menu.h"
 #include "../controls/evoui_centerlabel.h"
@@ -26,6 +27,7 @@
 #include "core/model/pad_battery_alert.h"
 #include "core/model/pad_battery_match.h"
 #include "core/services/game_query.h"
+#include <functional>
 #include <vector>
 #include <memory>
 #include <map>
@@ -63,11 +65,15 @@ public:
     explicit GuiLauncher(ableem::GuiBase &g) : GuiScreen(g), carousel(*gui) {
         frameColor = abgui::OptionalColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
         declareTransitions(abgui::ScreenTransitions(abgui::Transition::none()));
+        if (ctx.hasStack())
+            ctx.stack().declareFrameCanvas(*this, [this] { useFrameCanvas(); });
     }
     void init() override;
     ~GuiLauncher() override;
-    bool prepareFrame() override; // before each frame: the busy state ends, the state selector follows the menu
-    void draw() override;         // the frame's picture: the stack clears before and presents after
+    bool prepareFrame() override;
+    void useFrameCanvas(); // the 4:3 layout's 640x480, else the 1280x720 one (also for a transition's picture of it)
+                           // before each frame: the busy state ends, the state selector follows the menu
+    void draw() override;  // the frame's picture: the stack clears before and presents after
 
     // these variables are used by the loop routines
     long motionStart = 0; // when the stick went left/right and stayed; 0 once it is centred again
@@ -143,6 +149,17 @@ public:
     // UIREV-43: a fresh install's welcome card, drawn where the covers would be when the PS1 "all games" set is empty
     bool welcomeCardShows() const;
     void renderWelcomeCard();
+    // the layout profile: the 1280x720 launcher, or the 4:3 canvas's (evoui_layout.h - chosen in loadAssets)
+    EvoLayout layout;
+    // a part laid out for 1280x720 only: drawn as it is, or on the 4:3 canvas into wideLayer and letterboxed there
+    void drawWide(const std::function<void()> &draw);
+    ableem::Texture wideLayer;
+    // the rect the hint grid is laid out in: the hint bar, or on the 4:3 layout the bar 1 / hintScale its size at 0, 0
+    // (drawn into hintLayer, which goes into the bar scaled)
+    ableem::Rect hintLayoutRect() const;
+    ableem::Texture hintLayer;
+    unsigned long hintLayerAt = 0;
+    unsigned long wideLayerAt = 0;
     // fills both padBatteryLabels and padBatteryIconTags from one pass of matchPadBatteries() - out params
     // rather than a struct-of-two-vectors to keep the call site in pollPadBattery() simple
     std::vector<std::string> padBatteryLabelsFor(const std::vector<PadBatteryInfo> &batteries,

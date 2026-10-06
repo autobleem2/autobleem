@@ -43,6 +43,14 @@ else
     ab_timeout() { "$@"; }
 fi
 
+# ab_config_get KEY: the value of KEY in the launcher's config.ini (<root>/Autobleem/bin/autobleem/config.ini - the
+# file the launcher writes, with "Outputmode=" style keys; an older or hand-made file may spell the key in any
+# case, with CRLF line ends). The last such line wins; empty when there is none. Not /media/System/config.ini:
+# nothing writes that on a stick (the Windows install's data folder has one, never a console).
+ab_config_get() {
+    tr -d '\r' < "$AB_ROOT/Autobleem/bin/autobleem/config.ini" 2>/dev/null | grep -i "^$1=" | tail -1 | cut -d= -f2-
+}
+
 ab_persist_logs() {
     ab_keep=$AB_ROOT/System/Logs
     mkdir -p "$ab_keep" 2>/dev/null || return 1

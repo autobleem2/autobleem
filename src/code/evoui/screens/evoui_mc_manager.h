@@ -56,6 +56,7 @@ private:
     // them; the icons and the pencil are placed from the grids' origins
     static const int GridW = 256, GridH = 420, Slot = 80, IconSize = 64, IconInset = 10, PencilInset = 70;
     ableem::Rect gridRect(int card) const; // 1 = left, 2 = right
+    static int gridMargin(const ableem::Rect &content);
 
     int pencilColumn;
     int pencilRow;

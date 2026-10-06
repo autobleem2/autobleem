@@ -16,6 +16,11 @@ public:
     ableem::Font font;
     ableem::Color textColor;
     ableem::Size textSize;
+    // centred on the canvas (-1), or on this x (the 4:3 layout: under the menu row's selected icon), and a text wider
+    // than maxWidth (0: the 1280 canvas less 20) drawn in the largest medium size from fitMax down to fitMin that fits
+    int centreX = -1;
+    int maxWidth = 0;
+    int fitMax = 28, fitMin = 14;
 
     void render() override;
 

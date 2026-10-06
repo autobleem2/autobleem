@@ -17,8 +17,9 @@ constexpr unsigned int MetaSlideMs = 200;    // the meta panel
 constexpr unsigned int SettingsBandMs = 100; // the settings band
 
 // the offset that keeps an icon drawn at `scale` centred on its unzoomed place
-inline float zoomOffset(float scale) {
-    return -(118.0f * scale - 118.0f) / 2.0f;
+// (`icon` px wide at scale 1: 118 on 16:9, the 4:3 layout's own)
+inline float zoomOffset(float scale, float icon = 118.0f) {
+    return -(icon * scale - icon) / 2.0f;
 }
 
 // the row's y on its way from `restY` to `targetY`
@@ -35,8 +36,9 @@ inline float closingScale(float progress, float maxZoom) {
 }
 
 // the row's x while the selection moves to the icon on the left (direction 0) or on the right (1)
-inline float optionX(int direction, float restX, float progress) {
-    return direction == 0 ? restX + progress * IconGap : restX - progress * IconGap;
+// `pitch`: one icon to the next (IconGap on 16:9)
+inline float optionX(int direction, float restX, float progress, float pitch = IconGap) {
+    return direction == 0 ? restX + progress * pitch : restX - progress * pitch;
 }
 
 // the integer position (the meta panel's y, the settings band's length) between `from` and `to`

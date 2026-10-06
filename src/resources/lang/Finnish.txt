@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 459
+# Untranslated: 0 / Total: 461
 
 (changed)=(muutettu)
 (default)=(oletus)
@@ -85,6 +85,8 @@ Cover style:=Kannen tyyli:
 Crash logs:=Kaatumislokit:
 Create, rename or manage memory card sets=Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
 CRT (fast)=CRT (fast)
+CRT 4:3=CRT 4:3
+CRT margin:=CRT-reunus:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-tiedostoa ei löytynyt
 Custom=Mukautettu
@@ -432,6 +434,7 @@ Testing=Testausta
 The installer could not be started - it is in System/Updates=Asennusohjelmaa ei voitu käynnistää - se on kansiossa System/Updates
 The Store is not installed=Storea ei ole asennettu
 The update is downloaded - the installer is opening...=Päivitys on ladattu - asennusohjelma avautuu...
+Theme switched to the default (CRT 4:3)=Teema vaihdettu oletusteemaan (CRT 4:3)
 Third-party extensions=Kolmannen osapuolen laajennukset
 This game is protected by its PSN licence and cannot be started=Tämä peli on suojattu PSN-lisenssillään, eikä sitä voi käynnistää
 This PS1 emulator does not support swapping pads yet=Tämä PS1-emulaattori ei vielä tue ohjainten vaihtoa

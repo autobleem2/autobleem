@@ -40,7 +40,7 @@ void PsObj::destroy() {}
 void PsObj::render() {
     if (visible) {
         ableem::Rect rect(x, y, w, h);
-        ableem::Rect fullRect(0, 0, w, h);
+        const ableem::Rect fullRect = src.w > 0 ? src : ableem::Rect(0, 0, w, h);
         renderer.copy(tex, &fullRect, &rect);
     }
 }

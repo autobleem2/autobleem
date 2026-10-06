@@ -31,7 +31,7 @@ void PsMenu::freeAssets() {
     resume = ableem::Texture();
 }
 
-#define ICON_GAP evomotion::IconGap
+#define ICON_GAP pitch
 
 //*******************************
 // PsMenu::settle
@@ -57,8 +57,8 @@ namespace {
 // the selected icon's scale, and the offsets that keep it centred on its place
 void setScale(PsMenu &menu, int option, float scale) {
     menu.optionscales[option] = scale;
-    menu.xoff[option] = PsMenu::zoomOffset(scale);
-    menu.yoff[option] = PsMenu::zoomOffset(scale);
+    menu.xoff[option] = menu.zoomOffset(scale);
+    menu.yoff[option] = menu.zoomOffset(scale);
 }
 } // namespace
 
@@ -90,7 +90,7 @@ void PsMenu::applyProgress() {
         setScale(*this, selOption,
                  active ? evomotion::openingScale(progress, maxZoom) : evomotion::closingScale(progress, maxZoom));
     } else {
-        x = evomotion::optionX(direction == 0 ? 0 : 1, ox, progress);
+        x = evomotion::optionX(direction == 0 ? 0 : 1, ox, progress, pitch);
         // the icon left shrinks while the one entered grows (UIREV-44), both over the same eased progress
         setScale(*this, selOption, evomotion::closingScale(progress, maxZoom));
         const int entered = selOption + (direction == 0 ? -1 : 1);
@@ -133,9 +133,9 @@ void PsMenu::completeTransition() {
 //*******************************
 void PsMenu::render() {
     applyProgress();
-    static const float slots[4] = {0, ICON_GAP, ICON_GAP * 2, ICON_GAP * 3};
+    const float slots[4] = {0, ICON_GAP, ICON_GAP * 2, ICON_GAP * 3};
     const ableem::Texture *icons[4] = {&settings, &guide, &memcard, &savestate};
-    const ableem::Rect input(0, 0, 118, 118);
+    const ableem::Rect input(0, 0, 118, 118); // the icon images are 118 px (the theme format)
     // the Resume icon greyed when the selected game has no resume points - still drawn, still selectable
     // (how faint is the theme's `inactive.resume` when it sets one, else 120)
     const unsigned char resumeAlpha =
@@ -154,7 +154,7 @@ void PsMenu::render() {
         const int kind = optionAt(i); // which icon this position shows
         const float left = x + slots[i] + xoff[i];
         const float top = y + yoff[i];
-        const float size = 118 * optionscales[i];
+        const float size = iconSize * optionscales[i];
         if (tileFrame || selectedFrame) {
             const bool selected = active && i == selOption;
             const ableem::Rect box(static_cast<int>(left + 0.5f), static_cast<int>(top + 0.5f),
@@ -168,10 +168,11 @@ void PsMenu::render() {
         if (kind == 3 && resume.valid()) {
             const ableem::Size s = resume.size();
             const ableem::Rect whole(0, 0, s.w, s.h);
+            // the picture's window is in the 118 px icon's pixels
+            const float k = iconSize == 118 ? optionscales[i] : optionscales[i] * iconSize / 118.0f;
             renderer.copy(resume, &whole,
-                          ableem::FRect(left + resumePicture.x * optionscales[i],
-                                        top + resumePicture.y * optionscales[i], resumePicture.w * optionscales[i],
-                                        resumePicture.h * optionscales[i]));
+                          ableem::FRect(left + resumePicture.x * k, top + resumePicture.y * k, resumePicture.w * k,
+                                        resumePicture.h * k));
         }
     }
 }

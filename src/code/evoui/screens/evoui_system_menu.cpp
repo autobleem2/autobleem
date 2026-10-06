@@ -146,7 +146,7 @@ int GuiSystemMenu::rowHeight(const Row &row) const {
 }
 
 int GuiSystemMenu::roomForRows() const {
-    return SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - StripHeight - FooterHeight;
+    return gui->renderer().height() - 2 * PanelMargin - HeaderHeight - StripHeight - FooterHeight;
 }
 
 int GuiSystemMenu::visibleRowCount() const {
@@ -201,7 +201,8 @@ void GuiSystemMenu::draw() {
     const int panelHeight = HeaderHeight + rowsHeight + StripHeight + FooterHeight;
     // a footer is one row and the window makes room for it (abgui::Panel::compactWidth)
     const int panelWidth = abgui::Panel::compactWidth(gui->uiContext(), footerHints(), "");
-    ableem::Rect panel{(SCREEN_WIDTH - panelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, panelWidth, panelHeight};
+    ableem::Rect panel{(gui->renderer().width() - panelWidth) / 2, (gui->renderer().height() - panelHeight) / 2,
+                       panelWidth, panelHeight};
     style.sheet(gui->uiContext(), panel);
 
     // every text on this screen gets the launcher's halo, like the launcher's own
@@ -236,7 +237,7 @@ void GuiSystemMenu::draw() {
                            : style.rowColor(i == selected),
                 XALIGN_LEFT);
             if (!row.note.empty()) // XALIGN_RIGHT takes the margin from the screen's right edge
-                gui->text().renderText_WithColor(noteFont, row.note, SCREEN_WIDTH - rightEdge,
+                gui->text().renderText_WithColor(noteFont, row.note, gui->renderer().width() - rightEdge,
                                                  rowY + (h - noteFont.lineHeight()) / 2,
                                                  style.valueColor(i == selected), XALIGN_RIGHT);
             if (row.greyed)

@@ -88,3 +88,34 @@ TEST_CASE("the date's format is the user's when there is one") {
     CHECK(dateFormat("") == "%d.%m.%Y   %H:%M");
     CHECK(dateFormat("%F %I:%M %p") == "%F %I:%M %p");
 }
+
+TEST_CASE("the 4:3 design: four cards fit the 640 x 480 canvas, above the hint bar, the picture keeps its 4:3 shape") {
+    for (int i = 0; i < SlotCount; i++) {
+        const Box card = cardBox(i, true);
+        const Box well = wellBox(card, true);
+        const Box pic = pictureBox(card, true);
+        CHECK(card.x >= 0);
+        CHECK(card.x + card.w <= 640);
+        CHECK(card.y + card.h <= Narrow::BandY + Narrow::BandH);
+        CHECK(Narrow::BandY + Narrow::BandH < 418); // the hint bar starts at 418
+        CHECK(pic.w * 3 == pic.h * 4);
+        CHECK(pic.x >= well.x);
+        CHECK(pic.y >= well.y);
+        CHECK(pic.x + pic.w <= well.x + well.w);
+        CHECK(pic.y + pic.h <= well.y + well.h);
+        CHECK(well.x + well.w <= card.x + card.w);
+        if (i > 0)
+            CHECK(card.x == cardBox(i - 1, true).x + card.w + Narrow::CardGap);
+    }
+}
+
+TEST_CASE("the 4:3 NEWEST chip sits in the picture's bottom right corner, clear of the slot name") {
+    const Box card = cardBox(1, true);
+    const Box chip = chipBox(card, 46, true);
+    const Box pic = pictureBox(card, true);
+    CHECK(chip.x >= pic.x);
+    CHECK(chip.x + chip.w <= pic.x + pic.w); // inside the screenshot, in its bottom right corner
+    CHECK(chip.y + chip.h <= pic.y + pic.h);
+    CHECK(chip.y >= pic.y + pic.h / 2);
+    CHECK(chip.y + chip.h < card.y + Narrow::SlotNameY); // clear of "Slot 2"
+}

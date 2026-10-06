@@ -58,7 +58,7 @@ show_launch_splash()
 	rm -f /tmp/.ra_up
 	# the picture plays the selected theme's spinner (config.ini's "theme", the folder in /media/Themes) - a
 	# theme with no strip gets the ring of dots, no theme setting no spinner at all
-	THEME=$(sed -n 's/^theme=//p' /media/System/config.ini 2>/dev/null | tr -d '\r' | tail -1)
+	THEME=$(ab_config_get theme)
 	if [ -n "$THEME" ]; then
 		"$ABSPLASH" "$ABPICS/retroarch.jpg" --until-exists /tmp/.ra_up --timeout 30 --theme "/media/Themes/$THEME" &
 	else

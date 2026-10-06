@@ -113,6 +113,9 @@ void PsMeta::render() {
     }
 
     if (visible) {
+        const MetaLayout::Metrics &m = metrics;
+        // the row's own icons at their size on the 1280x720 section, at the section's icon size on another (4:3)
+        const int ownIcon = m.iconSize == MetaLayout::IconSize ? 0 : m.iconSize;
         ableem::Rect rect;
         ableem::Rect fullRect;
 
@@ -136,21 +139,24 @@ void PsMeta::render() {
         auto drawIcon = [&](const string &icon, int ix, int iy, int size) {
             ableem::Size s = ctx.icon(icon).size();
             rect = ableem::Rect(ix, iy, size > 0 ? size : s.w, size > 0 ? size : s.h);
-            fullRect = ableem::Rect(0, 0, rect.w, rect.h);
+            // the whole picture when the section draws its icons at another size than 30 (the 4:3 layout)
+            fullRect =
+                m.iconSize == MetaLayout::IconSize ? ableem::Rect(0, 0, rect.w, rect.h) : ableem::Rect(0, 0, s.w, s.h);
             copyWithOutline(icon);
         };
 
-        // the title - a name too long for the screen is drawn in the largest size that fits
-        auto nameFont = fixed.boldAtSize(MetaLayout::TitleSize);
-        if (x + nameFont.width(gameName) > SCREEN_WIDTH)
-            nameFont = text.fittingFont(FONT_BOLD, MetaLayout::TitleSize, MetaLayout::TitleMinSize, gameName,
-                                        SCREEN_WIDTH - x);
-        text.renderText_WithColor(nameFont, gameName, x, y, style.text, XALIGN_LEFT);
+        // the title - a name too long for the space up to screenRight is drawn in the largest size that fits, and
+        // elided there when even the smallest does not
+        auto nameFont = fixed.boldAtSize(m.titleSize);
+        if (x + nameFont.width(gameName) > screenRight)
+            nameFont = text.fittingFont(FONT_BOLD, m.titleSize, m.titleMinSize, gameName, screenRight - x);
+        text.renderText_WithColor(nameFont, text.elide(nameFont, gameName, screenRight - x), x, y, style.text,
+                                  XALIGN_LEFT);
 
         // the rule under it: the `edge` role at 78 %
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 200));
-        renderer.fillRect(ableem::Rect(x, y + MetaLayout::RuleY, MetaLayout::RuleWidth, 1));
+        renderer.fillRect(ableem::Rect(x, y + m.ruleY, m.ruleWidth, 1));
 
         // the facts grid: the label in `secondary` (bold capitals, a little lower), the value in `text`; a RetroArch
         // game shows its core in the CORE row (updateTexts); an App's description is a wrapped, unlabelled row
@@ -163,42 +169,40 @@ void PsMeta::render() {
 #endif
         const MetaLayout::Kind kind =
             !foreign ? MetaLayout::Kind::Ps1 : (app ? MetaLayout::Kind::App : MetaLayout::Kind::RetroArch);
-        const ableem::Font &valueFont = fixed.atSize(FONT_MED, MetaLayout::ValueSize);
-        int rowY = y + MetaLayout::GridY;
+        const ableem::Font &valueFont = fixed.atSize(FONT_MED, m.valueSize);
+        int rowY = y + m.gridY;
         for (const MetaLayout::Fact &fact :
              MetaLayout::facts(kind, publisher, year, serial, region, last_played, coreName, canShowLastPlayed)) {
             if (fact.wrapped) {
                 // a description: no label, wrapped to the area, the last line elided when it still does not fit
-                vector<string> lines = MetaLayout::capLines(
-                    text.wrapLines(valueFont, fact.value, MetaLayout::DescriptionWidth), MetaLayout::DescriptionLines);
+                vector<string> lines =
+                    MetaLayout::capLines(text.wrapLines(valueFont, fact.value, m.ruleWidth), m.descriptionLines());
                 for (const string &line : lines) {
-                    text.renderText_WithColor(valueFont, text.elide(valueFont, line, MetaLayout::DescriptionWidth), x,
-                                              rowY, style.text, XALIGN_LEFT);
-                    rowY += MetaLayout::RowPitch;
+                    text.renderText_WithColor(valueFont, text.elide(valueFont, line, m.ruleWidth), x, rowY, style.text,
+                                              XALIGN_LEFT);
+                    rowY += m.rowPitch;
                 }
                 continue;
             }
             // a label longer than its column (German, Polish) shrinks to fit
             const string label = _(fact.label);
-            const ableem::Font labelFont =
-                text.fittingFont(FONT_BOLD, MetaLayout::LabelSize, 8, label, MetaLayout::LabelWidth);
-            text.renderText_WithColor(labelFont, label, x, rowY + MetaLayout::LabelDrop, style.secondary, XALIGN_LEFT);
-            text.renderText_WithColor(valueFont, text.elide(valueFont, fact.value, MetaLayout::ValueWidth),
-                                      x + MetaLayout::ValueX, rowY, style.text, XALIGN_LEFT);
-            rowY += MetaLayout::RowPitch;
+            const ableem::Font labelFont = text.fittingFont(FONT_BOLD, m.labelSize, 8, label, m.labelWidth());
+            text.renderText_WithColor(labelFont, label, x, rowY + m.labelDrop, style.secondary, XALIGN_LEFT);
+            text.renderText_WithColor(valueFont, text.elide(valueFont, fact.value, m.valueWidth()), x + m.valueX, rowY,
+                                      style.text, XALIGN_LEFT);
+            rowY += m.rowPitch;
         }
 
         // the icon row: text centred on the icons' height
-        const ableem::Font &rowFont = fonts[FONT_15_BOLD];
-        const int iconY = y + MetaLayout::IconRowY;
-        const int textY = iconY + (MetaLayout::IconSize - rowFont.lineHeight()) / 2;
+        const ableem::Font &rowFont = m.infoSize == 15 ? fonts[FONT_15_BOLD] : fixed.boldAtSize(m.infoSize);
+        const int iconY = y + m.iconRowY;
+        const int textY = iconY + (m.iconSize - rowFont.lineHeight()) / 2;
         vector<string> badges;
         if (kind == MetaLayout::Kind::Ps1) {
-            text.renderText_WithColor(rowFont, players, x + MetaLayout::PlayersTextX, textY, style.text, XALIGN_LEFT);
-            drawIcon("players", x, iconY, 0);
-            drawIcon("disc", x + MetaLayout::DiscX, iconY, 0);
-            text.renderText_WithColor(rowFont, to_string(discs), x + MetaLayout::DiscCountX, textY, style.text,
-                                      XALIGN_LEFT);
+            text.renderText_WithColor(rowFont, players, x + m.playersTextX, textY, style.text, XALIGN_LEFT);
+            drawIcon("players", x, iconY, ownIcon);
+            drawIcon("disc", x + m.discX, iconY, ownIcon);
+            text.renderText_WithColor(rowFont, to_string(discs), x + m.discCountX, textY, style.text, XALIGN_LEFT);
 
             if (internal) {
                 locked = true;
@@ -218,9 +222,8 @@ void PsMeta::render() {
         } else if (kind == MetaLayout::Kind::RetroArch) {
             // the players when the database knows, then the RA icon (and the light gun) as badges
             if (playersKnown) {
-                text.renderText_WithColor(rowFont, players, x + MetaLayout::PlayersTextX, textY, style.text,
-                                          XALIGN_LEFT);
-                drawIcon("players", x, iconY, 0);
+                text.renderText_WithColor(rowFont, players, x + m.playersTextX, textY, style.text, XALIGN_LEFT);
+                drawIcon("players", x, iconY, ownIcon);
             }
             badges.push_back("retroarch");
             if (lightgun)
@@ -228,7 +231,7 @@ void PsMeta::render() {
         }
         const int count = static_cast<int>(badges.size());
         for (int i = 0; i < count; i++)
-            drawIcon(badges[i], x + MetaLayout::badgeX(count, i), iconY, MetaLayout::IconSize);
+            drawIcon(badges[i], x + m.badgeX(count, i), iconY, m.iconSize);
     }
 }
 

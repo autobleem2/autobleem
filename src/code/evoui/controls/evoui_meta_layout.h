@@ -35,6 +35,40 @@ constexpr int MaxFacts = 3;
 // row), so a long value is elided with "..." at this width instead of wrapping into the next row
 constexpr int ValueWidth = RuleWidth - ValueX;
 
+// The same numbers as one value, so the 4:3 layout (evoui_layout.h) can give the section its own: wide() is the
+// constants above, the 1280x720 section, exactly.
+struct Metrics {
+    int height = Height;
+    int titleSize = TitleSize;
+    int titleMinSize = TitleMinSize;
+    int ruleY = RuleY;
+    int ruleWidth = RuleWidth;
+    int gridY = GridY;
+    int rowPitch = RowPitch;
+    int labelSize = LabelSize;
+    int labelDrop = LabelDrop;
+    int valueX = ValueX;
+    int valueSize = ValueSize;
+    int iconRowY = IconRowY;
+    int iconSize = IconSize;
+    int infoSize = 15; // the icon row's text (FONT_15_BOLD)
+    int playersTextX = PlayersTextX;
+    int discX = DiscX;
+    int discCountX = DiscCountX;
+    int badgePitch = BadgePitch;
+    int badgesRight = BadgesRight;
+
+    int labelWidth() const { return valueX - 4; }
+    int valueWidth() const { return ruleWidth - valueX; }
+    int descriptionLines() const { return (height - gridY) / rowPitch; }
+    // the x of badge `index` of `count` (see badgeX below)
+    int badgeX(int count, int index) const { return badgesRight - iconSize - (count - 1 - index) * badgePitch; }
+};
+
+inline Metrics wide() {
+    return Metrics();
+}
+
 enum class Kind { Ps1, RetroArch, App };
 
 // an App's description (its author text) has no label: it is not a publisher, and it is wrapped across the whole

@@ -6,6 +6,7 @@
 
 #include <ab_gui/tween.h>
 #include "evoui_motion.h"
+#include "evoui_meta_layout.h"
 #include "evoui_obj.h"
 #include "core/model/ps_game.h"
 #include "gui/gui_font.h"
@@ -48,6 +49,10 @@ public:
     bool lightgun = false; // set from LightgunService by updateTexts(PsGamePtr)
     bool foreign = false;
     bool app = false;
+    // the section's numbers (the 1280x720 ones; the 4:3 layout's, evoui_layout.h) and the right edge a long
+    // title is fitted to
+    MetaLayout::Metrics metrics;
+    int screenRight = 1280;
     std::string coreName;      // a RetroArch game's core, shown under the publisher when there is one
     bool playersKnown = false; // the players line is drawn for a RetroArch game only when the database said
 

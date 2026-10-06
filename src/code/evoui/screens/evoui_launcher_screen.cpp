@@ -575,7 +575,7 @@ int GuiLauncher::renderPadBatteries() {
         return 0;
     const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
     const int plateMargin = 14; // review: the icons sat tight on the plate's edge at 8px - more room now
-    int x = 16, y = 16;
+    int x = 16, y = 16;         // the top-left corner, in 720p and 4:3 alike (the 4:3 logo is top right)
     const ableem::Font &battFont = ThemeAssets::fixedFonts()[FONT_15_BOLD];
     const int textY = (iconH - battFont.lineHeight()) / 2; // added to y: centres the text on the icon
 
@@ -685,6 +685,7 @@ void GuiLauncher::renderChannelWatermark(int plateBottom) {
     abgui::Context &ctx = gui->uiContext();
     const abgui::Style &style = ctx.style();
     const int x = ChannelWatermark::X;
+    // under the pad plate
     const int y = ChannelWatermark::yBelow(plateBottom);
     const int wordW = gui->text().textWidth(wordFont, tag.word);
     const ableem::Rect chip(x, y, ChannelWatermark::chipWidth(wordW), ChannelWatermark::ChipHeight);
@@ -832,13 +833,17 @@ void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
     // the 1x files even when @2x ones are drawn (ThemeAssets::loadImage): their pixels are the logical size
     const ableem::Image button = ableem::Image::loadFile(theme.playButton);
     const ableem::Image text = ableem::Image::loadFile(theme.playText);
+    // the 4:3 layout draws the images smaller: the outline with them
+    const float k = layout.fourByThree ? layout.play.imageScale : 1.0f;
+    auto scaled = [k](int v) { return k == 1.0f ? v : static_cast<int>(std::lround(v * k)); };
     playOutline = PanelStyle::outlineOf(renderer, button);
     if (playOutline.valid())
-        playOutlineRect = ableem::Rect(playButton->x - 2, playButton->y - 2, button.size().w + 5, button.size().h + 5);
+        playOutlineRect = ableem::Rect(playButton->x - 2, playButton->y - 2, scaled(button.size().w) + 5,
+                                       scaled(button.size().h) + 5);
     playTextOutline = PanelStyle::outlineOf(renderer, text);
     if (playTextOutline.valid()) {
-        playTextOutlineW = text.size().w + 5;
-        playTextOutlineH = text.size().h + 5;
+        playTextOutlineW = scaled(text.size().w) + 5;
+        playTextOutlineH = scaled(text.size().h) + 5;
     }
 }
 
@@ -850,12 +855,16 @@ void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
 // the language changes, and when the render targets were lost) and that texture grown about the box's centre by
 // playText's pulse, so no font is opened per size. An App's word is "Start".
 void GuiLauncher::renderPlayFrame() {
-    const int boxX = 540, boxY = 428, boxW = 200, boxH = 68;
-    const int iconSize = 28, gap = 8, padding = 16, margin = 4;
+    // the layout's box (540, 428, 200 x 68 on 16:9) and its content's sizes
+    const int boxX = layout.play.box.x, boxY = layout.play.box.y, boxW = layout.play.box.w, boxH = layout.play.box.h;
+    const int iconSize = layout.play.iconSize, gap = layout.play.gap, padding = layout.play.padding, margin = 4;
     const float maxZoom = 1.20f; // PsZoomBtn's: the content must still fit the box at the top of the pulse
     abgui::Context &ctx = gui->uiContext();
     const int centreX = boxX + boxW / 2, centreY = boxY + boxH / 2;
-    ctx.style().drawFrame(ctx, "play", ableem::Rect(boxX, boxY, boxW, boxH));
+    if (layout.fourByThree) // the frame's corners and edges at the box's scale, so it keeps the 16:9 shape (200 x 68)
+        ctx.style().drawFrame(ctx, "play", ableem::Rect(boxX, boxY, boxW, boxH), 255, boxH / 68.0f);
+    else
+        ctx.style().drawFrame(ctx, "play", ableem::Rect(boxX, boxY, boxW, boxH));
 
     const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
     const ableem::Texture icon = ctx.icon("play");
@@ -866,7 +875,7 @@ void GuiLauncher::renderPlayFrame() {
         remake = true;
         playLabel = label;
         const int room = static_cast<int>((boxW - 2 * padding) / maxZoom) - iconSpace;
-        playLabelFont = gui->text().fittingFont(FONT_BOLD, 28, 14, label, room);
+        playLabelFont = gui->text().fittingFont(FONT_BOLD, layout.play.fontMax, layout.play.fontMin, label, room);
         // even the smallest size too wide: cut characters (whole UTF-8 ones) and end on "..."
         while (gui->text().textWidth(playLabelFont, playLabel) > room && playLabel != "...") {
             size_t cut = playLabel.size() - 1;
@@ -959,8 +968,22 @@ void GuiLauncher::loadAssets() {
         secColor = TextRenderer::toColor(theme.colors.secondary, 255);
     hintColor = theme.colors.hint.set ? TextRenderer::toColor(theme.colors.hint, 255) : secColor;
 
+    // the layout profile (evoui_layout.h): on a 4:3 output a theme with a `layout4x3` block is drawn on the 640x480
+    // canvas (prepareFrame asks the renderer for it); any other is the 1280x720 launcher, letterboxed at its shape
+    layout = EvoLayout::wide();
+    if (renderer.fourByThreeOutput()) {
+        const ableem::ThemeLayout4x3 theme4x3 = ableem::loadThemeLayout4x3(app.theme().loadedPath());
+        if (theme4x3.set)
+            layout = EvoLayout::fromLayout4x3(theme4x3);
+        PLOG_INFO << "4:3 output: the launcher is " << (layout.fourByThree ? "laid out for 4:3" : "letterboxed")
+                  << " (theme " << app.theme().loadedPath() << ")";
+    }
+    carousel.positions.geometry = layout.carousel;
+    scanBubble.right = extensionBubble.right = layout.bubbleRight;
+    scanBubble.width = extensionBubble.width = layout.bubbleWidth;
+
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
-    notificationLines.create(2);
+    notificationLines.create(2, layout.messageWidth, layout.bubbleRight);
 
     // silently record who's Player 1/2 right now (C9): loadAssets() runs at startup and every time the
     // display comes back after a game, both of which fire a burst of PadAdded/PadRemoved that must not
@@ -1017,37 +1040,62 @@ void GuiLauncher::loadAssets() {
     PLOG_DEBUG << "Loading theme and creating objects";
     staticMeta = !theme.metaPanelSlides;
     textShadow = !theme.textShadow.set || theme.textShadow; // a theme has to say no
-    background = addStaticElement(new PsObj("background", theme.background));
+    const bool narrow = layout.fourByThree;
+    background = addStaticElement(
+        new PsObj("background", narrow && !layout.background.empty() ? layout.background : theme.background));
     background->x = 0;
     background->y = 0;
     background->visible = true;
+    if (narrow && layout.background.empty() && background->w > 0 && background->h > 0) {
+        // no 4:3 picture: the 16:9 one's middle, over the whole 4:3 canvas
+        background->src = ableem::coverCrop(background->w, background->h, layout.canvasW, layout.canvasH);
+        background->w = layout.canvasW;
+        background->h = layout.canvasH;
+    }
 
-    PsObj *footer = addStaticElement(new PsObj("footer", theme.footer));
-    footer->y = SCREEN_HEIGHT - footer->h;
-    footer->visible = true;
+    // 4:3: the layout's footer picture, else none (the 16:9 band is 1280 wide; the hint bar's frame stands)
+    PsObj *footer = addStaticElement(new PsObj("footer", narrow ? layout.footer : theme.footer));
+    footer->y = layout.canvasH - footer->h;
+    footer->visible = !narrow || !layout.footer.empty();
 
     playButton = addStaticElement(new PsObj("playButton", theme.playButton));
-    playButton->y = 428;
-    playButton->x = 540;
+    playButton->y = layout.play.box.y;
+    playButton->x = layout.play.box.x;
     playButton->visible = carousel.selected != -1;
 
     playText = addStaticElement(new PsZoomBtn("playText", theme.playText));
-    playText->y = 428;
-    playText->x = 640 - 262 / 2;
+    playText->y = layout.play.box.y;
+    playText->x = layout.play.textX;
     playText->visible = carousel.selected != -1;
+    if (narrow) { // the two images at the layout's size (a theme without the `play` frame)
+        for (PsObj *obj : {static_cast<PsObj *>(playButton), static_cast<PsObj *>(playText)}) {
+            obj->w = static_cast<int>(std::lround(obj->w * layout.play.imageScale));
+            obj->h = static_cast<int>(std::lround(obj->h * layout.play.imageScale));
+            obj->src = ableem::Rect(0, 0, obj->ow, obj->oh);
+            obj->ow = obj->w;
+            obj->oh = obj->h;
+        }
+    }
     playText->ox = playText->x;
     playText->oy = playText->y;
     playText->lastTime = time;
     makePlayOutline(theme);
 
-    settingsBack = addStaticElement(new PsSettingsBack("playButton", theme.settingsPanel));
-    settingsBack->setCurLen(100);
+    settingsBack = addStaticElement(new PsSettingsBack(
+        "playButton", narrow && !layout.settingsPanel.empty() ? layout.settingsPanel : theme.settingsPanel));
+    settingsBack->bottom = layout.band.bottom;
+    settingsBack->width = layout.canvasW;
+    settingsBack->setCurLen(layout.band.closed);
     settingsBack->visible = true;
 
     meta = addStaticElement(new PsMeta("meta") /* the players icon is the icon set's since G5b */);
     meta->fonts = ThemeAssets::fixedFonts();
-    meta->x = 785;
-    meta->y = 285;
+    meta->metrics = layout.meta.metrics;
+    // a long title fits to the canvas's edge; in 4:3, where the details sit between the cover and the edge, to the
+    // details' own right edge (the same margin as on their left)
+    meta->screenRight = layout.fourByThree ? layout.meta.x + layout.meta.metrics.ruleWidth : layout.canvasW;
+    meta->x = layout.meta.x;
+    meta->y = layout.meta.y;
     meta->visible = true;
     if (carousel.selected != -1 && carousel.selectedIsValid()) {
         meta->updateTexts(carousel.games[carousel.selected], fgColor);
@@ -1066,8 +1114,13 @@ void GuiLauncher::loadAssets() {
     }
 
     arrow = addStaticElement(new PsMoveBtn("arrow", theme.arrow));
-    arrow->x = 640 - 12;
-    arrow->y = 360;
+    arrow->x = layout.arrowX;
+    arrow->y = layout.arrowY;
+    if (layout.arrowSize > 0 && arrow->w > 0) { // the 4:3 layout's size, the image's shape kept
+        arrow->h = arrow->h * layout.arrowSize / arrow->w;
+        arrow->w = layout.arrowSize;
+        arrow->maxMove = arrow->maxMove * layout.canvasH / 720;
+    }
     arrow->originaly = arrow->y;
     arrow->visible = false;
 
@@ -1076,21 +1129,36 @@ void GuiLauncher::loadAssets() {
     lastHintSignature.clear();
 
     menu = std::make_unique<PsMenu>("menu", theme.menuIcons);
+    menu->iconSize = layout.menu.icon;
+    menu->pitch = layout.menu.pitch;
+    menu->x = menu->ox = static_cast<float>(layout.menu.x);
+    menu->y = menu->oy = static_cast<float>(layout.menu.yClosed);
 
     menuHead = addStaticElement(new PsCenterLabel("header"));
-    menuHead->font = ThemeAssets::fixedFonts()[FONT_28_BOLD];
+    menuHead->font =
+        narrow ? ThemeAssets::fixedFonts().boldAtSize(layout.menu.headSize) : ThemeAssets::fixedFonts()[FONT_28_BOLD];
     menuHead->visible = false;
-    menuHead->y = 545;
+    menuHead->y = layout.menu.headY;
     menuText = addStaticElement(new PsCenterLabel("menuText"));
     menuText->visible = false;
-    menuText->font = ThemeAssets::fixedFonts()[FONT_22_MED];
-    menuText->y = 585;
+    menuText->font = narrow ? ThemeAssets::fixedFonts().atSize(FONT_MED, layout.menu.textSize)
+                            : ThemeAssets::fixedFonts()[FONT_22_MED];
+    menuText->y = layout.menu.textY;
+    if (narrow) { // centred under the selected icon, a long line shrunk to the canvas
+        for (PsCenterLabel *label : {menuHead, menuText}) {
+            label->centreX = layout.menu.captionX;
+            label->maxWidth = std::min(layout.menu.captionX, layout.canvasW - layout.menu.captionX) * 2 - 16;
+            label->fitMax = label == menuHead ? layout.menu.headSize : layout.menu.textSize;
+            label->fitMin = 9;
+        }
+    }
 
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
 
     sselector = addFrontElement(new PsStateSelector("selector"));
     sselector->font30 = ThemeAssets::fixedFonts()[FONT_28_BOLD];
+    sselector->narrow = layout.fourByThree;
     sselector->visible = false;
 
     if (app.session().resumingGui) {
@@ -1170,6 +1238,8 @@ void GuiLauncher::freeAssets() {
     playTextOutline = ableem::Texture();
     playLabel.clear(); // the fitted font and the content texture go with the fonts
     playContent = ableem::Texture();
+    wideLayer = ableem::Texture();
+    hintLayer = ableem::Texture();
     playLabelFont = ableem::Font();
     meta = nullptr;
     background = nullptr;
@@ -1347,10 +1417,20 @@ void GuiLauncher::updateHintsIfNeeded() {
 // the theme's launcher.hintBar - unset, the pill most themes paint at the bottom right. What the hint grid is laid
 // out in and what the theme's `hintBar` frame is drawn into (G5e).
 ableem::Rect GuiLauncher::hintBarRect() const {
+    if (layout.hintBarFromLayout) // the 4:3 layout's
+        return layout.hintBar;
     const LauncherTheme &theme = app.theme().launcher();
     if (theme.hintBar.set)
         return ableem::Rect(theme.hintBar.x, theme.hintBar.y, theme.hintBar.w, theme.hintBar.h);
-    return ableem::Rect(560, 624, 680, 72);
+    return layout.hintBar; // 560, 624, 680 x 72
+}
+
+ableem::Rect GuiLauncher::hintLayoutRect() const {
+    const ableem::Rect bar = hintBarRect();
+    if (layout.hintScale == 1.0f)
+        return bar;
+    return ableem::Rect(0, 0, static_cast<int>(std::lround(bar.w / layout.hintScale)),
+                        static_cast<int>(std::lround(bar.h / layout.hintScale)));
 }
 
 //*******************************
@@ -1364,7 +1444,7 @@ ableem::Rect GuiLauncher::hintBarRect() const {
 // shows line 1 only, at the bar's full height. The launcher measures (its buttons through PanelStyle, its fixed
 // medium fonts) and keeps the result.
 void GuiLauncher::layoutHints() {
-    const ableem::Rect bar = hintBarRect();
+    const ableem::Rect bar = hintLayoutRect();
 
     buildHintLines(hints, hints2);
     hintsOneLineOnly = abgui::HintBar::oneLineOnly(bar);
@@ -1430,7 +1510,53 @@ void GuiLauncher::layoutHints() {
 // backdrop), AB_SHOT and the DebugDriver's frame copy see this frame as they did.
 bool GuiLauncher::prepareFrame() {
     gui->endBusy(); // the reload after a game, or after Options, is over once the launcher draws
+    useFrameCanvas();
     return true;
+}
+
+// the 4:3 layout draws on the 640x480 canvas: asked for every frame, the renderer goes back to its rest one after it
+// (the other screens have the 4:3 output's rest canvas, Gui::CrtCanvasW x H; a launcher with no 4:3 layout is the
+// 1280x720 one, letterboxed)
+void GuiLauncher::useFrameCanvas() {
+    if (layout.fourByThree)
+        renderer.setCanvas(layout.canvasW, layout.canvasH);
+    else
+        renderer.setCanvas(SCREEN_WIDTH, SCREEN_HEIGHT);
+}
+
+//*******************************
+// GuiLauncher::drawWide
+//*******************************
+// The parts with no 4:3 design yet (the welcome card, the resume slots, a theme's snapPanel): on the 4:3 canvas they
+// are drawn as on 1280x720 into a 16:9 picture, which goes on the canvas letterboxed at its shape (640 x 360 at y 60).
+// On the 1280x720 canvas they are simply drawn.
+void GuiLauncher::drawWide(const std::function<void()> &draw) {
+    if (!layout.fourByThree) {
+        draw();
+        return;
+    }
+    const int w = SCREEN_WIDTH, h = SCREEN_HEIGHT;
+    if (!wideLayer.valid() || wideLayerAt != renderer.targetsLost()) {
+        wideLayer = ableem::Texture::createTarget(renderer, w, h);
+        wideLayer.setBlendMode(ableem::BlendMode::Premultiplied);
+        wideLayerAt = renderer.targetsLost();
+    }
+    if (!wideLayer.valid())
+        return;
+    const ableem::Color keep = renderer.drawColor();
+    renderer.pushTarget(&wideLayer);
+    renderer.setBlendMode(ableem::BlendMode::None);
+    renderer.setDrawColor(ableem::Color(0, 0, 0, 0));
+    renderer.fillRect();
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+    renderer.setDrawColor(keep);
+    renderer.setCanvas(w, h); // what it centres on and fills is the 1280x720 picture
+    draw();
+    renderer.setCanvas(layout.canvasW, layout.canvasH);
+    renderer.popTarget();
+    const int bandH = layout.canvasW * h / w;
+    const ableem::Rect band(0, (layout.canvasH - bandH) / 2, layout.canvasW, bandH);
+    renderer.copy(wideLayer, nullptr, &band);
 }
 
 //*******************************
@@ -1481,16 +1607,22 @@ bool GuiLauncher::welcomeCardShows() const {
 //*******************************
 // The card in the theme's panel frame (else the code sheet) where the covers would be: a bold title, a rule in the
 // selection colour, the wrapped body and the signature. 660 wide, as tall as its content, centred on the empty
-// cover's centre; all numbers at the 1280x720 logical canvas (the designer's welcome-a.png).
+// cover's centre; all numbers at the 1280x720 logical canvas (the designer's welcome-a.png). On the 4:3 (CRT) canvas
+// (640x480) the card is the same, 580 wide and centred on the canvas, its text 23 / 18 / 16 px, ending above the menu's
+// icon row.
 void GuiLauncher::renderWelcomeCard() {
-    constexpr int boxW = 660, pad = 34, centreY = 292, linePitch = 31;
-    constexpr int titleH = 40, ruleGap = 16, signGap = 14, signH = 28, bodyTail = 18;
+    const bool narrow = layout.fourByThree;
+    const int boxW = narrow ? 580 : 660, pad = narrow ? 20 : 34, centreY = 292;
+    const int linePitch = narrow ? 24 : 31;
+    const int titleH = narrow ? 32 : 40, ruleGap = narrow ? 10 : 16, signGap = narrow ? 8 : 14;
+    const int signH = narrow ? 22 : 28, bodyTail = narrow ? 10 : 18;
+    const int bottomY = 272; // 4:3: the card ends above the menu's icon row (a longer text grows it upward)
     abgui::Context &ctx = gui->uiContext();
     const abgui::Style &style = ctx.style();
     Fonts &fonts = ThemeAssets::fixedFonts();
-    const ableem::Font &titleFont = fonts[FONT_28_BOLD];
-    const ableem::Font &bodyFont = fonts[FONT_22_MED];
-    const ableem::Font &signFont = fonts[FONT_20_BOLD];
+    const ableem::Font &titleFont = narrow ? fonts.boldAtSize(23) : fonts[FONT_28_BOLD];
+    const ableem::Font &bodyFont = narrow ? fonts.atSize(FONT_MED, 18) : fonts[FONT_22_MED];
+    const ableem::Font &signFont = narrow ? fonts.boldAtSize(16) : fonts[FONT_20_BOLD];
     const string title = _("Hi, and welcome to AutoBleem!");
     const string signature = _("Cheers, screemer");
     // where the games go depends on the platform: the Pi reads its SD card, Windows the AutoBleem folder, the
@@ -1508,7 +1640,7 @@ void GuiLauncher::renderWelcomeCard() {
     const vector<string> lines = gui->text().wrapLines(bodyFont, body, boxW - 2 * pad);
 
     const int boxH = pad + titleH + ruleGap + static_cast<int>(lines.size()) * linePitch + bodyTail + signH + pad - 6;
-    const ableem::Rect box((1280 - boxW) / 2, centreY - boxH / 2, boxW, boxH);
+    const ableem::Rect box((renderer.width() - boxW) / 2, narrow ? bottomY - boxH : centreY - boxH / 2, boxW, boxH);
     style.sheet(ctx, box); // the theme's panel frame, else the code-drawn sheet
 
     const LauncherTheme &theme = app.theme().launcher();
@@ -1565,7 +1697,7 @@ void GuiLauncher::draw() {
     }
     // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
     if (gui->launcherLogo().valid())
-        renderer.copy(gui->launcherLogo(), nullptr, &gui->launcherLogoRect());
+        renderer.copy(gui->launcherLogo(), nullptr, layout.logoSet ? &layout.logo : &gui->launcherLogoRect());
     // an empty "all games" shelf gives way to the welcome card: no empty cover frame, no arrow
     const bool welcome = welcomeCardShows();
     if (welcome) {
@@ -1602,12 +1734,20 @@ void GuiLauncher::draw() {
         }
         obj->render();
     }
-    renderSnap();
+    drawWide([this] { renderSnap(); }); // a theme's snapPanel is a 1280x720 rect
 
     // any other set with no games shows only the empty shelf: one line under it says so
-    if (carousel.games.empty() && !welcome && !snapshotFrame && !benchSkips("carousel"))
-        gui->text().renderText_WithColor(ThemeAssets::fixedFonts()[FONT_22_MED], _("No games here yet"), 0, 412,
-                                         fgColor, XALIGN_CENTER);
+    if (carousel.games.empty() && !welcome && !snapshotFrame && !benchSkips("carousel")) {
+        if (layout.fourByThree) { // under the cover's place
+            const ableem::Font &font = ThemeAssets::fixedFonts().atSize(FONT_MED, layout.emptyTextSize);
+            const string empty = _("No games here yet");
+            gui->text().renderText_WithColor(font, empty, layout.carousel.centreX - font.width(empty) / 2,
+                                             layout.emptyTextY, fgColor, XALIGN_LEFT);
+        } else {
+            gui->text().renderText_WithColor(ThemeAssets::fixedFonts()[FONT_22_MED], _("No games here yet"), 0,
+                                             layout.emptyTextY, fgColor, XALIGN_CENTER);
+        }
+    }
 
     if (!benchSkips("menu"))
         menu->render();
@@ -1632,11 +1772,40 @@ void GuiLauncher::draw() {
             gui->text().setAlpha(255);
         };
         if (!benchSkips("hints")) {
-            for (const Hint &hint : hints)
-                drawHint(hint, hintChipY, hintLabelY);
-            if (!hintsOneLineOnly)
-                for (const Hint &hint : hints2)
-                    drawHint(hint, hintChipY2, hintLabelY2);
+            auto drawLines = [&]() {
+                for (const Hint &hint : hints)
+                    drawHint(hint, hintChipY, hintLabelY);
+                if (!hintsOneLineOnly)
+                    for (const Hint &hint : hints2)
+                        drawHint(hint, hintChipY2, hintLabelY2);
+            };
+            if (layout.hintScale == 1.0f) {
+                drawLines();
+            } else {
+                // the 4:3 bar: the lines laid out at the 16:9 bar's proportions in a picture 1 / hintScale its size,
+                // which goes into the bar scaled down - the chips, the pictures and the labels keep their 16:9
+                // proportions to each other instead of 22 px chips beside 12 px labels
+                const ableem::Rect virtualBar = hintLayoutRect();
+                if (!hintLayer.valid() || hintLayerAt != renderer.targetsLost() || hintLayer.size().w != virtualBar.w ||
+                    hintLayer.size().h != virtualBar.h) {
+                    hintLayer = ableem::Texture::createTarget(renderer, virtualBar.w, virtualBar.h);
+                    hintLayer.setBlendMode(ableem::BlendMode::Premultiplied);
+                    hintLayerAt = renderer.targetsLost();
+                }
+                if (hintLayer.valid()) {
+                    const ableem::Color keep = renderer.drawColor();
+                    renderer.pushTarget(&hintLayer);
+                    renderer.setBlendMode(ableem::BlendMode::None);
+                    renderer.setDrawColor(ableem::Color(0, 0, 0, 0));
+                    renderer.fillRect();
+                    renderer.setBlendMode(ableem::BlendMode::Blend);
+                    renderer.setDrawColor(keep);
+                    drawLines();
+                    renderer.popTarget();
+                    const ableem::Rect bar = hintBarRect();
+                    renderer.copy(hintLayer, nullptr, &bar);
+                }
+            }
         }
 
         // top-left corner, one icon per known wireless pad (C8); the channel tag (UIREV-40) under its plate
@@ -1653,8 +1822,9 @@ void GuiLauncher::draw() {
     }
 
     for (auto &obj : frontElemets)
-        if (!benchSkips("front"))
-            obj->render();
+        if (!benchSkips("front") && (!layout.fourByThree || obj->visible))
+            obj->render(); // the resume slots: 1280x720, or the 4:3 design on the 640x480 canvas
+                           // (PsStateSelector::narrow)
 
     gui->text().setShadow(classicShadow);
 
@@ -1729,17 +1899,17 @@ void GuiLauncher::prevCarouselGame(int speed, bool eased) {
 void GuiLauncher::switchState(LauncherScreenState state, int time) {
     if (state == LauncherScreenState::Games) {
         app.audio().home_up.play();
-        settingsBack->slideTo(100);
+        settingsBack->slideTo(layout.band.closed);
         playButton->visible = true;
         playText->visible = true;
         if (!staticMeta) {
-            meta->slideTo(285);
+            meta->slideTo(layout.meta.y);
         }
         this->state = LauncherScreenState::Games;
         arrow->visible = false;
         arrow->restart();
         menu->duration = evomotion::MenuSlideMs;
-        menu->targety = 520;
+        menu->targety = layout.menu.yClosed;
         menu->active = false;
         menu->startTransition();
         menuHead->visible = false;
@@ -1748,17 +1918,17 @@ void GuiLauncher::switchState(LauncherScreenState state, int time) {
         carousel.moveMainCover(state == LauncherScreenState::Games);
     } else {
         app.audio().home_down.play();
-        settingsBack->slideTo(280);
+        settingsBack->slideTo(layout.band.open);
         playButton->visible = false;
         playText->visible = false;
         if (!staticMeta) {
-            meta->slideTo(215);
+            meta->slideTo(layout.meta.yRaised);
         }
         this->state = LauncherScreenState::Set;
         arrow->visible = true;
         arrow->restart();
         menu->duration = evomotion::MenuSlideMs;
-        menu->targety = 440;
+        menu->targety = layout.menu.yOpen;
         menu->active = true;
         menu->startTransition();
         menuHead->visible = true;
@@ -1879,13 +2049,14 @@ void GuiLauncher::showOptions() {
     menuForApp = forApp;
     captionOption = -1; // the Game icon's caption is the App's "Game settings" now, or the editor's again
     menu->selOption = 0;
-    menu->x = 640 - 118 / 2;
+    menu->x = static_cast<float>(layout.menu.x);
     menu->ox = menu->x;
     menu->direction = 0;
     menu->duration = 100;
     // at rest for the state the launcher is in (a row rebuilt while it was closing - Select from the open
     // row switching to a set of another kind - used to stay half-closed with its icon half-zoomed)
-    menu->settle(state == LauncherScreenState::Set, state == LauncherScreenState::Set ? 440 : 520);
+    menu->settle(state == LauncherScreenState::Set,
+                 state == LauncherScreenState::Set ? layout.menu.yOpen : layout.menu.yClosed);
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
 }

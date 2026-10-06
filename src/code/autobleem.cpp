@@ -14,6 +14,9 @@
 #include <ableem/engine/log.h>
 #include <ableem/engine/update_catalog.h>
 #include "core/version.h"
+#include <ableem/engine/theme_spec.h>
+#include "core/services/default_theme.h"
+#include "core/services/environment.h"
 
 using namespace std;
 
@@ -222,6 +225,7 @@ void AutoBleem::tryOutputMode(const string &token) {
         value = want.token();
         cfg_.save();
         PLOG_INFO << "Display mode " << want.token() << " kept";
+        useDefaultThemeFor(want);
     } else {
         PLOG_INFO << "Display mode " << want.token() << " not confirmed - back to " << was.token();
         switchOutputMode(was);
@@ -236,6 +240,16 @@ bool AutoBleem::confirmPendingOutputMode() {
     if (!OutputMode::readToken(OutputMode::pendingFile(), token))
         return true;
     DirEntry::removeFile(OutputMode::pendingFile()); // asked once: a crash from here comes back in the old mode
+    // The mode counts only when the window really has its size: when Weston did not take it (its restart failed,
+    // or this launcher was started under the old loop) the player is looking at another mode, and a confirm would
+    // keep one he never saw. Not applied: no question, the launcher leaves for the previous mode.
+    const OutputMode pending = OutputMode::parse(token);
+    const ableem::Size window = gui_->platform().windowSize();
+    if (!pending.shownAt(window.w, window.h)) {
+        PLOG_WARNING << "Display mode " << token << " not applied: the window is " << window.w << "x" << window.h
+                     << ", not " << pending.w << "x" << pending.h << " - leaving for the previous one";
+        return false;
+    }
     GuiKeepDisplay keep(*gui_);
     keep.modeLabel = OutputMode::parse(token).label();
     keep.show();
@@ -246,7 +260,27 @@ bool AutoBleem::confirmPendingOutputMode() {
     cfg_.inifile.values[OutputMode::ConfigKey] = OutputMode::parse(token).token();
     cfg_.save();
     PLOG_INFO << "Display mode " << token << " kept";
+    useDefaultThemeFor(OutputMode::parse(token));
     return true;
+}
+
+// The CRT 4:3 mode is in use - kept (the player confirmed it works) or already in config.ini at the start: a theme
+// without a 4:3 layout is replaced by the default theme - never while the mode is still being tried, so a mode the
+// display cannot show costs the player nothing. The assets are loaded again from the new theme, and the launcher
+// says so on its notification line.
+void AutoBleem::useDefaultThemeFor(const OutputMode &inUse) {
+    string &theme = cfg_.inifile.values["theme"];
+    const string themes = Env::getPathToThemesDir();
+    const string target = OutputMode::themeToSwitchTo(
+        inUse, theme, ableem::ThemeSpec::supports4x3(themes + sep + theme + sep + "theme.json"), DefaultTheme::Name,
+        DirEntry::isDirectory(themes + sep + DefaultTheme::Name));
+    if (target.empty())
+        return;
+    PLOG_INFO << "Theme " << theme << " has no 4:3 layout - switching to " << target;
+    theme = target;
+    cfg_.save();
+    gui_->loadAssets(true);
+    extensionRequests_.message = _("Theme switched to the default (CRT 4:3)"); // the launcher's notification line
 }
 
 //*******************************
@@ -357,6 +391,15 @@ int AutoBleem::run() {
 
     restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
 
+    // the CRT's safe area (overscan): the 4:3 frame goes into a centred rectangle of the 720x480 output, the margin
+    // from config.ini - only while the window really is the CRT mode. Before display(): its boot splash is the first
+    // 4:3 frame, and it would be shown with the renderer's default margin instead of config.ini's (CRT 4:3 round 2:
+    // Crtmargin=0 still drew the 5 % margin), and before the keep-mode question, which is drawn in it too
+    {
+        const ableem::Size window = gui_->platform().windowSize();
+        const bool crt = OutputMode::parse(OutputMode::CrtToken()).shownAt(window.w, window.h);
+        gui_->renderer().setSafeMargin(crt ? OutputMode::crtMargin(cfg_.inifile.values[OutputMode::MarginKey]) : 0);
+    }
     gui_->display(false);
     unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
 
@@ -368,6 +411,9 @@ int AutoBleem::run() {
     DirEntry::removeFile(OutputMode::pendingFile());
     const bool leaveForDisplay = false;
 #endif
+    // the CRT 4:3 mode config.ini already holds (a theme installed or chosen since): no confirm - it is in use
+    if (!leaveForDisplay)
+        useDefaultThemeFor(OutputMode::parse(cfg_.inifile.values[OutputMode::ConfigKey]));
 
     if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since

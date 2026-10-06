@@ -23,6 +23,9 @@ public:
 
     int nextLen = 0;
     int prevLen = 0;
+    // where the band ends and how wide it is: 632 and the 1280 canvas, or the 4:3 layout's
+    int bottom = 632;
+    int width = SCREEN_WIDTH;
 
     using PsObj::PsObj;
 
