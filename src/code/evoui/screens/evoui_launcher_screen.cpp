@@ -1725,6 +1725,8 @@ void GuiLauncher::draw() {
             continue;
         if (welcome && obj.get() == arrow)
             continue;
+        if (obj.get() == meta && layout.meta.hideWhileScrolling && carousel.scrolling)
+            continue; // a cover sliding to the shelf crosses the details' corner (EvoLayout::Meta)
         if (playFramed && obj.get() == playButton)
             continue;
         if (playFramed && obj.get() == playText) { // its pulse drives the frame, in the images' place in the order

@@ -110,6 +110,10 @@ struct EvoLayout {
     // the game's details: their place in the Games state and with the menu open, and the section's numbers
     struct Meta {
         int x = 785, y = 285, yRaised = 215;
+        // The details are not drawn while the shelf slides: in 4:3 a cover on its way to the shelf crosses their top
+        // left corner (it passes x 308 while it is still above y 162 + the title), and the details are drawn over the
+        // covers. They come back, with the new game's texts, when the carousel rests
+        bool hideWhileScrolling = false;
         MetaLayout::Metrics metrics;
     } meta;
 
@@ -206,6 +210,7 @@ inline EvoLayout EvoLayout::fromLayout4x3(const ableem::ThemeLayout4x3 &theme) {
     m.x = i("meta.x", 308); // centred between the cover (right edge 269) and the canvas's right edge
     m.y = i("meta.y", 162);
     m.yRaised = i("meta.yRaised", m.y);
+    m.hideWhileScrolling = true;
     MetaLayout::Metrics &g = m.metrics;
     g.height = i("meta.h", 110);
     g.ruleWidth = i("meta.w", 292);
