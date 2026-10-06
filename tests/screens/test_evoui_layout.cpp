@@ -109,7 +109,7 @@ TEST_CASE("EvoLayout::fromLayout4x3: an empty layout4x3 gives the designer's 4:3
     CHECK(l.play.iconSize == 19);
     CHECK(l.play.fontMax == 19);
     // the details on the right half, inside the canvas
-    CHECK(l.meta.x == 340);
+    CHECK(l.meta.x == 308);
     CHECK(l.meta.x + l.meta.metrics.ruleWidth <= l.canvasW);
     CHECK(l.meta.metrics.titleSize == 21);
     CHECK(l.meta.metrics.iconRowY + l.meta.metrics.iconSize == l.meta.metrics.height);

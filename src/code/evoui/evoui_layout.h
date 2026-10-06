@@ -203,7 +203,7 @@ inline EvoLayout EvoLayout::fromLayout4x3(const ableem::ThemeLayout4x3 &theme) {
     // (it may cross only the reflections): the 16:9 section's grid in a 292 x 110 box, the designer's font sizes; it
     // stays put when the menu opens (raised, it would run into the shelf)
     Meta &m = l.meta;
-    m.x = i("meta.x", 340);
+    m.x = i("meta.x", 308); // centred between the cover (right edge 269) and the canvas's right edge
     m.y = i("meta.y", 162);
     m.yRaised = i("meta.yRaised", m.y);
     MetaLayout::Metrics &g = m.metrics;
