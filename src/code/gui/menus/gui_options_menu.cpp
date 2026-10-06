@@ -161,7 +161,7 @@ void GuiOptions::fill() {
         // the picture height, one value for every 4:3 output (CRT and VGA): the frame taller or shorter by that many
         // output pixels, centred (a taller one is cropped top and bottom, for a tube's overscan); applied at once
         vector<string> heights;
-        for (int px = -ableem::MaxVerticalAdjust; px <= ableem::MaxVerticalAdjust; px++)
+        for (int px = -ableem::MaxVerticalAdjust; px <= ableem::MaxVerticalAdjust; px += ableem::VerticalAdjustStep)
             heights.push_back(to_string(px));
         lines.emplace_back(CFG_VSIZE, _("Picture height:"), OutputMode::VsizeKey, false, heights);
     }
