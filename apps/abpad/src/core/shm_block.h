@@ -42,6 +42,11 @@ private:
     std::string error_;
 };
 
+// Writes `text` to <path>.new and renames it over `path` (mode on POSIX). A stale <path>.new from an earlier run -
+// another user's too, which root may not open for writing in the sticky /tmp (fs.protected_regular) - is removed
+// first, and the rename replaces whatever `path` is. False when it could not be written.
+bool replaceFile(const std::string &path, const std::string &text, int mode = 0644);
+
 // where the block lives unless AB_PAD_SHM says otherwise
 std::string defaultShmPath();
 

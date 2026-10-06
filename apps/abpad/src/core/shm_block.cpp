@@ -1,5 +1,7 @@
 #include "core/shm_block.h"
 
+#include <cerrno>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -83,6 +85,22 @@ bool ShmBlock::openReadOnly(const string &path, size_t size) {
     return true;
 }
 
+bool replaceFile(const string &path, const string &text, int) {
+    string temporary = path + ".new";
+    FILE *file = fopen(temporary.c_str(), "wb");
+    if (!file) {
+        return false;
+    }
+    bool ok = fwrite(text.data(), 1, text.size(), file) == text.size();
+    ok = (fclose(file) == 0) && ok;
+    remove(path.c_str()); // Windows' rename does not replace
+    if (!ok || rename(temporary.c_str(), path.c_str()) != 0) {
+        remove(temporary.c_str());
+        return false;
+    }
+    return true;
+}
+
 void ShmBlock::close() {
     if (data_) {
         UnmapViewOfFile(data_);
@@ -100,9 +118,45 @@ void ShmBlock::close() {
 //*******************************
 // ShmBlock::create (POSIX)
 //*******************************
+// A block left in the sticky /tmp by another user (or with a mode we may not write): Debian's fs.protected_regular
+// refuses even root an O_CREAT open of it (EACCES), so an existing file is opened without O_CREAT and only a missing
+// one is created, with O_EXCL. A file we still may not open is replaced - unless a daemon holds its lock.
+static int openBlockFile(const string &path) {
+    for (int attempt = 0; attempt < 3; ++attempt) {
+        int fd = ::open(path.c_str(), O_RDWR);
+        if (fd >= 0) {
+            return fd;
+        }
+        if (errno == ENOENT) {
+            fd = ::open(path.c_str(), O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW, 0666);
+            if (fd >= 0 || errno != EEXIST) {
+                return fd;
+            }
+            continue; // somebody made it between the two calls
+        }
+        if (errno != EACCES) {
+            return -1;
+        }
+        int probe = ::open(path.c_str(), O_RDONLY);
+        if (probe < 0) {
+            if (errno == ENOENT) {
+                continue;
+            }
+            return -1;
+        }
+        bool held = flock(probe, LOCK_EX | LOCK_NB) != 0;
+        ::close(probe);
+        if (held) {
+            return -1; // a live daemon's block: not ours to take away
+        }
+        unlink(path.c_str());
+    }
+    return -1;
+}
+
 bool ShmBlock::create(const string &path, size_t size) {
     close();
-    int fd = ::open(path.c_str(), O_RDWR | O_CREAT, 0666);
+    int fd = openBlockFile(path);
     if (fd < 0) {
         error_ = "cannot create " + path;
         return false;
@@ -159,9 +213,39 @@ bool ShmBlock::openReadOnly(const string &path, size_t size) {
     return true;
 }
 
+//*******************************
+// replaceFile (POSIX)
+//*******************************
+bool replaceFile(const string &path, const string &text, int mode) {
+    string temporary = path + ".new";
+    unlink(temporary.c_str()); // a stale one from an earlier run, whoever owned it: root may not open it for writing
+    int fd = ::open(temporary.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, mode);
+    if (fd < 0) {
+        return false;
+    }
+    size_t done = 0;
+    while (done < text.size()) {
+        ssize_t n = ::write(fd, text.data() + done, text.size() - done);
+        if (n <= 0) {
+            ::close(fd);
+            unlink(temporary.c_str());
+            return false;
+        }
+        done += static_cast<size_t>(n);
+    }
+    fchmod(fd, static_cast<mode_t>(mode)); // the umask must not narrow it: an App may not be us
+    ::close(fd);
+    if (rename(temporary.c_str(), path.c_str()) != 0) {
+        unlink(temporary.c_str());
+        return false;
+    }
+    return true;
+}
+
 void ShmBlock::close() {
     if (data_) {
         munmap(data_, size_);
+        data_ = nullptr;
         data_ = nullptr;
     }
     if (fd_ >= 0) {

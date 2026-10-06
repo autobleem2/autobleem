@@ -374,17 +374,14 @@ void writeHideList(const string &path, const Slot *slots, const vector<string> &
             nodes.push_back(node);
         }
     }
-    string temporary = path + ".new";
-    FILE *file = fopen(temporary.c_str(), "w");
-    if (!file) {
-        say("abpadd: cannot write %s - the App will see the real pads too", temporary.c_str());
+    string text;
+    for (const string &node : nodes) {
+        text += node + "\n";
+    }
+    if (!replaceFile(path, text)) {
+        say("abpadd: cannot write %s - the App will see the real pads too", path.c_str());
         return;
     }
-    for (const string &node : nodes) {
-        fprintf(file, "%s\n", node.c_str());
-    }
-    fclose(file);
-    rename(temporary.c_str(), path.c_str());
     say("abpadd: %d node(s) of the held pads, the pads' touchpads and motion sensors, the mice and the Reset button "
         "to hide from the App, in %s",
         static_cast<int>(nodes.size()), path.c_str());
@@ -496,19 +493,8 @@ void writeMappings(const string &path, Slot *slots) {
         ++written;
     }
 
-    string temporary = path + ".tmp";
-    FILE *file = fopen(temporary.c_str(), "w");
-    if (!file) {
-        say("abpadd: cannot write %s", temporary.c_str());
-        return;
-    }
-    fwrite(text.data(), 1, text.size(), file);
-    fclose(file);
-#ifndef _WIN32
-    chmod(temporary.c_str(), 0644); // an App may not be us
-#endif
-    if (rename(temporary.c_str(), path.c_str()) != 0) {
-        say("abpadd: cannot replace %s", path.c_str());
+    if (!replaceFile(path, text)) {
+        say("abpadd: cannot write %s", path.c_str());
         return;
     }
     chatter("abpadd: %d mapping(s) written to %s", written, path.c_str());

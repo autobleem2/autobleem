@@ -8,15 +8,24 @@
 #include "core/mapping.h"
 #include "core/profile.h"
 #include "core/shared_state.h"
+#include "core/shm_block.h"
 #include "core/virtual_pad.h"
 #include "doctest/doctest.h"
 #include "pad_descriptions.h"
 
+#include <cstdlib>
+#include <fstream>
 #include <initializer_list>
 #include <sstream>
 #include <utility>
 #include <vector>
 #include <string>
+
+#ifndef _WIN32
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 using namespace abpad;
 using namespace std;
@@ -1396,3 +1405,82 @@ TEST_CASE("the 2020 floor: the console pad device is the real pad, fact by fact 
         CHECK(axis.max == 2);
     }
 }
+
+#ifndef _WIN32
+namespace {
+
+// a scratch directory of the test's own, gone with it
+struct ScratchDir {
+    string path;
+    ScratchDir() {
+        char pattern[] = "/tmp/abpad_state_XXXXXX";
+        path = mkdtemp(pattern);
+    }
+    ~ScratchDir() {
+        string command = "rm -rf '" + path + "'";
+        if (system(command.c_str()) != 0) {
+            // nothing more to do
+        }
+    }
+    string at(const string &name) const { return path + "/" + name; }
+};
+
+void putFile(const string &path, const string &text, mode_t mode) {
+    int fd = ::open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, mode);
+    REQUIRE(fd >= 0);
+    REQUIRE(::write(fd, text.data(), text.size()) == static_cast<ssize_t>(text.size()));
+    fchmod(fd, mode);
+    ::close(fd);
+}
+
+string readFile(const string &path) {
+    ifstream in(path, ios::binary);
+    stringstream all;
+    all << in.rdbuf();
+    return all.str();
+}
+
+} // namespace
+
+TEST_CASE("a state file is written over a stale temp file nobody can write") {
+    ScratchDir dir;
+    const string target = dir.at("abpad.state.hide");
+    // what an earlier run as another user left: a temp file the writer may not open, and an old target
+    putFile(target + ".new", "stale", 0444);
+    putFile(target, "old", 0444);
+
+    CHECK(replaceFile(target, "/dev/input/event5\n"));
+    CHECK(readFile(target) == "/dev/input/event5\n");
+    struct stat facts;
+    CHECK(stat((target + ".new").c_str(), &facts) != 0); // the temp is gone after the rename
+    REQUIRE(stat(target.c_str(), &facts) == 0);
+    CHECK((facts.st_mode & 0777) == 0644);
+}
+
+TEST_CASE("a state file is written where there was none, and again") {
+    ScratchDir dir;
+    const string target = dir.at("abpad.state.mappings");
+    CHECK(replaceFile(target, "one\n"));
+    CHECK(replaceFile(target, "two\n"));
+    CHECK(readFile(target) == "two\n");
+}
+
+TEST_CASE("a state file in a missing directory is reported, not written") {
+    CHECK_FALSE(replaceFile("/nonexistent-abpad-dir/abpad.state.hide", "x"));
+}
+
+TEST_CASE("the shared block replaces a stale block it may not open, and refuses a held one") {
+    ScratchDir dir;
+    const string target = dir.at("abpad.state");
+    putFile(target, "stale", 0444); // another user's, mode 0444: root may open it, a user may not
+
+    ShmBlock first;
+    REQUIRE(first.create(target, 4096));
+    REQUIRE(first.data() != nullptr);
+    static_cast<char *>(first.data())[0] = 'x';
+
+    ShmBlock second; // a second daemon must still be refused while the first holds the block
+    CHECK_FALSE(second.create(target, 4096));
+    CHECK(static_cast<char *>(first.data())[0] == 'x');
+}
+#endif
