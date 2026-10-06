@@ -36,6 +36,8 @@ string appCategoryLabel(AppCategory category) {
         return _("Other");
     case AppCategory::PE:
         return _("PE apps");
+    case AppCategory::Packages:
+        return _("Packages");
     }
     return _(appCategoryName(category));
 }
@@ -111,11 +113,13 @@ void GuiSetPicker::buildTabs() {
     Tab &apps = tabs[layout.apps()];
     apps.entries.clear();
     auto appsCount = [](size_t n) { return pluralApps(n); };
+    auto packagesCount = [](size_t n) { return pluralPackages(n); };
     apps.entries.push_back(
         {_("All apps"), appsCount(c.apps), 0, GameSet::Apps, Ps1SelectState::AllGames, 0, "", AppCategory::All});
     for (const auto &cat : c.appCategories) {
         Entry entry{appCategoryLabel(cat.category),
-                    appsCount(static_cast<size_t>(cat.count)),
+                    cat.category == AppCategory::Packages ? packagesCount(static_cast<size_t>(cat.count))
+                                                          : appsCount(static_cast<size_t>(cat.count)),
                     0,
                     GameSet::Apps,
                     Ps1SelectState::AllGames,
