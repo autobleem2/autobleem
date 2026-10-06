@@ -26,6 +26,11 @@
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
 #include "evoui_extensions.h"
+#include "evoui_package_info.h"
+#include "evoui_package_picker.h"
+#include "package_picker_logic.h"
+#include "core/services/app_manifest.h"
+#include "core/services/app_settings.h"
 #include "evoui_processors.h"
 #ifdef AB_ONLINE_UPDATE
 #include "evoui_update.h"
@@ -89,10 +94,86 @@ void GuiLauncher::loop_chooseSet() {
 }
 
 //*******************************
+// GuiLauncher::chooseGameData
+//*******************************
+// docs/packages.md 5.4: an App with Uses= is started with one game of the Packages - none: the message and no start;
+// one: at once; more: the picker, on the last choice. Returns whether the App starts, with the entry in the session.
+// An App without Uses= is not touched.
+bool GuiLauncher::chooseGameData(const PsGamePtr &game) {
+    app.session().package.reset();
+    const AppManifest manifest = AppManifest::load(game->base, "app.ini", Env::appPlatformKeys());
+    if (manifest.uses.empty())
+        return true;
+
+    vector<PackageEntry> entries = app.packages().entriesFor(manifest);
+    // the files are checked again right before the start: a vanished one shows the message, not a crashing engine
+    entries.erase(remove_if(entries.begin(), entries.end(),
+                            [](const PackageEntry &entry) { return !PackageService::stillThere(entry); }),
+                  entries.end());
+
+    const packagepicker::Start what = packagepicker::decide(entries.size());
+    if (what == packagepicker::Start::NoData) {
+        string kinds;
+        for (const string &use : manifest.uses)
+            kinds += (kinds.empty() ? "" : ", ") + packageKindLabel(use);
+        GuiConfirm message(*gui);
+        message.title = _("No game data found");
+        message.label = _("%1 needs game data it can run: %2.");
+        message.label.replace(message.label.find("%1"), 2, game->title);
+        message.label.replace(message.label.find("%2"), 2, kinds);
+        message.label += "\n\n" + _("Put the game's files into the Packages folder on the stick (for example "
+                                    "Packages/Doom/DOOM2.WAD), or get a package from the Store. Your own files are "
+                                    "only read, never changed.");
+        message.confirmLabel = _("OK");
+        message.cancelLabel = _("Back");
+        BackdropScope backdrop(*this);
+        message.show();
+        return false;
+    }
+
+    int pick = 0;
+    if (what == packagepicker::Start::Pick) {
+        GuiPackagePicker picker(*gui, game->title, entries, AppSettings::lastPackage(game->base));
+        {
+            BackdropScope backdrop(*this);
+            picker.show();
+        }
+        if (picker.chosen < 0)
+            return false; // Circle: nothing is started and nothing is stored
+        pick = picker.chosen;
+    }
+    // the choice is remembered; a pick equal to the stored one writes nothing
+    AppSettings::setLastPackage(game->base, entries[pick].id());
+    app.session().package = make_shared<const PackageEntry>(entries[pick]);
+    return true;
+}
+
+//*******************************
+// GuiLauncher::loop_openPackageInfo
+//*******************************
+void GuiLauncher::loop_openPackageInfo(const PsGame &game) {
+    for (const PackageInfo &info : app.packages().packages()) {
+        if (info.id != game.package_id)
+            continue;
+        GuiPackageInfo infoScreen(*gui, info);
+        BackdropScope backdrop(*this);
+        infoScreen.show();
+        return;
+    }
+    app.audio().cancel.play(); // the package is gone since the row was listed: the next scan drops the row
+}
+
+//*******************************
 // GuiLauncher::loop_crossButtonPressed_STATE_GAMES
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     if (carousel.games.empty() || refuseLicenceProtected()) {
+        return;
+    }
+
+    // a package of the Packages row is game data, not a program: Cross opens what is in it and nothing starts
+    if (carousel.selectedIsValid() && carousel.games[carousel.selected]->package) {
+        loop_openPackageInfo(*carousel.games[carousel.selected]);
         return;
     }
 
@@ -145,6 +226,12 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             // Do not run
             if (!result) {
                 app.session().startingGame = false;
+                menuVisible = true;
+            }
+            // an engine (Uses=) is started with game data: none, the only one, or the player's pick
+            if (result && !chooseGameData(app.session().runningGame)) {
+                app.session().startingGame = false;
+                app.session().runningGame.reset();
                 menuVisible = true;
             }
             app.session().emuMode = EmuMode::Launcher;

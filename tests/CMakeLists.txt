@@ -94,3 +94,8 @@ endif()
 if (NOT AB_TARGET STREQUAL "win")
     ab_add_test(test_abdialog tools/test_abdialog.cpp LIBS abdialog_core)
 endif()
+
+# The Packages screens' decisions (evoui/screens/package_picker_logic.h, pure): no game data / one entry / the picker,
+# the picker's rows and where its cursor starts, the second line's fitting at 16:9 and 4:3, "Runs with"
+ab_add_test(test_package_picker screens/test_package_picker.cpp)
+target_include_directories(test_package_picker PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)

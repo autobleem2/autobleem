@@ -310,7 +310,9 @@ void AutoBleem::restoreCarouselSession() {
 void AutoBleem::launchGame() {
     PLOG_INFO << "Starting game";
     const bool retroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
-    runOutside(retroArch, [this]() { launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint); });
+    runOutside(retroArch, [this]() {
+        launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint, session_.package.get());
+    });
 
     bool reloadFavHist{false};
     if (session_.runningGame->foreign)
@@ -325,6 +327,7 @@ void AutoBleem::launchGame() {
     takeAppMessage();
 
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
+    session_.package.reset();
     session_.startingGame = false;
 }
 

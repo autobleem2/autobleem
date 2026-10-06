@@ -20,3 +20,7 @@ inline std::string pluralGames(size_t n) {
 inline std::string pluralApps(size_t n) {
     return std::to_string(n) + " " + (n == 1 ? _("app") : _("apps"));
 }
+
+inline std::string pluralPackages(size_t n) {
+    return std::to_string(n) + " " + (n == 1 ? _("package") : _("packages"));
+}
