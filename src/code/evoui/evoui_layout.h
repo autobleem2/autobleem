@@ -260,8 +260,10 @@ inline EvoLayout EvoLayout::fromLayout4x3(const ableem::ThemeLayout4x3 &theme) {
     l.band.closed = i("band.closed", 60);
     l.band.open = i("band.open", 170);
 
-    l.emptyTextY = p.box.y + 8;
+    // with no games the menu row is raised under the empty cover's place (where the text used to stand, over
+    // its icon): the line goes inside the empty cover, above the arrow
     l.emptyTextSize = 15;
+    l.emptyTextY = c.centreY - l.emptyTextSize / 2 - 6;
     l.bubbleRight = l.canvasW - 12;
     l.bubbleWidth = 300;
     l.messageWidth = 420;
