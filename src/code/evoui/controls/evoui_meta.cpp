@@ -145,11 +145,13 @@ void PsMeta::render() {
             copyWithOutline(icon);
         };
 
-        // the title - a name too long for the screen is drawn in the largest size that fits
+        // the title - a name too long for the space up to screenRight is drawn in the largest size that fits, and
+        // elided there when even the smallest does not
         auto nameFont = fixed.boldAtSize(m.titleSize);
         if (x + nameFont.width(gameName) > screenRight)
             nameFont = text.fittingFont(FONT_BOLD, m.titleSize, m.titleMinSize, gameName, screenRight - x);
-        text.renderText_WithColor(nameFont, gameName, x, y, style.text, XALIGN_LEFT);
+        text.renderText_WithColor(nameFont, text.elide(nameFont, gameName, screenRight - x), x, y, style.text,
+                                  XALIGN_LEFT);
 
         // the rule under it: the `edge` role at 78 %
         renderer.setBlendMode(ableem::BlendMode::Blend);

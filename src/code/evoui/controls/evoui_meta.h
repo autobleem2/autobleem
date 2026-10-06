@@ -49,7 +49,7 @@ public:
     bool lightgun = false; // set from LightgunService by updateTexts(PsGamePtr)
     bool foreign = false;
     bool app = false;
-    // the section's numbers (the 1280x720 ones; the 4:3 layout's, evoui_layout.h) and the canvas's right edge a long
+    // the section's numbers (the 1280x720 ones; the 4:3 layout's, evoui_layout.h) and the right edge a long
     // title is fitted to
     MetaLayout::Metrics metrics;
     int screenRight = 1280;

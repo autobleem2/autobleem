@@ -1091,7 +1091,9 @@ void GuiLauncher::loadAssets() {
     meta = addStaticElement(new PsMeta("meta") /* the players icon is the icon set's since G5b */);
     meta->fonts = ThemeAssets::fixedFonts();
     meta->metrics = layout.meta.metrics;
-    meta->screenRight = layout.canvasW;
+    // a long title fits to the canvas's edge; in 4:3, where the details sit between the cover and the edge, to the
+    // details' own right edge (the same margin as on their left)
+    meta->screenRight = layout.fourByThree ? layout.meta.x + layout.meta.metrics.ruleWidth : layout.canvasW;
     meta->x = layout.meta.x;
     meta->y = layout.meta.y;
     meta->visible = true;
