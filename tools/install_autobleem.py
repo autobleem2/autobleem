@@ -108,6 +108,8 @@ import stat
 import sys
 from pathlib import Path
 
+import unshipped_themes
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 JUNK_DIR_NAMES = {'.Trashes', '.Spotlight-V100', '.TemporaryItems', '.fseventsd', '.apdisk',
@@ -953,7 +955,8 @@ def stage_install(root: Path, opts, dry_run: bool):
     if not payload_themes.is_dir():
         print(f'  WARNING: {payload_themes} missing - skipping themes install')
     else:
-        for theme_dir in sorted(p for p in payload_themes.iterdir() if p.is_dir()):
+        unshipped = unshipped_themes.names()  # a theme folder in the repository does not mean it ships
+        for theme_dir in sorted(p for p in payload_themes.iterdir() if p.is_dir() and p.name not in unshipped):
             replace_tree(theme_dir, usb_themes / theme_dir.name, dry_run, log)
 
     # the RetroArch folder's skeleton: bin/ bios/ roms/ with their README files and bios/biospack.txt,

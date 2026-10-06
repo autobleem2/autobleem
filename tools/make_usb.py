@@ -22,6 +22,8 @@ import struct
 import sys
 import zipfile
 
+import unshipped_themes
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # ABFlashKit and PSC-Bios moved to their own repository on 2026-09-23 (docs/developer-guide.md, "Where the code lives") and
 # build there now, not here - same sibling-checkout convention as ab_drive.py's CONSOLE_TOOLS_DIR / make_psc.sh's
@@ -308,6 +310,9 @@ def main():
     replace_tree(os.path.join(REPO, 'payload', 'Autobleem', 'rc'), os.path.join(usb, 'Autobleem', 'rc'))
     # the five themes: their own repository now (autobleem2/autobleem-themes), a submodule at autobleem-themes/
     replace_tree(os.path.join(REPO, 'autobleem-themes', 'Themes'), os.path.join(usb, 'Themes'))
+    # a theme folder in the repository does not mean it ships: tools/unshipped_themes.txt (ab2)
+    for name in unshipped_themes.names():
+        shutil.rmtree(os.path.join(usb, 'Themes', name), ignore_errors=True)
     # the scanner processors' folder and its README (once: the processors in it are the tester's)
     processors = os.path.join(usb, 'System', 'Processors')
     os.makedirs(processors, exist_ok=True)

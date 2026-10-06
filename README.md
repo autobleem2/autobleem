@@ -86,7 +86,8 @@ The launcher is built from libraries that link only the one below them:
 - `apps/abpad/` - virtual gamepad mapper for third-party Apps
 - `payload/` - console USB tree; `payload_linux/` keeps only `Autobleem/rc/`, the App scripts shared
   with the console (DOCS-5, 2026-09-27) - the Pi/PC-stick installer package itself is
-  autobleem2/autobleem-appliance's own `payload_linux/`
+  autobleem2/autobleem-appliance's own `payload_linux/`. **This repo's `payload_linux/Autobleem/rc/` is the only
+  source of the Linux appliances' rc scripts**: the launcher artifact carries them, the appliance keeps no copy
 
 Clone with `git clone --recurse-submodules`.
 

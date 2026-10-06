@@ -344,7 +344,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   launcher binary only, the same as `publish-launcher.yml`, and stop there). The local route, from inside
   this checkout: `AB_LAUNCHER_DIR="$PWD" ../autobleem-appliance/tools/make_rpi_package.sh` (or an absolute
   path to that checkout) - it reads `build_rpi/` and `src/resources/` from here, `payload_linux/` from
-  there. Incremental since 2026-09-19
+  there, except `Autobleem/rc/`, which it copies from this checkout's `payload_linux/Autobleem/rc/`. Incremental since 2026-09-19
   (it used to `rm -rf` the build dir on every run); `--clean` wipes it, `--debug` builds into
   `build_rpi_dbg/`. See the "Raspberry Pi port" section above. All three build scripts are incremental now;
   `make_win.sh`'s time is mostly `ctest`.
@@ -578,8 +578,9 @@ defaults, which both the services and the screens need.
 | (autobleem-console-tools) | `PscBios`, `AbFlashKit` | The console tools live in their own repository since 2026-09-23: PSC-Bios an extension (`Extensions/pscbios/`), ABFlashKit an App. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, `RetroArch/`'s skeleton, and
-`Docs/README.txt` (which points to the site's current user manual). **The five themes (`ab2`, `aergb`,
-`Legacy of 2018` (was `autobleem`), `default`, `evolution`) no longer live here** (D5, 2026-09-26): they are
+`Docs/README.txt` (which points to the site's current user manual). **The themes (`ab2.0.0`, `aergb`,
+`Legacy of 2018` (was `autobleem`), `default`, `evolution`; the old `ab2` folder stays in the repository but is
+no package's - `tools/unshipped_themes.txt`, 2026-10-06) no longer live here** (D5, 2026-09-26): they are
 `github.com/autobleem2/autobleem-themes`, a submodule at `autobleem-themes/` (`Themes/` inside it, pinned
 to its `develop` branch like `autobleem-core`) - `tools/make_usb.py` and this repo's own packaging scripts
 (`tools/make_psc_package.sh`/`make_win_package.sh`) all take the themes from there; autobleem-appliance's own
@@ -587,6 +588,13 @@ to its `develop` branch like `autobleem-core`) - `tools/make_usb.py` and this re
 it has no submodule of its own, so it fetches `autobleem-themes`' own GitHub release
 (`tools/release_assets.sh`'s `stage_themes()`, the same call `assemble.sh` makes), or copies from a local
 checkout given as `AB_THEMES_DIR` when there's no `gh`.
+**What no package ships** (the owner, 2026-10-06: the experimental `ab2` theme is out of every package, the folder and
+its `ab.ogg` stay in `autobleem-themes`): `tools/unshipped_themes.txt` lists the theme folders the packaging skips -
+`make_psc_package.sh`, `make_win_package.sh` (so the Windows launcher artifact too), `make_usb.py` and
+`install_autobleem.py` apply it through `tools/unshipped_themes.sh`/`.py`, and autobleem-appliance's
+`stage_themes()` keeps the same list (`UNSHIPPED_THEMES`) for the release packages. A stick that has the folder already keeps it
+(updates never delete a theme folder they do not ship); a config.ini that names a theme whose folder is gone loads
+`default` for that run (autobleem-core's `Theme::load`, `test_theme.cpp`: "a theme that does not exist at all is the default theme").
 **`.github/workflows/publish-launcher.yml` no longer stages `Themes/` into its per-platform artifact**
 (D5 step 3, 2026-09-27): a release package gets its themes only through autobleem-appliance's own
 `stage_themes` (a real release of `autobleem2/autobleem-themes`, fetched straight there), never through the
@@ -611,7 +619,12 @@ stopped it but swapped Triangle/Square on the same pad's new GUID, so it was rev
 hidapi's mapping (a gamecontrollerdb line for the evdev GUID, or not closing the pad around a game at all).
 `payload_linux/` next to it keeps only `Autobleem/rc/` (DOCS-5, 2026-09-27) - the App scripts shared with the
 console's `payload/`, kept identical there and checked by `test_app_resolve` (see the quiet-stick section
-below). The Raspberry Pi/PC-stick installer package itself - `install.sh`, `README.md`, `system/`, the
+below). **`payload_linux/Autobleem/rc/` is the single source of truth for the Linux appliances' rc scripts**
+(the owner, 2026-10-06; `launch.sh`, `launch_rb.sh`, `retroarch.sh`, `app_*.sh`, `ab_log.sh`, `pad.default.ini`):
+`publish-launcher.yml` puts them into every `launcher-<rpi-armhf|rpi-arm64|pcusb>-<v>.tar.gz` as `Autobleem/rc/`
+(which autobleem-appliance's `assemble.sh` extracts over its skeleton), and `tools/make_rpi_package.sh` copies
+them from this checkout. autobleem-appliance keeps no copy of them (its own copy had drifted and was removed) -
+edit them here only. The Raspberry Pi/PC-stick installer package itself - `install.sh`, `README.md`, `system/`, the
 data-partition tree - is autobleem2/autobleem-appliance's own `payload_linux/` now; this repo's duplicate had
 drifted and was removed rather than kept in sync by hand. `db/` is git-ignored (cover DBs live there).
 

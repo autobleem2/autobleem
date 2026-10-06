@@ -13,7 +13,11 @@ decisions) is in `autobleem2/autobleem-main` (`CLAUDE.md`, `docs/`); history in 
 - Here: `ab_ui` (`src/code/app.*`, the game-aware classic screens in `src/code/gui/`), `ab_evoui`
   (`src/code/evoui/`: the carousel launcher), the executable (`main.cpp`, `autobleem.*`), `apps/abpad/`,
   `payload*/`, `src/resources/` (lang files, platform ini), `tools/`, `ci/`, `docker/run.sh`.
-- Themes are the `autobleem-themes/` submodule. Clone with `--recurse-submodules`.
+- Themes are the `autobleem-themes/` submodule. Clone with `--recurse-submodules`. A theme folder there does not
+  mean it ships: `tools/unshipped_themes.txt` lists what the packaging skips (`ab2`, 2026-10-06).
+- **`payload_linux/Autobleem/rc/` is the single source of the Pi / PC-stick rc scripts** (launch.sh, retroarch.sh,
+  app_*.sh ...): the launcher artifact carries them (`publish-launcher.yml`), `make_rpi_package.sh` of
+  autobleem-appliance copies them from this checkout; the appliance keeps no copy - never re-add one there.
 
 ## Build (details: developer guide "Build")
 

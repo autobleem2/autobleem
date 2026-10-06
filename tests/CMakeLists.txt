@@ -88,6 +88,9 @@ find_package(Python3 COMPONENTS Interpreter QUIET)
 if (Python3_Interpreter_FOUND)
     add_test(NAME test_make_pe_gamecontrollerdb COMMAND ${Python3_EXECUTABLE}
              ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_make_pe_gamecontrollerdb.py)
+    # tools/unshipped_themes.txt: the theme folders no package ships (ab2) and the scripts that apply the list
+    add_test(NAME test_unshipped_themes COMMAND ${Python3_EXECUTABLE}
+             ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_unshipped_themes.py)
 endif()
 
 # abdialog (src/tools/abdialog), the PE dialogs: the options, the command file the scripts write, the answer codes

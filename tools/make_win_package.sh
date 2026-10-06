@@ -167,6 +167,9 @@ if [ -n "$PRODUCT_DIR" ]; then
     fi
     mkdir -p "$APP/Themes"
     cp -a "$REPO/autobleem-themes/Themes/." "$APP/Themes/"
+    # a theme folder in the repository does not mean it ships: tools/unshipped_themes.txt (ab2)
+    . "$REPO/tools/unshipped_themes.sh"
+    drop_unshipped_themes "$APP/Themes"
     # the two PS1 emulators: a local Windows build, else the site's package of each
     emulator "pcsx-ab" "emu" "${AB_PCSX_WIN_DIST:-}"
     emulator "pcsx-abnxt" "emunxt" "${AB_PCSXNXT_WIN_DIST:-}"
