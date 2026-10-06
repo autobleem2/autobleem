@@ -212,8 +212,8 @@ void AutoBleem::switchOutputMode(const OutputMode &mode) {
     extensions_.resume();
 }
 
-// The margin of the window as it really is (it may not be the mode asked for): 720x480 the tube, any other 4:3 size a
-// VGA monitor, a wide one none
+// The margin and the picture height of the window as it really is (it may not be the mode asked for): 720x480 the
+// tube's margin, any other 4:3 size the VGA one, a wide output none; the height adjust is one value for all
 void AutoBleem::applySafeMargin() {
     const ableem::Size window = gui_->platform().windowSize();
     OutputMode shown;
@@ -221,6 +221,8 @@ void AutoBleem::applySafeMargin() {
     shown.h = window.h;
     gui_->renderer().setSafeMargin(OutputMode::safeMarginFor(shown, cfg_.inifile.values[OutputMode::MarginKey],
                                                              cfg_.inifile.values[OutputMode::VgaMarginKey]));
+    // the picture height of every 4:3 output; recorded on a wide one too, for a later switch to 4:3
+    gui_->renderer().setVerticalAdjust(OutputMode::vsize(cfg_.inifile.values[OutputMode::VsizeKey]));
 }
 
 // the new mode on the screen, and kept only with a Cross within GuiKeepDisplay::Seconds - else the old one back

@@ -297,6 +297,7 @@ P2=P2
 Page=Pagina
 pcsx.cfg file not found=Fișierul pcsx.cfg nu a fost găsit
 Persist RetroArch config:=Păstrează config. RetroArch:
+Picture height:=Înălțimea imaginii:
 Platform=Platformă
 Play=Joacă
 Play all PSX games with RA:=Joaca toate jocurile PSX cu RA:

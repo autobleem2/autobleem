@@ -34,9 +34,10 @@ enum {
     CFG_COVER_SHINE,
     CFG_SPLASH_SCREEN,
     CFG_ANIMATIONS,
-    CFG_CRT_MARGIN // the CRT 4:3 mode's safe margin (config.ini crtmargin)
+    CFG_CRT_MARGIN, // the 4:3 modes' safe margin (config.ini crtmargin / vgamargin)
+    CFG_VSIZE       // the 4:3 modes' picture height adjust (config.ini vsize43)
 };
-#define CFG_LAST CFG_CRT_MARGIN
+#define CFG_LAST CFG_VSIZE
 #define CFG_SIZE (CFG_LAST + 1)
 #define CFG_HEADING (-1) // a group heading row: not an option, never selected
 

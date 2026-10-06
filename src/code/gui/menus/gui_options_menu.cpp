@@ -1,6 +1,7 @@
 #include "gui_options_menu.h"
 #include <algorithm>
 #include <ableem/engine/theme_spec.h>
+#include <ableem/ui/canvas.h>
 #include "core/services/system.h"
 #include "core/services/environment.h"
 #include "core/services/theme_converter.h"
@@ -157,6 +158,12 @@ void GuiOptions::fill() {
         shown.h = window.h;
         lines.emplace_back(CFG_CRT_MARGIN, _("CRT margin:"), OutputMode::marginKeyFor(shown), false,
                            vector<string>({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}));
+        // the picture height, one value for every 4:3 output (CRT and VGA): the frame taller or shorter by that many
+        // output pixels, centred (a taller one is cropped top and bottom, for a tube's overscan); applied at once
+        vector<string> heights;
+        for (int px = -ableem::MaxVerticalAdjust; px <= ableem::MaxVerticalAdjust; px += ableem::VerticalAdjustStep)
+            heights.push_back(to_string(px));
+        lines.emplace_back(CFG_VSIZE, _("Picture height:"), OutputMode::VsizeKey, false, heights);
     }
     // how the PS1 emulator fits a game's picture to the screen: the emulator's own menu's Scaler (pcsx-abnxt's
     // g_scaler, AB_SCALER); the classic pcsx-ab and RetroArch know only full and 4:3 (LaunchService). Under the
@@ -378,6 +385,8 @@ std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &va
             return mode.label();
         return autoLabel;
     }
+    if (info.id == CFG_VSIZE) // signed, in output pixels
+        return (OutputMode::vsize(value) > 0 ? "+" : "") + to_string(OutputMode::vsize(value)) + " px";
     if (info.id == CFG_CRT_MARGIN)
         return value + "%";
     if (info.id == CFG_SCALER) { // the emulator menu's names, shortened: "integer scaled 2x" is "2x (integer)"
@@ -420,6 +429,8 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
         renderer.setPerfOverlay(nextValue == "true"); // at once, from the next frame
     if (id == CFG_CRT_MARGIN)
         renderer.setSafeMargin(OutputMode::crtMargin(nextValue)); // at once, from the next frame
+    if (id == CFG_VSIZE)
+        renderer.setVerticalAdjust(OutputMode::vsize(nextValue)); // at once, from the next frame
     const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
     const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || (id == CFG_FONT && userFontInUse());
     if (!theme && !fonts)

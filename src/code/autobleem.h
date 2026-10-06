@@ -36,7 +36,7 @@ private:
     // Options -> Display (OutputMode, MENU_OPTION_DISPLAY) - see autobleem.cpp
     void takeEmulatorOutputMode();
     void switchOutputMode(const OutputMode &mode);
-    void applySafeMargin(); // the margin of the window's real output: tube, VGA mode or none (wide)
+    void applySafeMargin(); // margin + picture height of the real output
     void tryOutputMode(const std::string &token);
     bool confirmPendingOutputMode();
     void useDefaultThemeFor(const OutputMode &inUse); // CRT 4:3 in use: a theme without a 4:3 layout goes
