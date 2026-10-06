@@ -137,15 +137,17 @@ abgui::SpinnerSpec themeSpinner(const std::string &dir) {
     return spec;
 }
 
-// one frame of the spinner centred on (cx, cy): the strip's current frame at `k` times its logical size, else the ring
-void drawSpinner(Renderer &r, abgui::SpinnerStrip &strip, unsigned int nowMs, unsigned int elapsedMs, int cx, int cy,
-                 double k) {
+// one frame of the spinner centred on (cx, cy): the strip's current frame at `k` times its logical size, else the ring.
+// `kx` squeezes it horizontally (0.889 on the 4:3 output's 640x480 canvas, which the output stretches 1.125x), so it is
+// round on the screen; the ring is drawn square into `layer` and copied squeezed.
+void drawSpinner(Renderer &r, abgui::SpinnerStrip &strip, Texture &layer, unsigned int nowMs, unsigned int elapsedMs,
+                 int cx, int cy, double k, double kx) {
     const abgui::SpinnerAnim anim = strip.anim(r);
     if (anim.valid()) {
         const int index = abgui::spinnerFrameIndex(elapsedMs, anim.fps, anim.frames);
         const Rect src = abgui::spinnerFrameRect(anim.strip.size(), anim.frames, index);
         Size frame;
-        frame.w = static_cast<int>(std::lround(src.w * k));
+        frame.w = static_cast<int>(std::lround(src.w * k * kx));
         frame.h = static_cast<int>(std::lround(src.h * k));
         const Rect dst = abgui::spinnerDestRect(frame, cx, cy);
         r.setBlendMode(BlendMode::Blend);
@@ -154,7 +156,29 @@ void drawSpinner(Renderer &r, abgui::SpinnerStrip &strip, unsigned int nowMs, un
     }
     const int radius = static_cast<int>(std::lround(abgui::Busy::SpinnerRadius * k));
     const int dot = std::max(2, static_cast<int>(std::lround(abgui::Busy::SpinnerDot * k)));
-    abgui::Style().spinner(r, cx, cy, radius, dot, abgui::Busy::spinnerLead(nowMs));
+    if (kx >= 0.999) {
+        abgui::Style().spinner(r, cx, cy, radius, dot, abgui::Busy::spinnerLead(nowMs));
+        return;
+    }
+    const int side = 2 * (radius + dot) + 8;
+    if (!layer.valid() || layer.size().w != side) {
+        layer = Texture::createTarget(r, side, side);
+        layer.setBlendMode(BlendMode::Premultiplied);
+    }
+    if (!layer.valid())
+        return;
+    const Color keep = r.drawColor();
+    r.pushTarget(&layer);
+    r.setBlendMode(BlendMode::None);
+    r.setDrawColor(Color(0, 0, 0, 0));
+    r.fillRect();
+    r.setBlendMode(BlendMode::Blend);
+    abgui::Style().spinner(r, side / 2, side / 2, radius, dot, abgui::Busy::spinnerLead(nowMs));
+    r.popTarget();
+    r.setDrawColor(keep);
+    const Rect dst(cx - static_cast<int>(std::lround(side * kx / 2)), cy - side / 2,
+                   static_cast<int>(std::lround(side * kx)), side);
+    r.copy(layer, nullptr, &dst);
 }
 
 } // namespace
@@ -240,6 +264,7 @@ int main(int argc, char **argv) {
     const unsigned int startedMs = gui.platform().ticks();
     const double started = static_cast<double>(startedMs) / 1000.0;
     bool logged = false;
+    Texture spinLayer;
     for (;;) {
         Event e;
         while (gui.input().poll(e)) {
@@ -278,7 +303,8 @@ int main(int argc, char **argv) {
             const int cx = dst.x + (fourThree ? dst.w / 2 : static_cast<int>(std::lround(SpinnerX * k)));
             const int cy = dst.y + (fourThree ? dst.h * 2 / 3 : static_cast<int>(std::lround(SpinnerY * k)));
             const unsigned int nowMs = gui.platform().ticks();
-            drawSpinner(r, strip, nowMs, nowMs - startedMs, cx, cy, k);
+            drawSpinner(r, strip, spinLayer, nowMs, nowMs - startedMs, cx, cy, k,
+                        fillCanvas ? 8.0 / 9.0 : 1.0); // pixel aspect 8:9 of the 640x480 canvas on 720x480
         }
         if (sweep)
             drawSweep(r, dst, rule, gui.platform().ticks() - startedMs);
