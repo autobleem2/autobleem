@@ -7,10 +7,11 @@
 
 RC=/media/Autobleem/rc
 
-# Sony's UI first, at once (the stock logo held the screen until killsony.sh, far below), and again after a
-# second for the late forks (killsony.sh without "now" sleeps one) - in the background, the boot goes on
-$RC/killsony.sh now
-$RC/killsony.sh > /dev/null 2>&1 &
+# What this shell loaded: the loop below runs from the shell's memory, so an update that replaces this file on the
+# stick (selection.sh's abupdate, between two rounds) would leave the OLD loop running until a reboot - the old
+# apply_output_mode, the old picture rules. The loop compares this with the stick's file at the top of every round
+# and starts the new one in the same process (see "restart"); AB_BOOT_RESTARTED says this run is that restart.
+BOOT_SUM=$(cksum < $RC/boot.sh 2> /dev/null)
 
 # bt STEP: one line in the boot log (RAM, like the others) with the seconds since the kernel started - where the
 # boot's time goes. Until ab_log.sh has said where the log directory is, the lines wait in /tmp/boot-steps.early.
@@ -18,16 +19,7 @@ BT_FILE=/tmp/boot-steps.early
 bt() {
     echo "$(cut -d' ' -f1 /proc/uptime) $*" >> "$BT_FILE"
 }
-bt "boot.sh started, Sony's UI killed"
 
-# OUR picture from the first moment until the launcher's window is up (the launcher removes /tmp/.abload itself,
-# as after a wake or RetroArch): absplash and its pictures are copied to tmpfs - the stick is unmounted at the
-# standby, a binary running from it would hold it - and the libraries it needs are unpacked to /tmp/lib (RAM) now
-# instead of by autobleem.sh much later. Run with the sweep along the picture's rule (--anim) and never for long:
-# the launcher's own start ends it, the timeout only the case it never comes.
-sh $RC/unpack_libs.sh
-bt "libraries unpacked to /tmp/lib"
-cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
 # the pictures on tmpfs, each with its 4:3 twin (<name>-4x3.jpg, 720x480 for the CRT mode) when the package has one:
 # absplash itself shows the twin when the window it opens is 720x480, so no script has to know the mode
 copy_pictures() {
@@ -36,7 +28,6 @@ copy_pictures() {
         cp -f /media/Autobleem/bin/autobleem/splash/$pic-4x3.jpg /tmp/$pic-4x3.jpg 2>/dev/null
     done
 }
-copy_pictures autobleem
 SPLASH_PID=/tmp/.absplash.pid
 show_splash() {
     # already up (the wake's or the return's picture): nothing to start - one on the screen at a time
@@ -49,73 +40,100 @@ show_splash() {
     echo $! > $SPLASH_PID
     bt "absplash started (pid $!)"
 }
-show_splash
 
-# where this run's logs go (RAM unless kept on the stick) - exported to everything below, the launcher too
-. $RC/ab_log.sh
-cat /tmp/boot-steps.early >> "$AB_LOG_DIR/boot.log" 2>/dev/null && rm -f /tmp/boot-steps.early
-BT_FILE=$AB_LOG_DIR/boot.log
-bt "log directory $AB_LOG_DIR"
+# The one-time setup of a boot. Not done again when this run is the restart of the loop after an update: the
+# console is already set up (udev rules, the pad seat, the modules, the picture on the screen).
+boot_once() {
+    # Sony's UI first, at once (the stock logo held the screen until killsony.sh, far below), and again after a
+    # second for the late forks (killsony.sh without "now" sleeps one) - in the background, the boot goes on
+    $RC/killsony.sh now
+    $RC/killsony.sh > /dev/null 2>&1 &
+    bt "boot.sh started, Sony's UI killed"
 
-# CONSOLE-15 P2: selection.sh's standby() leaves System/Logs/poweroff_reason before it unmounts the stick and
-# deletes it when the standby ended in a wake. Found here, the console was reset or powered off in between: say so
-# in standby.log, with Sony's power log if it is there, once.
-POR=/media/System/Logs/poweroff_reason
-if [ -f "$POR" ]; then
-    {
-        echo "$(date) boot after a power-off request: $(cat $POR) - now uptime=$(cut -d' ' -f1 /proc/uptime)"
-        [ -f /tmp/power.log ] && { echo "-- /tmp/power.log"; cat /tmp/power.log; }
-        echo
-    } >> /media/System/Logs/standby.log
-    rm -f "$POR"
-fi
+    # OUR picture from the first moment until the launcher's window is up (the launcher removes /tmp/.abload
+    # itself, as after a wake or RetroArch): absplash and its pictures are copied to tmpfs - the stick is
+    # unmounted at the standby, a binary running from it would hold it - and the libraries it needs are unpacked
+    # to /tmp/lib (RAM) now instead of by autobleem.sh much later. Run with the sweep along the picture's rule
+    # (--anim) and never for long: the launcher's own start ends it, the timeout only the case it never comes.
+    sh $RC/unpack_libs.sh
+    bt "libraries unpacked to /tmp/lib"
+    cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
+    copy_pictures autobleem
+    show_splash
 
-# Nothing of ours in /tmp is aged out. The console boots with its clock at 2018-09-01; on a network (the
-# AutoBleem kernel's WiFi) timesyncd jumps it to today, and systemd-tmpfiles-clean.timer (15 min after boot,
-# then daily) then finds everything made at boot eight years old - /usr/lib/tmpfiles.d/tmp.conf ages /tmp
-# at 10 days - and deletes it: /tmp/lib's soname links went (the Apps fell back to the firmware's SDL 2.0.4),
-# the libs archive, the udev rules file. /tmp is RAM, emptied by every reboot anyway. /run/tmpfiles.d is
-# tmpfs too - nothing on the console's own storage is written; an x line keeps a path and all under it.
-mkdir -p /run/tmpfiles.d
-echo 'x /tmp/*' > /run/tmpfiles.d/autobleem.conf
+    # where this run's logs go (RAM unless kept on the stick) - exported to everything below, the launcher too
+    . $RC/ab_log.sh
+    cat /tmp/boot-steps.early >> "$AB_LOG_DIR/boot.log" 2>/dev/null && rm -f /tmp/boot-steps.early
+    BT_FILE=$AB_LOG_DIR/boot.log
+    bt "log directory $AB_LOG_DIR"
 
-# USB gamepad fix - the rules file from tmpfs: it survives the standby (the stick is unmounted then) and
-# holds nothing on the stick
-cp -f $RC/20-joystick.rules /tmp/20-joystick.rules
-mount -o bind /tmp/20-joystick.rules /etc/udev/rules.d/20-joystick.rules
-udevadm control --reload-rules
-udevadm trigger
-bt "udev rules reloaded and triggered"
-# no mouse cursor from a pad's touchpad: its seat rule into /run, a pad already connected announced again
-sh $RC/pad_seat.sh
-bt "pad touchpad seat rule in place"
-
-# kernel modules the stick carries beyond the firmware's (xpad.ko for Xbox pads - the site's libs pack,
-# unpacked by the installer into Autobleem/lib/modules) - only for a kernel without its own: the AutoBleem
-# kernel from psc-kernel-payload 2026-09-25 on builds a newer xpad (and more) as modules, udev loads them,
-# and the stick's 2020 build would take the pad from it - built for another kernel, at best refused
-KMODDIR=/lib/modules/$(uname -r)
-for kmod in /media/Autobleem/lib/modules/*.ko; do
-    [ -f "$kmod" ] || continue
-    name=$(basename "$kmod")
-    if grep -qs "/$name" "$KMODDIR/modules.dep" "$KMODDIR/modules.builtin"; then
-        echo "boot: $name - the kernel has its own"
-        continue
+    # CONSOLE-15 P2: selection.sh's standby() leaves System/Logs/poweroff_reason before it unmounts the stick and
+    # deletes it when the standby ended in a wake. Found here, the console was reset or powered off in between: say so
+    # in standby.log, with Sony's power log if it is there, once.
+    POR=/media/System/Logs/poweroff_reason
+    if [ -f "$POR" ]; then
+        {
+            echo "$(date) boot after a power-off request: $(cat $POR) - now uptime=$(cut -d' ' -f1 /proc/uptime)"
+            [ -f /tmp/power.log ] && { echo "-- /tmp/power.log"; cat /tmp/power.log; }
+            echo
+        } >> /media/System/Logs/standby.log
+        rm -f "$POR"
     fi
-    insmod "$kmod"
-done
-bt "kernel modules done"
 
-# a third time, the udev work and the modules gave Sony's late starters time to come up (no sleep this time)
-$RC/killsony.sh now
-$RC/backup.sh
-bt "backup.sh done"
-# the stick's dirty flag, before anything of ours writes to it
-$RC/checkstick.sh
-bt "checkstick.sh done"
-# the AutoBleem kernel's SSH key from the stick, if any (C10) - a no-op on the stock kernel
-$RC/ssh_keys.sh
-bt "ssh_keys.sh done"
+    # Nothing of ours in /tmp is aged out. The console boots with its clock at 2018-09-01; on a network (the
+    # AutoBleem kernel's WiFi) timesyncd jumps it to today, and systemd-tmpfiles-clean.timer (15 min after boot,
+    # then daily) then finds everything made at boot eight years old - /usr/lib/tmpfiles.d/tmp.conf ages /tmp
+    # at 10 days - and deletes it: /tmp/lib's soname links went (the Apps fell back to the firmware's SDL 2.0.4),
+    # the libs archive, the udev rules file. /tmp is RAM, emptied by every reboot anyway. /run/tmpfiles.d is
+    # tmpfs too - nothing on the console's own storage is written; an x line keeps a path and all under it.
+    mkdir -p /run/tmpfiles.d
+    echo 'x /tmp/*' > /run/tmpfiles.d/autobleem.conf
+
+    # USB gamepad fix - the rules file from tmpfs: it survives the standby (the stick is unmounted then) and
+    # holds nothing on the stick
+    cp -f $RC/20-joystick.rules /tmp/20-joystick.rules
+    mount -o bind /tmp/20-joystick.rules /etc/udev/rules.d/20-joystick.rules
+    udevadm control --reload-rules
+    udevadm trigger
+    bt "udev rules reloaded and triggered"
+    # no mouse cursor from a pad's touchpad: its seat rule into /run, a pad already connected announced again
+    sh $RC/pad_seat.sh
+    bt "pad touchpad seat rule in place"
+
+    # kernel modules the stick carries beyond the firmware's (xpad.ko for Xbox pads - the site's libs pack,
+    # unpacked by the installer into Autobleem/lib/modules) - only for a kernel without its own: the AutoBleem
+    # kernel from psc-kernel-payload 2026-09-25 on builds a newer xpad (and more) as modules, udev loads them,
+    # and the stick's 2020 build would take the pad from it - built for another kernel, at best refused
+    KMODDIR=/lib/modules/$(uname -r)
+    for kmod in /media/Autobleem/lib/modules/*.ko; do
+        [ -f "$kmod" ] || continue
+        name=$(basename "$kmod")
+        if grep -qs "/$name" "$KMODDIR/modules.dep" "$KMODDIR/modules.builtin"; then
+            echo "boot: $name - the kernel has its own"
+            continue
+        fi
+        insmod "$kmod"
+    done
+    bt "kernel modules done"
+
+    # a third time, the udev work and the modules gave Sony's late starters time to come up (no sleep this time)
+    $RC/killsony.sh now
+    $RC/backup.sh
+    bt "backup.sh done"
+    # the stick's dirty flag, before anything of ours writes to it
+    $RC/checkstick.sh
+    bt "checkstick.sh done"
+    # the AutoBleem kernel's SSH key from the stick, if any (C10) - a no-op on the stock kernel
+    $RC/ssh_keys.sh
+    bt "ssh_keys.sh done"
+}
+if [ -z "$AB_BOOT_RESTARTED" ]; then
+    boot_once
+else
+    . $RC/ab_log.sh
+    BT_FILE=$AB_LOG_DIR/boot.log
+    bt "boot.sh restarted by the loop (run $AB_BOOT_RESTARTS) - the console is set up already"
+fi
 
 # Options -> Display: Weston's output mode, 720p (the firmware's), 1080p or 720x480 ("CRT 4:3": 480p, for a CRT
 # behind an HDMI converter). The console's HDMI driver reads no EDID, so a client cannot switch modes: Weston is
@@ -129,7 +147,7 @@ bt "ssh_keys.sh done"
 WESTON_INI=/etc/xdg/weston/weston.ini
 apply_output_mode() {
     want=$(cat "$AB_RUNTIME_DIR/outputmode.pending" 2>/dev/null | tr -d '\r' | head -1)
-    [ -n "$want" ] || want=$(sed -n 's/^outputmode=//p' /media/System/config.ini 2>/dev/null | tr -d '\r' | tail -1)
+    [ -n "$want" ] || want=$(ab_config_get outputmode)
     case "$want" in 1080 | 720x480) ;; *) want=720 ;; esac
     have=$(cat /tmp/weston.mode 2>/dev/null)
     [ -n "$have" ] || have=720
@@ -167,8 +185,36 @@ apply_output_mode() {
 # every time round, so a stick updated during a standby is what runs at the next power off; the wake-up
 # picture (absplash, shown from the resume until the launcher's window is up) goes to tmpfs with it, the
 # stick not being mounted at the wake.
+#
+# The loop itself lives in the shell's memory, so it is also what an update must not leave behind: at the top of
+# every round the stick's boot.sh is compared with the one this shell loaded (BOOT_SUM), and when it differs (an
+# update, selection.sh's abupdate) a tmpfs copy of the new file replaces this shell (exec: the same process, the
+# same cwd and environment - no second loop, nothing left from the old one) with AB_BOOT_RESTARTED set, which
+# skips boot_once. A file that does not parse (sh -n) or a restart that keeps happening (5) is left alone.
+restart_if_updated() {
+    [ -s $RC/boot.sh ] || return
+    [ "$(cksum < $RC/boot.sh 2> /dev/null)" = "$BOOT_SUM" ] && return
+    ab_n=${AB_BOOT_RESTARTS:-0}
+    if [ "$ab_n" -ge 5 ]; then
+        bt "boot.sh on the stick changed again - not restarting (limit)"
+        return
+    fi
+    grep -q "$(printf '\r')" $RC/boot.sh && sed -i 's/\r//g' $RC/boot.sh # as Autobleem/start.sh does
+    cp -f $RC/boot.sh /tmp/boot.restart.sh # a copy on tmpfs: a shell running the stick's file would hold the stick
+    if ! sh -n /tmp/boot.restart.sh 2> /dev/null; then
+        bt "boot.sh on the stick changed but does not parse - keeping the running one"
+        return
+    fi
+    bt "boot.sh on the stick changed (an update) - running the new one"
+    AB_BOOT_RESTARTED=1
+    AB_BOOT_RESTARTS=$((ab_n + 1))
+    export AB_BOOT_RESTARTED AB_BOOT_RESTARTS
+    exec sh /tmp/boot.restart.sh
+}
+
 while true; do
     cd $RC
+    restart_if_updated
     bt "loop: launcher round starts"
     show_splash   # not up (the launcher left for a new display mode, the first try failed): up now
     apply_output_mode
