@@ -35,7 +35,10 @@ decisions) is in `autobleem2/autobleem-main` (`CLAUDE.md`, `docs/`); history in 
 - **A game launch gives the display up**: never keep an `ableem::Texture`/`Font` in an object that outlives a
   launch (only `ThemeAssets`).
 - **The quiet stick**: anything that runs per boot/scan/launch writes through `DirEntry::writeFileIfChanged` or to
-  the runtime dir; the guard is `autobleem-core/tests/core/test_quiet_stick.cpp`.
+  the runtime dir; the guard is `autobleem-core/tests/core/test_quiet_stick.cpp`. The Packages index
+  (`PackageService`) is RAM only: a scan never writes or creates anything; the one write is an App's `LastPackage=`.
+- **Packages** (game data an engine with `Uses=` plays; developer guide "Packages"): a Packages-row entry is never
+  launched (`PsGame::package`); the engine gets `AB_PKG_*` and the `{package}` placeholders, replaced per argument.
 - **Every version a user sees is `Env::productVersion()`**, never `Version::VERSION`/`FULL_VERSION`.
 - Files: `ios::binary` for non-text; **never `readsome()`**; shell scripts and cfg/ini stay **LF**.
 - Logging is `PLOG_*` (no `cout`); `PLOG_*` inside an unbraced `if` wants braces.

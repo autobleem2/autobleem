@@ -309,7 +309,10 @@ void GuiLauncher::showSetName() {
         string name = _("Showing: Apps");
         if (selection.appCategory != AppCategory::All)
             name += ": " + appCategoryLabel(selection.appCategory);
-        string numApps = " (" + pluralApps(carousel.games.size()) + ")";
+        string numApps = " (" +
+                         (selection.appCategory == AppCategory::Packages ? pluralPackages(carousel.games.size())
+                                                                         : pluralApps(carousel.games.size())) +
+                         ")";
         notificationLines[0].setText(name + numApps, timeout);
     }
 }
@@ -778,14 +781,17 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
     // a games-directory scan affects the PS1 set, a ROM pass the RetroArch one; leave the rest alone, and
     // never interrupt a scroll animation - reloadGames() repositions the carousel outright.
     // the picker's counts are about every set, not just the one on screen
-    if (scanRosterChangedSinceReload || update.finished || !update.playlistsWritten.empty() || update.appsChanged)
-        forgetSetCounts();
+    if (scanRosterChangedSinceReload || update.finished || !update.playlistsWritten.empty() || update.appsChanged ||
+        update.packagesChanged)
+        forgetSetCounts(); // the Packages row's count too
 
     bool setAffected = selection.set == GameSet::PS1 || selection.set == GameSet::RetroArch;
     if (scanRosterChangedSinceReload && setAffected && !carousel.scrolling) {
         reloadGames();
-    } else if (update.appsChanged && selection.set == GameSet::Apps && !carousel.scrolling) {
-        // a processor changed Apps/ (a PE package turned into an App): the Apps set is read again
+    } else if ((update.appsChanged || (update.packagesChanged && selection.appCategory == AppCategory::Packages)) &&
+               selection.set == GameSet::Apps && !carousel.scrolling) {
+        // a processor changed Apps/ (a PE package turned into an App), or Packages/ changed under its own row: the
+        // Apps set is read again
         reloadGames();
     }
 }
@@ -2019,7 +2025,9 @@ void GuiLauncher::showOptions() {
     bool forApp = false;                           // an App: settings, and its Game settings
     if (carousel.selectedIsValid()) {
         const PsGame &game = *carousel.games[carousel.selected];
-        if (!game.foreign) {
+        if (game.package) {
+            // game data, not a program: no game settings, no resume points - Cross opens its info view
+        } else if (!game.foreign) {
             enabled[1] = enabled[2] = enabled[3] = true; // a PS1 game: editor, memory cards, resume points
         } else if (game.app) {
             enabled[1] = true; // an App: its Game settings

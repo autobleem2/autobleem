@@ -12,6 +12,7 @@
 #include "core/services/game_settings.h"
 #include "core/services/launch.h"
 #include "core/services/lightgun.h"
+#include "core/services/package_service.h"
 #include "core/services/memcard.h"
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
@@ -52,6 +53,7 @@ public:
     // where covers and screenshots are in RetroArch's thumbnails tree; the launcher's own listing cache
     ableem::ThumbnailLookup &thumbnails() { return thumbnails_; }
     ScanService &scans() { return scans_; }
+    PackageService &packages() { return packages_; }
     // hands the scan config.ini's "online" and the platform's download command - at start, and again
     // whenever Options may have changed the setting
     void applyOnlineSetting();
@@ -89,6 +91,7 @@ public:
 protected:
     ableem::GameLibrary gameLibrary;
     Session session_;
+    PackageService packages_;                       // before the scans and the query: both hold a pointer to it
     GameQueryService gameQuery_{gameLibrary, cfg_}; // after gameLibrary: it holds a reference
     GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
     GameSettingsService gameSettings_{gameLibrary};

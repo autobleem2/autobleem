@@ -175,6 +175,9 @@ public:
     void loop_squareButton_Pressed();
     void loop_crossButton_Pressed();
     void loop_crossButtonPressed_STATE_GAMES();
+    // an App with Uses= and the game data it starts with (none: false after a message; one; the picker)
+    bool chooseGameData(const PsGamePtr &game);
+    void loop_openPackageInfo(const PsGame &game);
     void loop_crossButtonPressed_STATE_SET();
     void loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
     void loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS();
