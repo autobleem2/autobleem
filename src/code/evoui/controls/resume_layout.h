@@ -76,6 +76,7 @@ constexpr int DateRoom = 132; // the width the date wraps to
 constexpr int ChipRight = 140; // card + 140
 constexpr int ChipY = 121;     // card + 121
 constexpr int ChipHeight = 18;
+constexpr int ChipCorner = 4; // its distance from the picture's corner
 constexpr int ChipPadding = 5;
 } // namespace Narrow
 
@@ -97,8 +98,11 @@ inline Box pictureBox(const Box &card, bool narrow = false) {
 // the chip around a word `wordW` wide, its right edge on the card's
 inline Box chipBox(const Box &card, int wordW, bool narrow = false) {
     if (narrow) {
+        // in the picture's bottom right corner: the narrow card has no room beside "Slot n" for it
         const int w = wordW + 2 * Narrow::ChipPadding;
-        return {card.x + Narrow::ChipRight - w, card.y + Narrow::ChipY, w, Narrow::ChipHeight};
+        return {card.x + Narrow::PictureInset + Narrow::PictureW - w - Narrow::ChipCorner,
+                card.y + Narrow::PictureInset + Narrow::PictureH - Narrow::ChipHeight - Narrow::ChipCorner, w,
+                Narrow::ChipHeight};
     }
     const int w = wordW + 2 * ChipPadding;
     return {card.x + ChipRight - w, card.y + ChipY, w, ChipHeight};

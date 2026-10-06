@@ -65,11 +65,15 @@ public:
     explicit GuiLauncher(ableem::GuiBase &g) : GuiScreen(g), carousel(*gui) {
         frameColor = abgui::OptionalColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
         declareTransitions(abgui::ScreenTransitions(abgui::Transition::none()));
+        if (ctx.hasStack())
+            ctx.stack().declareFrameCanvas(*this, [this] { useFrameCanvas(); });
     }
     void init() override;
     ~GuiLauncher() override;
-    bool prepareFrame() override; // before each frame: the busy state ends, the state selector follows the menu
-    void draw() override;         // the frame's picture: the stack clears before and presents after
+    bool prepareFrame() override;
+    void useFrameCanvas(); // the 4:3 layout's 640x480, else the 1280x720 one (also for a transition's picture of it)
+                           // before each frame: the busy state ends, the state selector follows the menu
+    void draw() override;  // the frame's picture: the stack clears before and presents after
 
     // these variables are used by the loop routines
     long motionStart = 0; // when the stick went left/right and stayed; 0 once it is centred again

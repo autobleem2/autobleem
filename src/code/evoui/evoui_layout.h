@@ -3,9 +3,9 @@
 // number the one the code always had; fromLayout4x3() is the 640x480 canvas of a 4:3 output (CRT 480p, the Renderer's
 // CanvasMapping), from the theme's `layout4x3` block (ableem::ThemeLayout4x3) with this file's own 4:3 default for
 // any number the theme leaves out. The defaults are the designer's ab2.0.0 4:3 mockup (autobleem-design, CRT 480p,
-// 2026-10-05): the logo top left, the carousel centred at x 196 with the details on the right half, Play under the
-// cover, the menu row under Play, a full-width hint bar of two lines. Pure, so tests/screens/test_evoui_layout holds
-// it without a Gui.
+// 2026-10-05): the logo top right (the pad plate and channel tag keep the top-left corner, as in 720p), the carousel
+// centred at x 196 with the details on the right half, Play under the cover, the menu row under Play, a full-width hint
+// bar of two lines. Pure, so tests/screens/test_evoui_layout holds it without a Gui.
 //
 #pragma once
 
@@ -139,11 +139,9 @@ struct EvoLayout {
     // the hint lines drawn at 1 / hintScale and scaled down into the bar (1: drawn as they are)
     float hintScale = 1.0f;
 
-    // the rest: "No games here yet" under the shelf, the bubbles' right edge and widths, the corner's pad plate and
-    // channel tag pushed under a logo in the corner
+    // the rest: "No games here yet" under the shelf, the bubbles' right edge and widths
     int emptyTextY = 412, emptyTextSize = 22;
     int bubbleRight = 1280 - 16, bubbleWidth = 440, messageWidth = 840;
-    int cornerTop = 0;
 
     static EvoLayout wide() { return EvoLayout(); }
     static EvoLayout fromLayout4x3(const ableem::ThemeLayout4x3 &theme);
@@ -167,7 +165,8 @@ inline EvoLayout EvoLayout::fromLayout4x3(const ableem::ThemeLayout4x3 &theme) {
     l.footer = theme.image("footer");
     l.settingsPanel = theme.image("settingsPanel");
 
-    l.logo = ableem::Rect(i("logo.x", 14), i("logo.y", 12), i("logo.w", 158), i("logo.h", 38));
+    l.logo = ableem::Rect(i("logo.x", ableem::FourByThreeCanvasW - 14 - 158), i("logo.y", 12), i("logo.w", 158),
+                          i("logo.h", 38));
     l.logoSet = l.logo.w > 0 && l.logo.h > 0;
 
     // the selected cover 146 px (0.65 of 16:9) at (196, 214); the shelf of side covers along y 60..136, 0.6 of the
@@ -261,7 +260,5 @@ inline EvoLayout EvoLayout::fromLayout4x3(const ableem::ThemeLayout4x3 &theme) {
     l.bubbleRight = l.canvasW - 12;
     l.bubbleWidth = 300;
     l.messageWidth = 420;
-    // the logo in the top-left corner: the pad plate and the channel tag go under it
-    l.cornerTop = l.logoSet && l.logo.x < 100 && l.logo.y < 60 ? l.logo.y + l.logo.h + 4 : 0;
     return l;
 }

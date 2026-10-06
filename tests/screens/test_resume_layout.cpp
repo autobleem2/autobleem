@@ -109,10 +109,13 @@ TEST_CASE("the 4:3 design: four cards fit the 640 x 480 canvas, above the hint b
     }
 }
 
-TEST_CASE("the 4:3 NEWEST chip sits on the card's right inside it, beside the slot name") {
+TEST_CASE("the 4:3 NEWEST chip sits in the picture's bottom right corner, clear of the slot name") {
     const Box card = cardBox(1, true);
     const Box chip = chipBox(card, 46, true);
-    CHECK(chip.x + chip.w == card.x + Narrow::ChipRight);
-    CHECK(chip.x >= card.x + Narrow::TextInset + 50); // clear of "Slot 2"
-    CHECK(chip.y + chip.h <= card.y + Narrow::DateY);
+    const Box pic = pictureBox(card, true);
+    CHECK(chip.x >= pic.x);
+    CHECK(chip.x + chip.w <= pic.x + pic.w); // inside the screenshot, in its bottom right corner
+    CHECK(chip.y + chip.h <= pic.y + pic.h);
+    CHECK(chip.y >= pic.y + pic.h / 2);
+    CHECK(chip.y + chip.h < card.y + Narrow::SlotNameY); // clear of "Slot 2"
 }

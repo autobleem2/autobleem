@@ -74,7 +74,6 @@ TEST_CASE("EvoLayout::wide: the 1280x720 launcher's numbers, unchanged") {
     CHECK(l.bubbleRight == 1264);
     CHECK(l.bubbleWidth == 440);
     CHECK(l.messageWidth == 840);
-    CHECK(l.cornerTop == 0);
 }
 
 TEST_CASE("shelfScale/shelfStep: the 1280x720 shelf's steps in float maths, on every target") {
@@ -90,7 +89,7 @@ TEST_CASE("EvoLayout::fromLayout4x3: an empty layout4x3 gives the designer's 4:3
     CHECK(l.canvasW == 640);
     CHECK(l.canvasH == 480);
     CHECK(l.logoSet);
-    CHECK(l.logo.x == 14);
+    CHECK(l.logo.x == 640 - 14 - 158); // top-right corner
     CHECK(l.logo.w == 158);
     // the cover 146 px centred on (196, 214); raised 58 (0.4 of it, as 90 of 226)
     CHECK(l.carousel.centreX == 196);
@@ -125,7 +124,7 @@ TEST_CASE("EvoLayout::fromLayout4x3: an empty layout4x3 gives the designer's 4:3
     // the arrow between the raised cover and the open row
     CHECK(l.arrowY > l.carousel.mainY(true) + 146);
     CHECK(l.arrowY + l.arrowSize < l.menu.yOpen);
-    // the hint bar across the bottom, the band ending on it, the corner under the logo
+    // the hint bar across the bottom, the band ending on it
     CHECK(l.hintBarFromLayout);
     CHECK(l.hintBar.x == 8);
     CHECK(l.hintBar.y == 418);
@@ -133,7 +132,6 @@ TEST_CASE("EvoLayout::fromLayout4x3: an empty layout4x3 gives the designer's 4:3
     CHECK(l.hintBar.y + l.hintBar.h <= l.canvasH);
     CHECK(l.band.bottom == l.hintBar.y);
     CHECK(l.menu.textY + l.menu.textSize <= l.hintBar.y);
-    CHECK(l.cornerTop == 12 + 38 + 4);
     CHECK(l.bubbleRight <= l.canvasW);
 }
 
@@ -208,7 +206,6 @@ TEST_CASE("EvoLayout::fromLayout4x3: the theme's numbers win, the rest follow fr
     CHECK(l.hintBar.y == 420);
     CHECK(l.band.bottom == 420);
     CHECK_FALSE(l.logoSet); // a zero-wide logo: the theme's own, and the corner stays free
-    CHECK(l.cornerTop == 0);
 }
 
 TEST_CASE("EvoLayout::fromLayout4x3: the 4:3 pictures by name, none when the theme has none") {

@@ -574,8 +574,8 @@ int GuiLauncher::renderPadBatteries() {
     if (padBatteries.empty())
         return 0;
     const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
-    const int plateMargin = 14;            // review: the icons sat tight on the plate's edge at 8px - more room now
-    int x = 16, y = 16 + layout.cornerTop; // under a logo in the corner (the 4:3 layout's)
+    const int plateMargin = 14; // review: the icons sat tight on the plate's edge at 8px - more room now
+    int x = 16, y = 16;         // the top-left corner, in 720p and 4:3 alike (the 4:3 logo is top right)
     const ableem::Font &battFont = ThemeAssets::fixedFonts()[FONT_15_BOLD];
     const int textY = (iconH - battFont.lineHeight()) / 2; // added to y: centres the text on the icon
 
@@ -685,9 +685,8 @@ void GuiLauncher::renderChannelWatermark(int plateBottom) {
     abgui::Context &ctx = gui->uiContext();
     const abgui::Style &style = ctx.style();
     const int x = ChannelWatermark::X;
-    // the 4:3 layout's logo is in the corner: right under it, or under the pad plate
-    const int y = layout.cornerTop > 0 ? std::max(layout.cornerTop, plateBottom + ChannelWatermark::PlateGap)
-                                       : ChannelWatermark::yBelow(plateBottom);
+    // under the pad plate
+    const int y = ChannelWatermark::yBelow(plateBottom);
     const int wordW = gui->text().textWidth(wordFont, tag.word);
     const ableem::Rect chip(x, y, ChannelWatermark::chipWidth(wordW), ChannelWatermark::ChipHeight);
     const unsigned char alpha = ChannelWatermark::Alpha;
@@ -1509,14 +1508,18 @@ void GuiLauncher::layoutHints() {
 // backdrop), AB_SHOT and the DebugDriver's frame copy see this frame as they did.
 bool GuiLauncher::prepareFrame() {
     gui->endBusy(); // the reload after a game, or after Options, is over once the launcher draws
-    // the 4:3 layout draws on the 640x480 canvas: asked for every frame, the renderer goes back to 1280x720 after it
-    // (the other screens have the 4:3 output's rest canvas, Gui::CrtCanvasW x H; a launcher with no 4:3 layout is the
-    // 1280x720 one, letterboxed)
+    useFrameCanvas();
+    return true;
+}
+
+// the 4:3 layout draws on the 640x480 canvas: asked for every frame, the renderer goes back to its rest one after it
+// (the other screens have the 4:3 output's rest canvas, Gui::CrtCanvasW x H; a launcher with no 4:3 layout is the
+// 1280x720 one, letterboxed)
+void GuiLauncher::useFrameCanvas() {
     if (layout.fourByThree)
         renderer.setCanvas(layout.canvasW, layout.canvasH);
     else
         renderer.setCanvas(SCREEN_WIDTH, SCREEN_HEIGHT);
-    return true;
 }
 
 //*******************************

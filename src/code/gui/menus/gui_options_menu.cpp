@@ -144,7 +144,7 @@ void GuiOptions::fill() {
     // the CRT's safe area (overscan): only while the CRT 4:3 mode runs; applied at once
     if (Gui::fullscreen() && OutputMode::parse(app.config().inifile.values[OutputMode::ConfigKey]).isCrt())
         lines.emplace_back(CFG_CRT_MARGIN, _("CRT margin:"), OutputMode::MarginKey, false,
-                           vector<string>({"0", "5", "8", "10"}));
+                           vector<string>({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}));
     // how the PS1 emulator fits a game's picture to the screen: the emulator's own menu's Scaler (pcsx-abnxt's
     // g_scaler, AB_SCALER); the classic pcsx-ab and RetroArch know only full and 4:3 (LaunchService). Under the
     // display mode, the owner's place for it (2026-09-29); it replaced the Widescreen switch
@@ -266,6 +266,9 @@ void GuiOptions::draw() {
     const int fontHeight = font.lineHeight();
     const int firstLineY = yoffset + fontHeight * firstRow;
     if (firstRender) {
+        // the rows that fit the canvas of this frame: init() ran from the launcher, whose 4:3 canvas is smaller
+        maxVisible = gui->classicRowsThatFit(font);
+        lastVisibleIndex = firstVisibleIndex + maxVisible - 1;
         computePagePosition();
         firstRender = false;
     }
