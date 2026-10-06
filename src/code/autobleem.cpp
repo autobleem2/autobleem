@@ -240,6 +240,16 @@ bool AutoBleem::confirmPendingOutputMode() {
     if (!OutputMode::readToken(OutputMode::pendingFile(), token))
         return true;
     DirEntry::removeFile(OutputMode::pendingFile()); // asked once: a crash from here comes back in the old mode
+    // The mode counts only when the window really has its size: when Weston did not take it (its restart failed,
+    // or this launcher was started under the old loop) the player is looking at another mode, and a confirm would
+    // keep one he never saw. Not applied: no question, the launcher leaves for the previous mode.
+    const OutputMode pending = OutputMode::parse(token);
+    const ableem::Size window = gui_->platform().windowSize();
+    if (!pending.shownAt(window.w, window.h)) {
+        PLOG_WARNING << "Display mode " << token << " not applied: the window is " << window.w << "x" << window.h
+                     << ", not " << pending.w << "x" << pending.h << " - leaving for the previous one";
+        return false;
+    }
     GuiKeepDisplay keep(*gui_);
     keep.modeLabel = OutputMode::parse(token).label();
     keep.show();

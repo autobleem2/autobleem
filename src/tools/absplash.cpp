@@ -28,6 +28,7 @@
 #include <ableem/ableem.h>
 #include <ableem/engine/log.h>
 #include <ableem/engine/theme_spec.h>
+#include <ableem/ui/canvas.h>
 
 #include <algorithm>
 #include <cmath>
@@ -72,10 +73,11 @@ int usage() {
 // x 398..1507, y 554, 14 thick)
 struct AnimRule {
     int x0 = 207, y = 513, x1 = 785, h = 13;
-    // the 4:3 picture (autobleem-4x3.jpg, the CRT mode's): the same rule, in a picture cut to the 4:3 centre
+    // the 4:3 picture (autobleem-4x3.jpg, the CRT mode's: 720x480, a 3:2 grid that a 4:3 screen shows at pixel
+    // aspect 8:9): the same rule, in a picture cut to the 4:3 centre
     static AnimRule forPicture(int w, int h) {
         AnimRule rule;
-        if (w * 3 <= h * 4) { // 4:3 or narrower
+        if (w * 2 <= h * 3) { // 3:2 or narrower (the 720x480 twin is 3:2 exactly)
             rule.x0 = 110;
             rule.x1 = 880;
         }
@@ -196,16 +198,33 @@ int main(int argc, char **argv) {
     if (seconds > 0)
         timeout = seconds;
 
-    GuiBase gui("absplash");
+    // The window is the launcher's: full screen, so it is the size of whatever mode Weston runs in (a plain 1280x720
+    // window was 1:1 only on a 720p output - on 480p Weston showed its middle, a picture 1.5x too big: CRT 4:3 round
+    // 1). Not on a dev host, nor with AB_WINDOWED (and AB_WINDOW_SIZE makes a window of that size, whatever this says).
+#ifdef AB_PLATFORM_DEV
+    const bool fullscreen = false;
+#else
+    const bool fullscreen = std::getenv("AB_WINDOWED") == nullptr;
+#endif
+    GuiBase gui("absplash", GuiBase::ScreenWidth, GuiBase::ScreenHeight, 1.0f, 0, fullscreen);
     gui.platform().setPowerOffHandler([]() {}); // the console's front buttons are not ours to act on
     Renderer &r = gui.renderer();
     // the CRT 4:3 mode (a 720x480 window): the picture's 4:3 twin, <name>-4x3.<ext> next to it, when there is one -
     // one place for every splash of the launcher, the emulator and App hand-overs, the update and the power-off
     const Size shown = gui.platform().windowDisplaySize();
+    const Size window = gui.platform().windowSize();
     const std::string twin = crtTwin(image);
-    if (((shown.w == 720 && shown.h == 480) || (r.width() == 720 && r.height() == 480)) && fileExists(twin))
+    const bool crtOutput = (window.w == 720 && window.h == 480) || (shown.w == 720 && shown.h == 480);
+    bool useTwin = false;
+    if ((crtOutput || (r.width() == 720 && r.height() == 480)) && fileExists(twin)) {
         image = twin;
+        useTwin = true;
+    }
     Texture tex = Texture::loadFile(r, image);
+    PLOG_INFO << "absplash: window " << window.w << "x" << window.h << ", display mode " << shown.w << "x" << shown.h
+              << ", canvas " << r.width() << "x" << r.height() << ", 4:3 output " << (r.fourByThreeOutput() ? "yes" : "no")
+              << ", picture " << image << " " << (tex.valid() ? tex.size().w : 0) << "x"
+              << (tex.valid() ? tex.size().h : 0) << (useTwin ? " (the 4:3 twin)" : "");
     if (!tex.valid()) {
         PLOG_WARNING << "absplash: could not load " << image << " - black it is";
     } else if (!ruleGiven) {
@@ -220,21 +239,34 @@ int main(int argc, char **argv) {
 
     const unsigned int startedMs = gui.platform().ticks();
     const double started = static_cast<double>(startedMs) / 1000.0;
+    bool logged = false;
     for (;;) {
         Event e;
         while (gui.input().poll(e)) {
         }
+        // the 4:3 twin is a picture for the whole 4:3 output: the output's own 640x480 canvas (stretched to 720x480 at
+        // pixel aspect 8:9), which the picture then fills - 720x480 over 640x480 comes out 1:1 on the screen
+        const bool fillCanvas = useTwin && r.setCanvas(FourByThreeCanvasW, FourByThreeCanvasH);
         r.setDrawColor(Color(0, 0, 0, 255));
         r.clear();
-        // the picture's box on the canvas: scaled to fit, centred - the pictures are 1280x720 like the screen, so
+        // the picture's box on the canvas: scaled to fit, centred - the pictures are 1280x720 like the canvas, so
         // this is a plain copy (no picture: the canvas itself stands in for it, the spinner over black)
         Rect dst(0, 0, r.width(), r.height());
+        double scale = 1.0;
         if (tex.valid()) {
             Size s = tex.size();
-            double scale = std::min(static_cast<double>(r.width()) / s.w, static_cast<double>(r.height()) / s.h);
-            int w = static_cast<int>(s.w * scale), h = static_cast<int>(s.h * scale);
-            dst = Rect((r.width() - w) / 2, (r.height() - h) / 2, w, h);
+            if (!fillCanvas) {
+                scale = std::min(static_cast<double>(r.width()) / s.w, static_cast<double>(r.height()) / s.h);
+                int w = static_cast<int>(s.w * scale), h = static_cast<int>(s.h * scale);
+                dst = Rect((r.width() - w) / 2, (r.height() - h) / 2, w, h);
+            }
             r.copy(tex, nullptr, &dst);
+        }
+        if (!logged) {
+            logged = true;
+            PLOG_INFO << "absplash: first frame - canvas " << r.width() << "x" << r.height() << ", scale " << scale
+                      << (fillCanvas ? " (fills the 4:3 canvas)" : "") << ", picture box " << dst.x << "," << dst.y
+                      << " " << dst.w << "x" << dst.h;
         }
         if (spin) {
             // the spinner scales with the picture: 64x64 logical at 1x, the same share of it at any size
