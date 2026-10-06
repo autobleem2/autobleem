@@ -45,17 +45,61 @@ struct Box {
     int x, y, w, h;
 };
 
-inline Box cardBox(int slot) {
+// The 4:3 (CRT) design on the 640x480 canvas: the same four cards in a row, narrower - each its picture over "Slot n"
+// (and the NEWEST chip) and the date under it, which wraps to a second line where it must. The numbers are the wide
+// design's, fitted: the picture keeps its 4:3 shape (128 x 96), the corners are cut 4 px.
+namespace Narrow {
+constexpr int BandY = 58;
+constexpr int BandH = 318; // ends at 376, well above the hint bar (418)
+constexpr int TitleMidY = 82;
+constexpr int NameMidY = 108;
+
+constexpr int CardW = 148;
+constexpr int CardH = 210;
+constexpr int CardGap = 8;
+constexpr int CardX0 = 12;
+constexpr int CardY = 140;
+
+constexpr int WellInset = 8; // the well: card + (8, 8), 132 x 100
+constexpr int WellW = 132;
+constexpr int WellH = 100;
+constexpr int PictureInset = 10; // the picture: card + (10, 10), 128 x 96
+constexpr int PictureW = 128;
+constexpr int PictureH = 96;
+constexpr int CutCorner = 4;
+
+constexpr int SlotNameY = 118; // card + (10, 118) top
+constexpr int DateY = 148;     // card + (10, 148) top; two lines of 20
+constexpr int TextInset = 10;
+constexpr int DateRoom = 132; // the width the date wraps to
+
+constexpr int ChipRight = 140; // card + 140
+constexpr int ChipY = 121;     // card + 121
+constexpr int ChipHeight = 18;
+constexpr int ChipPadding = 5;
+} // namespace Narrow
+
+inline Box cardBox(int slot, bool narrow = false) {
+    if (narrow)
+        return {Narrow::CardX0 + slot * (Narrow::CardW + Narrow::CardGap), Narrow::CardY, Narrow::CardW, Narrow::CardH};
     return {CardX0 + slot * (CardW + CardGap), CardY, CardW, CardH};
 }
-inline Box wellBox(const Box &card) {
+inline Box wellBox(const Box &card, bool narrow = false) {
+    if (narrow)
+        return {card.x + Narrow::WellInset, card.y + Narrow::WellInset, Narrow::WellW, Narrow::WellH};
     return {card.x + WellInset, card.y + WellInset, WellW, WellH};
 }
-inline Box pictureBox(const Box &card) {
+inline Box pictureBox(const Box &card, bool narrow = false) {
+    if (narrow)
+        return {card.x + Narrow::PictureInset, card.y + Narrow::PictureInset, Narrow::PictureW, Narrow::PictureH};
     return {card.x + PictureInset, card.y + PictureInset, PictureW, PictureH};
 }
 // the chip around a word `wordW` wide, its right edge on the card's
-inline Box chipBox(const Box &card, int wordW) {
+inline Box chipBox(const Box &card, int wordW, bool narrow = false) {
+    if (narrow) {
+        const int w = wordW + 2 * Narrow::ChipPadding;
+        return {card.x + Narrow::ChipRight - w, card.y + Narrow::ChipY, w, Narrow::ChipHeight};
+    }
     const int w = wordW + 2 * ChipPadding;
     return {card.x + ChipRight - w, card.y + ChipY, w, ChipHeight};
 }

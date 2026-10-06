@@ -56,7 +56,7 @@ const ProcessorInfo *GuiProcessors::info(const string &name) const {
 // GuiProcessors::visibleRows
 //*******************************
 int GuiProcessors::visibleRows() const {
-    int roomForRows = SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - FooterHeight;
+    int roomForRows = gui->renderer().height() - 2 * PanelMargin - HeaderHeight - FooterHeight;
     return max(1, min(count(), roomForRows / RowHeight));
 }
 
@@ -88,7 +88,9 @@ void GuiProcessors::draw() {
     const int rows = empty ? 0 : visibleRows();
     const int body = empty ? EmptyHeight : rows * RowHeight;
     const int panelHeight = HeaderHeight + body + FooterHeight;
-    ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
+    const int panelWidth = min(PanelWidth, gui->renderer().width() - 2 * PanelMargin); // a 4:3 canvas is narrower
+    ableem::Rect panel{(gui->renderer().width() - panelWidth) / 2, (gui->renderer().height() - panelHeight) / 2,
+                       panelWidth, panelHeight};
     style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();

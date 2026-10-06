@@ -31,13 +31,19 @@ void GuiBtnGuide::draw() {
     auto key = [](const string &name) { return name.empty() ? string() : "|@" + name + "|"; };
     PanelStyle style = gui->panelStyle();
     const ableem::Rect content = gui->classicContent();
-    const ableem::Font &buttonFont = gui->assets().themeFonts[FONT_20_BOLD];
-    const ableem::Font &textFont = gui->assets().themeFont;
+    // On the 4:3 (CRT) canvas (600 tall, shown 0.8x) the same list takes 18 px text, 24 px rows and buttons, the
+    // buttons' column narrower - the 1280x720 sizes would run the third section off the panel
+    const bool tight = gui->renderer().height() < 700;
+    const ableem::Font &buttonFont =
+        tight ? gui->assets().themeFonts.boldAtSize(18) : gui->assets().themeFonts[FONT_20_BOLD];
+    const ableem::Font &textFont = tight ? gui->assets().classicFontAtSize(18) : gui->assets().themeFont;
+    const int buttonsWidth = tight ? 170 : 250, keysWidth = tight ? 180 : 230;
     const int xButtons = content.x + PanelStyle::RowInset + 8;
-    const int xKeys = xButtons + 250;
-    const int xText = keyboard ? xKeys + 230 : xButtons + 250;
+    const int xKeys = xButtons + buttonsWidth;
+    const int xText = keyboard ? xKeys + keysWidth : xButtons + buttonsWidth;
     const int textWidth = content.x + content.w - PanelStyle::RowInset - 8 - xText;
-    const int rowHeight = max(30, textFont.lineHeight() + 2);
+    const int glyphHeight = tight ? 24 : 30;
+    const int rowHeight = max(tight ? 24 : 30, textFont.lineHeight() + 2);
     int y = content.y;
     auto section = [&](const string &title, const string &keysTitle = "") {
         style.label(gui->uiContext(), ableem::Rect(content.x + 1, y, content.w - 2, rowHeight));
@@ -51,9 +57,9 @@ void GuiBtnGuide::draw() {
     };
     auto row = [&](const string &buttons, const string &what, const string &keys = "") {
         const int textHeight = max(rowHeight, gui->text().wrappedHeight(textFont, what, textWidth));
-        style.buttons(*gui, buttons, xButtons, y + (rowHeight - 30) / 2);
+        style.buttons(*gui, buttons, xButtons, y + (rowHeight - glyphHeight) / 2, glyphHeight);
         if (keyboard && !keys.empty())
-            style.buttons(*gui, keys, xKeys, y + (rowHeight - 30) / 2);
+            style.buttons(*gui, keys, xKeys, y + (rowHeight - glyphHeight) / 2, glyphHeight);
         gui->text().renderWrappedText(textFont, what, xText, y + (rowHeight - textFont.lineHeight()) / 2, textWidth,
                                       style.text);
         y += textHeight;
