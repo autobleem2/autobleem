@@ -1740,7 +1740,7 @@ void GuiLauncher::draw() {
 
     // any other set with no games shows only the empty shelf: one line under it says so
     if (carousel.games.empty() && !welcome && !snapshotFrame && !benchSkips("carousel")) {
-        if (layout.fourByThree) { // under the cover's place
+        if (layout.fourByThree) { // inside the empty cover's place (the raised menu row is under it)
             const ableem::Font &font = ThemeAssets::fixedFonts().atSize(FONT_MED, layout.emptyTextSize);
             const string empty = _("No games here yet");
             gui->text().renderText_WithColor(font, empty, layout.carousel.centreX - font.width(empty) / 2,

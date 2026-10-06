@@ -15,7 +15,7 @@ void GuiKeepDisplay::init() {
 }
 
 void GuiKeepDisplay::updateLabel(int secondsLeft) {
-    label = _("Keep this display mode?") + " " + modeLabel + ". " + _("Going back to the previous mode in") + " " +
+    label = _("Keep this display mode?") + " " + modeLabel + " - " + _("Going back to the previous mode in") + " " +
             to_string(secondsLeft) + " s";
 }
 

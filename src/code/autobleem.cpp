@@ -207,8 +207,20 @@ void AutoBleem::switchOutputMode(const OutputMode &mode) {
     ableem::Platform::setOutputMode(mode.w, mode.h);
     gui_->input().flushEvents();
     gui_->display(true);
+    applySafeMargin(); // the new window's shape decides (a margin left over from the old mode would not fit)
     gui_->endBusy();
     extensions_.resume();
+}
+
+// The margin of the window as it really is (it may not be the mode asked for): 720x480 the tube, any other 4:3 size a
+// VGA monitor, a wide one none
+void AutoBleem::applySafeMargin() {
+    const ableem::Size window = gui_->platform().windowSize();
+    OutputMode shown;
+    shown.w = window.w;
+    shown.h = window.h;
+    gui_->renderer().setSafeMargin(OutputMode::safeMarginFor(shown, cfg_.inifile.values[OutputMode::MarginKey],
+                                                             cfg_.inifile.values[OutputMode::VgaMarginKey]));
 }
 
 // the new mode on the screen, and kept only with a Cross within GuiKeepDisplay::Seconds - else the old one back
@@ -391,15 +403,12 @@ int AutoBleem::run() {
 
     restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
 
-    // the CRT's safe area (overscan): the 4:3 frame goes into a centred rectangle of the 720x480 output, the margin
-    // from config.ini - only while the window really is the CRT mode. Before display(): its boot splash is the first
-    // 4:3 frame, and it would be shown with the renderer's default margin instead of config.ini's (CRT 4:3 round 2:
-    // Crtmargin=0 still drew the 5 % margin), and before the keep-mode question, which is drawn in it too
-    {
-        const ableem::Size window = gui_->platform().windowSize();
-        const bool crt = OutputMode::parse(OutputMode::CrtToken()).shownAt(window.w, window.h);
-        gui_->renderer().setSafeMargin(crt ? OutputMode::crtMargin(cfg_.inifile.values[OutputMode::MarginKey]) : 0);
-    }
+    // the safe area (overscan): the 4:3 frame goes into a centred rectangle of the output, the margin from config.ini -
+    // the tube's on the 720x480 CRT mode, the VGA one (0 unless set) on any other 4:3 size. Before display(): its boot
+    // splash is the first 4:3 frame, and it would be shown with the renderer's default margin instead of config.ini's
+    // (CRT 4:3 round 2: Crtmargin=0 still drew the 5 % margin), and before the keep-mode question, which is drawn in
+    // it too
+    applySafeMargin();
     gui_->display(false);
     unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
 
@@ -411,9 +420,17 @@ int AutoBleem::run() {
     DirEntry::removeFile(OutputMode::pendingFile());
     const bool leaveForDisplay = false;
 #endif
-    // the CRT 4:3 mode config.ini already holds (a theme installed or chosen since): no confirm - it is in use
-    if (!leaveForDisplay)
-        useDefaultThemeFor(OutputMode::parse(cfg_.inifile.values[OutputMode::ConfigKey]));
+    // a 4:3 mode config.ini already holds (a theme installed or chosen since): no confirm - it is in use. "auto" is
+    // the window the display gave (a 4:3 monitor on a Pi or a PC stick)
+    if (!leaveForDisplay) {
+        OutputMode inUse = OutputMode::parse(cfg_.inifile.values[OutputMode::ConfigKey]);
+        if (inUse.isAuto()) {
+            const ableem::Size window = gui_->platform().windowSize();
+            inUse.w = window.w;
+            inUse.h = window.h;
+        }
+        useDefaultThemeFor(inUse);
+    }
 
     if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since

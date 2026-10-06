@@ -10,7 +10,8 @@
 #       --sdl DIR   an autobleem_sdl checkout with its upstream/SDL submodule (default ../autobleem_sdl)
 #   AB_BUILD_IMAGE         the image (default ghcr.io/autobleem2/autobleem-build:develop)
 #   AB_GLES2_SECONDS=N     how long each margin's walk repeats (default 60; the proof before a console round is 300)
-#   AB_GLES2_MARGINS="0 5 10"
+#   AB_GLES2_MARGINS="0 5 10"   the margins of the 720x480 tube; the square-pixel sizes run with margin 0 only
+#   AB_GLES2_SIZES="720x480 640x480 1024x768"   the 4:3 outputs walked (window size = display mode)
 #
 # Builds into build_gles2/ (SDL once per set of patches, then the launcher, absplash and test_crt_frame with ASan),
 # lays build_gles2/usb with tools/make_usb.py, then per margin: test_crt_frame, absplash on the 4:3 twin, and the
@@ -28,7 +29,7 @@ if [ "${1:-}" != "--inside" ]; then
     sdl="$(cd "$sdl" && pwd)" || { echo "no autobleem_sdl checkout at $sdl (--sdl DIR)" >&2; exit 2; }
     [ -f "$sdl/upstream/SDL/configure" ] || { echo "$sdl/upstream/SDL is empty - git submodule update --init" >&2; exit 2; }
     image="${AB_BUILD_IMAGE:-ghcr.io/autobleem2/autobleem-build:develop}"
-    exec docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e AB_GLES2_SECONDS -e AB_GLES2_MARGINS \
+    exec docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e AB_GLES2_SECONDS -e AB_GLES2_MARGINS -e AB_GLES2_SIZES \
         -v "$REPO:$REPO" -v "$sdl:$sdl:ro" -w "$REPO" "$image" bash tests/gles2/crt43_gles2.sh --inside "$sdl"
 fi
 
@@ -36,6 +37,7 @@ SDL_SRC="${2:?}"
 OUT="$REPO/build_gles2"
 SECONDS_EACH="${AB_GLES2_SECONDS:-60}"
 MARGINS="${AB_GLES2_MARGINS:-0 5 10}"
+SIZES="${AB_GLES2_SIZES:-720x480 640x480 1024x768}"
 FAILS=0
 ok() { echo "ok: $*"; }
 bad() { echo "FAIL: $*"; FAILS=$((FAILS + 1)); }
@@ -80,9 +82,9 @@ APP="$USB/Autobleem/bin/autobleem"
 cp "$OUT/ab/autobleem-gui" "$OUT/ab/absplash" "$APP/"
 mkdir -p "$USB/System/Logs"
 
-# the console's renderer, as the console runs it: GLES2 through EGL, a 720x480 window
+# the console's renderer, as the console runs it: GLES2 through EGL, a window of each size (AB_WINDOW_SIZE, below)
 export SDL_VIDEODRIVER=offscreen SDL_RENDER_DRIVER=opengles2 SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 \
-    AB_WINDOW_SIZE=720x480 AB_HEADLESS=1 AB_INPUT_ISOLATED=1 AB_MAX_FPS=30 AB_ROOT="$USB" \
+    AB_HEADLESS=1 AB_INPUT_ISOLATED=1 AB_MAX_FPS=30 AB_ROOT="$USB" \
     ASAN_OPTIONS=detect_leaks=0 LD_LIBRARY_PATH="$SDL_PREFIX/lib"
 unset AB_NO_SPLASH # the boot splash is the first 4:3 frame on the console
 
@@ -101,15 +103,20 @@ WALK="$WALK; home; down l2; down r2; wait 1800; wait_idle 800; screen; up r2; up
 WALK="$WALK; home; menu About; wait_screen GuiAbout; wait 2500; press right; wait 1200; press right; wait 1200; press start; wait 5000; screen; press start; wait 7000; screen; press circle; wait 1500; press circle; wait 1500; home"
 
 PORT=7791
-for margin in $MARGINS; do
-    echo "== margin $margin %"
+for size in $SIZES; do
+# 720x480 is the tube (anamorphic, the safe margin); 640x480 and 1024x768 are square pixels without a margin
+export AB_WINDOW_SIZE="$size"
+if [ "$size" = 720x480 ]; then sizeMargins="$MARGINS"; else sizeMargins=0; fi
+for margin in $sizeMargins; do
+    tag="$size-m$margin"
+    echo "== $size, margin $margin %"
     cfg="$APP/config.ini"
     grep -v -i -E '^(outputmode|crtmargin|theme)=' "$cfg" > "$cfg.new" 2>/dev/null
-    printf 'Outputmode=720x480\nCrtmargin=%s\nTheme=ab2.0.0\n' "$margin" >> "$cfg.new"
+    printf 'Outputmode=%s\nCrtmargin=%s\nTheme=ab2.0.0\n' "$size" "$margin" >> "$cfg.new"
     mv "$cfg.new" "$cfg"
 
     # the frame test on this renderer (it must run, not skip)
-    log="$OUT/frame-m$margin.log"
+    log="$OUT/frame-$tag.log"
     if (cd "$OUT" && "$FRAME_TEST" -s > "$log" 2>&1); then
         if grep -q "renderer opengles2" "$log"; then ok "test_crt_frame on opengles2"; else bad "test_crt_frame did not run on opengles2 ($log)"; fi
     else
@@ -117,19 +124,19 @@ for margin in $MARGINS; do
     fi
 
     # absplash on the 4:3 twin with the theme's spinner (the console's boot and game pictures)
-    log="$OUT/absplash-m$margin.log"
+    log="$OUT/absplash-$tag.log"
     (cd "$APP" && ./absplash "$APP/splash/autobleem.jpg" --seconds 3 --theme "$USB/Themes/ab2.0.0" --anim sweep \
         > "$log" 2>&1)
     rc=$?
     if [ $rc = 0 ] && grep -q "safe margin $margin%" "$log" && grep -q "the 4:3 twin" "$log"; then
-        ok "absplash 4:3, margin $margin %"
+        ok "absplash 4:3, $size, margin $margin %"
     else
-        bad "absplash rc $rc, margin $margin % ($log)"
+        bad "absplash rc $rc, $size, margin $margin % ($log)"
     fi
 
     # the launcher, walked until the time is up
-    log="$OUT/launcher-m$margin.log"
-    rm -f "$USB/System/Logs/autobleem.log" "$OUT/walk-m$margin.log"
+    log="$OUT/launcher-$tag.log"
+    rm -f "$USB/System/Logs/autobleem.log" "$OUT/walk-$tag.log"
     (cd "$APP" && AB_DEBUG_PORT=$PORT exec ./autobleem-gui "$USB" > "$log" 2>&1) &
     pid=$!
     walks=0
@@ -140,10 +147,10 @@ for margin in $MARGINS; do
         sleep 1
     done
     while [ $SECONDS -lt $end ] && kill -0 $pid 2> /dev/null; do
-        if python3 tools/ab_drive.py run "$WALK" --port $PORT >> "$OUT/walk-m$margin.log" 2>&1; then
+        if python3 tools/ab_drive.py run "$WALK" --port $PORT >> "$OUT/walk-$tag.log" 2>&1; then
             walks=$((walks + 1))
         else
-            kill -0 $pid 2> /dev/null && { bad "walk failed with the launcher still up ($OUT/walk-m$margin.log)"; break; }
+            kill -0 $pid 2> /dev/null && { bad "walk failed with the launcher still up ($OUT/walk-$tag.log)"; break; }
         fi
     done
     if kill -0 $pid 2> /dev/null; then
@@ -154,22 +161,23 @@ for margin in $MARGINS; do
     wait $pid
     rc=$?
     if grep -q -E "AddressSanitizer|SIGSEGV|Segmentation" "$log" || { [ $rc != 0 ] && [ $rc != 143 ]; }; then
-        bad "launcher margin $margin %: exit $rc after $walks walks ($log)"
+        bad "launcher $size, margin $margin %: exit $rc after $walks walks ($log)"
         grep -m1 -A12 "ERROR: AddressSanitizer" "$log"
     elif [ $walks = 0 ]; then
-        bad "launcher margin $margin %: no walk finished ($OUT/walk-m$margin.log)"
+        bad "launcher $size, margin $margin %: no walk finished ($OUT/walk-$tag.log)"
     else
-        ok "launcher margin $margin %: $walks walks of every 4:3 screen in ${SECONDS_EACH}s, exit $rc"
+        ok "launcher $size, margin $margin %: $walks walks of every 4:3 screen in ${SECONDS_EACH}s, exit $rc"
     fi
     grep -q "compiled against SDL 2.0.18, linked against SDL 2.0.18" "$log" && grep -q "Renderer: opengles2" "$log" &&
-        grep -q "4:3 output 720x480" "$log" || bad "the launcher did not run on SDL 2.0.18 / opengles2 / 720x480 ($log)"
+        grep -q "4:3 output $size" "$log" || bad "the launcher did not run on SDL 2.0.18 / opengles2 / $size ($log)"
     # config.ini's margin is in place before the first frame (the boot splash): its line before the audio's (display())
-    if [ "$margin" != 5 ]; then
+    if [ "$size" = 720x480 ] && [ "$margin" != 5 ]; then
         m=$(grep -n "CRT margin $margin%" "$log" | head -1 | cut -d: -f1)
         a=$(grep -n "Audio subsystem initialized" "$log" | head -1 | cut -d: -f1)
         if [ -n "$m" ] && [ -n "$a" ] && [ "$m" -lt "$a" ]; then ok "Crtmargin=$margin applied before the first frame"
         else bad "Crtmargin=$margin not applied before the first frame ($log)"; fi
     fi
+done
 done
 
 [ $FAILS = 0 ] && echo "crt43 gles2: all ok" || echo "crt43 gles2: $FAILS failed"
