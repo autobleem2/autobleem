@@ -50,7 +50,7 @@ struct Box {
 // design's, fitted: the picture keeps its 4:3 shape (128 x 96), the corners are cut 4 px.
 namespace Narrow {
 constexpr int BandY = 58;
-constexpr int BandH = 318; // ends at 376, well above the hint bar (418)
+constexpr int BandH = 356; // ends at 414, above the hint bar (418): covers the menu caption and its line beneath, as at 720p
 constexpr int TitleMidY = 82;
 constexpr int NameMidY = 108;
 
