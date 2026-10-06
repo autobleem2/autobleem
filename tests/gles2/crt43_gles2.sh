@@ -65,10 +65,10 @@ grep -qE '#define SDL_PATCHLEVEL +18' "$SDL_PREFIX/include/SDL2/SDL_version.h" |
 
 # --- the launcher, absplash and the frame test against it (ASan: a stale texture handle is a report, not luck) -----
 echo "== launcher (build_gles2/ab)"
-san="-g -O1 -fno-omit-frame-pointer -fsanitize=address"
+# (the _DEBUG flags: the root CMakeLists sets CMAKE_CXX_FLAGS itself for Debug; -I first, so <SDL2/SDL.h> is 2.0.18's)
+san="-I$SDL_PREFIX/include -g -O1 -fno-omit-frame-pointer -fsanitize=address"
 cmake -S . -B "$OUT/ab" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DAB_TARGET=dev -DAB_ENABLE_CHD=ON \
-    -DCMAKE_PREFIX_PATH="$SDL_PREFIX" -DCMAKE_C_FLAGS="$san -I$SDL_PREFIX/include" \
-    -DCMAKE_CXX_FLAGS="$san -I$SDL_PREFIX/include" \
+    -DCMAKE_PREFIX_PATH="$SDL_PREFIX" -DCMAKE_C_FLAGS_DEBUG="$san" -DCMAKE_CXX_FLAGS_DEBUG="$san" \
     -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address -L$SDL_PREFIX/lib -Wl,-rpath,$SDL_PREFIX/lib" \
     > "$OUT/configure.log" 2>&1 || { tail -20 "$OUT/configure.log"; exit 1; }
 ninja -C "$OUT/ab" autobleem-gui absplash test_crt_frame > "$OUT/build.log" 2>&1 || { tail -30 "$OUT/build.log"; exit 1; }
@@ -89,15 +89,16 @@ unset AB_NO_SPLASH # the boot splash is the first 4:3 frame on the console
 # one walk through every 4:3 screen the CRT shots cover (the carousel, the game menu and editor, Options, memory cards,
 # resume slots, the button guide, the set picker, the quick menu, the System menu, About and the Surprise game)
 OPEN="home; wait_idle 800; press down; wait 1200; wait_idle 800; press left; wait 400; press left; wait 400; press left; wait 400; press left; wait 600; wait_idle 500"
-WALK="wait_screen GuiLauncher; wait_idle 800; $OPEN; press cross; wait 2500; wait_idle 800; press circle; wait 2000; wait_idle 800"
-WALK="$WALK; $OPEN; press right; wait 800; wait_idle 500; press cross; wait 2500; wait_idle 800; press circle; wait 2000; wait_idle 800"
-WALK="$WALK; $OPEN; press right; wait 600; press right; wait 800; wait_idle 500; press cross; wait 2500; wait_idle 800; press circle; wait 2000; wait_idle 800"
-WALK="$WALK; $OPEN; press right; wait 600; press right; wait 600; press right; wait 800; wait_idle 500; press cross; wait 2500; wait_idle 800; press circle; wait 2000; wait_idle 800"
-WALK="$WALK; home; wait_idle 800; press triangle; wait 1800; wait_idle 800; press circle; wait 1800; wait_idle 800"
-WALK="$WALK; home; wait_idle 800; press select; wait 1800; wait_idle 800; press circle; wait 1800; wait_idle 800"
-WALK="$WALK; home; wait_idle 800; press up; wait 1800; wait_idle 800; press circle; wait 1800; wait_idle 800"
-WALK="$WALK; home; down l2; down r2; wait 1800; wait_idle 800; up r2; up l2; wait 500; press circle; wait 1200"
-WALK="$WALK; home; menu About; wait_screen GuiAbout; wait 2500; press right; wait 1200; press right; wait 1200; press start; wait 5000; press start; wait 7000; press circle; wait 1500; press circle; wait 1500; home"
+# (each `screen` puts the screen shown into the walk's log: walk-m<margin>.log lists what was walked)
+WALK="wait_screen GuiLauncher; wait_idle 800; screen; $OPEN; screen; press cross; wait 2500; wait_idle 800; screen; press circle; wait 2000; wait_idle 800"
+WALK="$WALK; $OPEN; press right; wait 800; wait_idle 500; press cross; wait 2500; wait_idle 800; screen; press circle; wait 2000; wait_idle 800"
+WALK="$WALK; $OPEN; press right; wait 600; press right; wait 800; wait_idle 500; press cross; wait 2500; wait_idle 800; screen; press circle; wait 2000; wait_idle 800"
+WALK="$WALK; $OPEN; press right; wait 600; press right; wait 600; press right; wait 800; wait_idle 500; press cross; wait 2500; wait_idle 800; screen; press circle; wait 2000; wait_idle 800"
+WALK="$WALK; home; wait_idle 800; press triangle; wait 1800; wait_idle 800; screen; press circle; wait 1800; wait_idle 800"
+WALK="$WALK; home; wait_idle 800; press select; wait 1800; wait_idle 800; screen; press circle; wait 1800; wait_idle 800"
+WALK="$WALK; home; wait_idle 800; press up; wait 1800; wait_idle 800; screen; press circle; wait 1800; wait_idle 800"
+WALK="$WALK; home; down l2; down r2; wait 1800; wait_idle 800; screen; up r2; up l2; wait 500; press circle; wait 1200"
+WALK="$WALK; home; menu About; wait_screen GuiAbout; wait 2500; press right; wait 1200; press right; wait 1200; press start; wait 5000; screen; press start; wait 7000; screen; press circle; wait 1500; press circle; wait 1500; home"
 
 PORT=7791
 for margin in $MARGINS; do
@@ -128,21 +129,25 @@ for margin in $MARGINS; do
 
     # the launcher, walked until the time is up
     log="$OUT/launcher-m$margin.log"
-    rm -f "$USB/System/Logs/autobleem.log"
+    rm -f "$USB/System/Logs/autobleem.log" "$OUT/walk-m$margin.log"
     (cd "$APP" && AB_DEBUG_PORT=$PORT exec ./autobleem-gui "$USB" > "$log" 2>&1) &
     pid=$!
     walks=0
     end=$((SECONDS + SECONDS_EACH))
-    python3 tools/ab_drive.py --port $PORT run "wait_screen GuiLauncher 120" > /dev/null 2>&1 || true
+    for _ in $(seq 120); do # the driver's port opens once the launcher is up (slower with ASan)
+        python3 tools/ab_drive.py screen --port $PORT > /dev/null 2>&1 && break
+        kill -0 $pid 2> /dev/null || break
+        sleep 1
+    done
     while [ $SECONDS -lt $end ] && kill -0 $pid 2> /dev/null; do
-        if python3 tools/ab_drive.py --port $PORT run "$WALK" > "$OUT/walk-m$margin.log" 2>&1; then
+        if python3 tools/ab_drive.py run "$WALK" --port $PORT >> "$OUT/walk-m$margin.log" 2>&1; then
             walks=$((walks + 1))
         else
             kill -0 $pid 2> /dev/null && { bad "walk failed with the launcher still up ($OUT/walk-m$margin.log)"; break; }
         fi
     done
     if kill -0 $pid 2> /dev/null; then
-        python3 tools/ab_drive.py --port $PORT run "quit" > /dev/null 2>&1
+        python3 tools/ab_drive.py run quit --port $PORT > /dev/null 2>&1
         for _ in $(seq 100); do kill -0 $pid 2> /dev/null || break; sleep 0.1; done
         kill $pid 2> /dev/null
     fi
