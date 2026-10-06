@@ -39,6 +39,7 @@ public:
     ableem::Font font30;
 
     int selSlot = 0;
+    bool narrow = false; // the 4:3 (CRT) design: ResumeLayout::Narrow, on the launcher's 640x480 canvas
 
     using PsObj::PsObj;
 

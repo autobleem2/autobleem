@@ -155,7 +155,7 @@ void GuiSetPicker::buildTabs() {
 // GuiSetPicker::visibleRows / moveSelection / keepSelectedVisible
 //*******************************
 int GuiSetPicker::visibleRows() const {
-    const int room = SCREEN_HEIGHT - 2 * PanelMargin - TabsHeight - FooterHeight;
+    const int room = gui->renderer().height() - 2 * PanelMargin - TabsHeight - FooterHeight;
     return max(1, room / RowHeight);
 }
 
@@ -245,7 +245,8 @@ void GuiSetPicker::draw() {
     const int panelHeight = TabsHeight + maxShown * RowHeight + FooterHeight;
     // a footer is one row and the window makes room for it (abgui::Panel::compactWidth)
     const int panelWidth = abgui::Panel::compactWidth(gui->uiContext(), footerHints(), "");
-    ableem::Rect panel{(SCREEN_WIDTH - panelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, panelWidth, panelHeight};
+    ableem::Rect panel{(gui->renderer().width() - panelWidth) / 2, (gui->renderer().height() - panelHeight) / 2,
+                       panelWidth, panelHeight};
     style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();

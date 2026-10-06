@@ -1157,6 +1157,7 @@ void GuiLauncher::loadAssets() {
 
     sselector = addFrontElement(new PsStateSelector("selector"));
     sselector->font30 = ThemeAssets::fixedFonts()[FONT_28_BOLD];
+    sselector->narrow = layout.fourByThree;
     sselector->visible = false;
 
     if (app.session().resumingGui) {
@@ -1509,8 +1510,12 @@ void GuiLauncher::layoutHints() {
 bool GuiLauncher::prepareFrame() {
     gui->endBusy(); // the reload after a game, or after Options, is over once the launcher draws
     // the 4:3 layout draws on the 640x480 canvas: asked for every frame, the renderer goes back to 1280x720 after it
+    // (the other screens have the 4:3 output's rest canvas, Gui::CrtCanvasW x H; a launcher with no 4:3 layout is the
+    // 1280x720 one, letterboxed)
     if (layout.fourByThree)
         renderer.setCanvas(layout.canvasW, layout.canvasH);
+    else
+        renderer.setCanvas(SCREEN_WIDTH, SCREEN_HEIGHT);
     return true;
 }
 
@@ -1597,16 +1602,22 @@ bool GuiLauncher::welcomeCardShows() const {
 //*******************************
 // The card in the theme's panel frame (else the code sheet) where the covers would be: a bold title, a rule in the
 // selection colour, the wrapped body and the signature. 660 wide, as tall as its content, centred on the empty
-// cover's centre; all numbers at the 1280x720 logical canvas (the designer's welcome-a.png).
+// cover's centre; all numbers at the 1280x720 logical canvas (the designer's welcome-a.png). On the 4:3 (CRT) canvas
+// (640x480) the card is the same, 580 wide and centred on the canvas, its text 23 / 18 / 16 px, ending above the menu's
+// icon row.
 void GuiLauncher::renderWelcomeCard() {
-    constexpr int boxW = 660, pad = 34, centreY = 292, linePitch = 31;
-    constexpr int titleH = 40, ruleGap = 16, signGap = 14, signH = 28, bodyTail = 18;
+    const bool narrow = layout.fourByThree;
+    const int boxW = narrow ? 580 : 660, pad = narrow ? 20 : 34, centreY = 292;
+    const int linePitch = narrow ? 24 : 31;
+    const int titleH = narrow ? 32 : 40, ruleGap = narrow ? 10 : 16, signGap = narrow ? 8 : 14;
+    const int signH = narrow ? 22 : 28, bodyTail = narrow ? 10 : 18;
+    const int bottomY = 272; // 4:3: the card ends above the menu's icon row (a longer text grows it upward)
     abgui::Context &ctx = gui->uiContext();
     const abgui::Style &style = ctx.style();
     Fonts &fonts = ThemeAssets::fixedFonts();
-    const ableem::Font &titleFont = fonts[FONT_28_BOLD];
-    const ableem::Font &bodyFont = fonts[FONT_22_MED];
-    const ableem::Font &signFont = fonts[FONT_20_BOLD];
+    const ableem::Font &titleFont = narrow ? fonts.boldAtSize(23) : fonts[FONT_28_BOLD];
+    const ableem::Font &bodyFont = narrow ? fonts.atSize(FONT_MED, 18) : fonts[FONT_22_MED];
+    const ableem::Font &signFont = narrow ? fonts.boldAtSize(16) : fonts[FONT_20_BOLD];
     const string title = _("Hi, and welcome to AutoBleem!");
     const string signature = _("Cheers, screemer");
     // where the games go depends on the platform: the Pi reads its SD card, Windows the AutoBleem folder, the
@@ -1624,7 +1635,7 @@ void GuiLauncher::renderWelcomeCard() {
     const vector<string> lines = gui->text().wrapLines(bodyFont, body, boxW - 2 * pad);
 
     const int boxH = pad + titleH + ruleGap + static_cast<int>(lines.size()) * linePitch + bodyTail + signH + pad - 6;
-    const ableem::Rect box((1280 - boxW) / 2, centreY - boxH / 2, boxW, boxH);
+    const ableem::Rect box((renderer.width() - boxW) / 2, narrow ? bottomY - boxH : centreY - boxH / 2, boxW, boxH);
     style.sheet(ctx, box); // the theme's panel frame, else the code-drawn sheet
 
     const LauncherTheme &theme = app.theme().launcher();
@@ -1686,7 +1697,7 @@ void GuiLauncher::draw() {
     const bool welcome = welcomeCardShows();
     if (welcome) {
         if (!benchSkips("carousel"))
-            drawWide([this] { renderWelcomeCard(); });
+            renderWelcomeCard();
     } else if (!benchSkips("carousel"))
         carousel.render();
     // a theme with the `play` frame (G5j) draws Play as that frame, the icon and the label - not the two images
@@ -1807,7 +1818,8 @@ void GuiLauncher::draw() {
 
     for (auto &obj : frontElemets)
         if (!benchSkips("front") && (!layout.fourByThree || obj->visible))
-            drawWide([&obj] { obj->render(); }); // the resume slots: a 1280x720 design
+            obj->render(); // the resume slots: 1280x720, or the 4:3 design on the 640x480 canvas
+                           // (PsStateSelector::narrow)
 
     gui->text().setShadow(classicShadow);
 

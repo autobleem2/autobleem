@@ -8,8 +8,7 @@
 using namespace std;
 
 namespace {
-const int PanelWidth = 800; // at least - wider for a long line
-const int MaxPanelWidth = SCREEN_WIDTH - 2 * PanelStyle::Margin;
+const int PanelWidth = 800;                     // at least - wider for a long line
 const int TextInset = PanelStyle::RowInset + 8; // a line's x in the panel, and its right margin
 const int RowHeight = PanelStyle::RowHeight;
 const int RowInset = PanelStyle::RowInset;
@@ -50,14 +49,15 @@ int panelWidthFor(Gui &gui, const vector<pair<const ableem::Font *, string>> &te
     int widest = 0;
     for (const auto &t : texts)
         widest = max(widest, gui.text().textWidth(*t.first, t.second));
-    return min(MaxPanelWidth, max(PanelWidth, widest + 2 * TextInset));
+    const int maxPanelWidth = gui.renderer().width() - 2 * PanelStyle::Margin; // the canvas of the frame
+    return min(maxPanelWidth, max(PanelWidth, widest + 2 * TextInset));
 }
 
 // the dimmed launcher's snapshot (Gui::renderBackground) under the panel; returns the panel's rect
 ableem::Rect drawPanel(Gui &gui, const PanelStyle &style, int width, int height) {
     gui.renderBackground();
     style.dim(gui.uiContext());
-    ableem::Rect panel{(SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2, width, height};
+    ableem::Rect panel{(gui.renderer().width() - width) / 2, (gui.renderer().height() - height) / 2, width, height};
     style.sheet(gui.uiContext(), panel);
     return panel;
 }

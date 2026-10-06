@@ -117,7 +117,7 @@ int GuiExtensions::rowHeight(int row) const {
 }
 
 int GuiExtensions::visibleRows() const {
-    const int roomForRows = SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - FooterHeight;
+    const int roomForRows = gui->renderer().height() - 2 * PanelMargin - HeaderHeight - FooterHeight;
     int used = 0, shown = 0;
     for (int i = firstVisible; i < count() && used + rowHeight(i) <= roomForRows; i++, shown++)
         used += rowHeight(i);
@@ -126,7 +126,7 @@ int GuiExtensions::visibleRows() const {
 
 // the whole list when it fits, else as much room as there is - the panel keeps its height while it scrolls
 int GuiExtensions::bodyHeight() const {
-    const int roomForRows = SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - FooterHeight;
+    const int roomForRows = gui->renderer().height() - 2 * PanelMargin - HeaderHeight - FooterHeight;
     int all = 0;
     for (int i = 0; i < count(); i++)
         all += rowHeight(i);
@@ -159,7 +159,9 @@ void GuiExtensions::draw() {
     const int shown = empty ? 0 : visibleRows();
     const int body = empty ? EmptyHeight : bodyHeight();
     const int panelHeight = HeaderHeight + body + FooterHeight;
-    ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
+    const int panelWidth = min(PanelWidth, gui->renderer().width() - 2 * PanelMargin); // a 4:3 canvas is narrower
+    ableem::Rect panel{(gui->renderer().width() - panelWidth) / 2, (gui->renderer().height() - panelHeight) / 2,
+                       panelWidth, panelHeight};
     style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();

@@ -55,8 +55,9 @@ void PsStateSelector::drawPicture(const ableem::Texture &picture, const ResumeLa
     const ableem::Size s = picture.size();
     if (s.w <= 0 || s.h <= 0)
         return;
+    const int cut = narrow ? ResumeLayout::Narrow::CutCorner : ResumeLayout::CutCorner;
     auto strip = [&](int row, int rows) {
-        const ResumeLayout::RowInset in = ResumeLayout::rowInset(row, box.h);
+        const ResumeLayout::RowInset in = ResumeLayout::rowInset(row, box.h, cut);
         const int srcY = row * s.h / box.h;
         const int srcH = max(1, (row + rows) * s.h / box.h - srcY);
         const int srcL = in.left * s.w / box.w;
@@ -65,7 +66,6 @@ void PsStateSelector::drawPicture(const ableem::Texture &picture, const ResumeLa
         const ableem::Rect to(box.x + in.left, box.y + row, box.w - in.left - in.right, rows);
         renderer.copy(picture, &from, &to);
     };
-    const int cut = ResumeLayout::CutCorner;
     for (int row = 0; row < cut; row++)
         strip(row, 1);
     strip(cut, box.h - 2 * cut);
@@ -87,15 +87,24 @@ void PsStateSelector::render() {
     abgui::Context &ctx = gui->uiContext();
     const abgui::Style &style = ctx.style();
     Fonts &fonts = ThemeAssets::fixedFonts();
-    const ableem::Font &titleFont = font30; // bold 28
-    const ableem::Font &nameFont = fonts.atSize(FONT_MED, 20);
-    const ableem::Font &slotFont = fonts.boldAtSize(24);
-    const ableem::Font &emptyFont = fonts[FONT_22_MED];
-    const ableem::Font &dateFont = fonts.atSize(FONT_MED, 18);
-    const ableem::Font &chipFont = fonts.boldAtSize(13);
+    // the 4:3 design (narrow) is a CRT canvas' 640 x 480: smaller than the 1280 x 720 one in the shapes, the text much
+    // less so (sizes are logical pixels of the canvas, which is shown 1:1 high)
+    const ableem::Font &titleFont = narrow ? fonts.boldAtSize(24) : font30; // bold 28
+    const ableem::Font &nameFont = fonts.atSize(FONT_MED, narrow ? 18 : 20);
+    const ableem::Font &slotFont = fonts.boldAtSize(narrow ? 21 : 24);
+    const ableem::Font &emptyFont = narrow ? fonts.atSize(FONT_MED, 17) : fonts[FONT_22_MED];
+    const ableem::Font &dateFont = fonts.atSize(FONT_MED, narrow ? 16 : 18);
+    const ableem::Font &chipFont = fonts.boldAtSize(narrow ? 12 : 13);
+    const int bandY = narrow ? ResumeLayout::Narrow::BandY : ResumeLayout::BandY;
+    const int bandH = narrow ? ResumeLayout::Narrow::BandH : ResumeLayout::BandH;
+    const int titleMidY = narrow ? ResumeLayout::Narrow::TitleMidY : ResumeLayout::TitleMidY;
+    const int nameMidY = narrow ? ResumeLayout::Narrow::NameMidY : ResumeLayout::NameMidY;
+    const int textInset = narrow ? ResumeLayout::Narrow::TextInset : ResumeLayout::TextInset;
+    const int slotNameY = narrow ? ResumeLayout::Narrow::SlotNameY : ResumeLayout::SlotNameY;
+    const int dateY = narrow ? ResumeLayout::Narrow::DateY : ResumeLayout::DateY;
 
     // the band: the theme's `band` frame (G5i), else the black strip
-    const ableem::Rect band(0, ResumeLayout::BandY, SCREEN_WIDTH, ResumeLayout::BandH);
+    const ableem::Rect band(0, bandY, renderer.width(), bandH);
     if (!style.drawFrame(ctx, "band", band)) {
         renderer.setDrawColor(ableem::Color(0, 0, 0, 200));
         renderer.fillRect(band);
@@ -111,14 +120,14 @@ void PsStateSelector::render() {
     const ableem::Color secondary = style.secondary;
 
     const string title = operation == OP_SAVE ? _("Select slot to save state") : _("Select resume slot to load");
-    gui->text().renderText_WithColor(titleFont, title, 0, ResumeLayout::TitleMidY - titleFont.lineHeight() / 2,
-                                     textColor, XALIGN_CENTER);
-    gui->text().renderText_WithColor(nameFont, gameTitle, 0, ResumeLayout::NameMidY - nameFont.lineHeight() / 2,
-                                     secondary, XALIGN_CENTER);
+    gui->text().renderText_WithColor(titleFont, title, 0, titleMidY - titleFont.lineHeight() / 2, textColor,
+                                     XALIGN_CENTER);
+    gui->text().renderText_WithColor(nameFont, gameTitle, 0, nameMidY - nameFont.lineHeight() / 2, secondary,
+                                     XALIGN_CENTER);
 
     for (int i = 0; i < ResumeLayout::SlotCount; i++) {
-        const ResumeLayout::Box card = ResumeLayout::cardBox(i);
-        const ResumeLayout::Box well = ResumeLayout::wellBox(card);
+        const ResumeLayout::Box card = ResumeLayout::cardBox(i, narrow);
+        const ResumeLayout::Box well = ResumeLayout::wellBox(card, narrow);
         const bool selected = selSlot == i;
         const bool veiled = operation == OP_LOAD && !slotUsed[i];
         const ableem::Rect cardRect(card.x, card.y, card.w, card.h);
@@ -127,7 +136,7 @@ void PsStateSelector::render() {
         style.field(ctx, ableem::Rect(well.x, well.y, well.w, well.h));
 
         if (slotImg[i].valid()) {
-            drawPicture(slotImg[i], ResumeLayout::pictureBox(card));
+            drawPicture(slotImg[i], ResumeLayout::pictureBox(card, narrow));
         } else {
             const string empty = _("Empty");
             const int w = gui->text().textWidth(emptyFont, empty);
@@ -135,15 +144,19 @@ void PsStateSelector::render() {
                                              well.y + (well.h - emptyFont.lineHeight()) / 2, secondary);
         }
 
-        const int textX = card.x + ResumeLayout::TextInset;
-        gui->text().renderText_WithColor(slotFont, _("Slot") + " " + to_string(i + 1), textX,
-                                         card.y + ResumeLayout::SlotNameY, selected ? selectionColor : textColor);
+        const int textX = card.x + textInset;
+        gui->text().renderText_WithColor(slotFont, _("Slot") + " " + to_string(i + 1), textX, card.y + slotNameY,
+                                         selected ? selectionColor : textColor);
         const string date = slotUsed[i] ? slotDate[i] : (operation == OP_LOAD ? _("No resume point") : _("Free"));
-        gui->text().renderText_WithColor(dateFont, date, textX, card.y + ResumeLayout::DateY, secondary);
+        if (narrow) // the card is narrow: the date wraps (the format's blanks) to a second line
+            gui->text().renderWrappedText(dateFont, date, textX, card.y + dateY, ResumeLayout::Narrow::DateRoom,
+                                          secondary);
+        else
+            gui->text().renderText_WithColor(dateFont, date, textX, card.y + dateY, secondary);
 
         if (i == newest) {
             const string word = _("NEWEST");
-            const ResumeLayout::Box chip = ResumeLayout::chipBox(card, gui->text().textWidth(chipFont, word));
+            const ResumeLayout::Box chip = ResumeLayout::chipBox(card, gui->text().textWidth(chipFont, word), narrow);
             const ableem::Rect chipRect(chip.x, chip.y, chip.w, chip.h);
             if (!style.drawFrame(ctx, "chip", chipRect)) {
                 renderer.setBlendMode(ableem::BlendMode::Blend);
@@ -152,8 +165,9 @@ void PsStateSelector::render() {
                 renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 200));
                 renderer.drawRect(chipRect);
             }
-            gui->text().renderText_WithColor(chipFont, word, chip.x + ResumeLayout::ChipPadding,
-                                             chip.y + (chip.h - chipFont.lineHeight()) / 2, textColor);
+            gui->text().renderText_WithColor(
+                chipFont, word, chip.x + (narrow ? ResumeLayout::Narrow::ChipPadding : ResumeLayout::ChipPadding),
+                chip.y + (chip.h - chipFont.lineHeight()) / 2, textColor);
         }
 
         if (veiled)
