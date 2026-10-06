@@ -14,9 +14,19 @@
  *   x360     a wired Xbox 360 pad on xpad (GUID 030000005e0400008e02000014010000) - the default; USB only
  *   ds4      a DualShock 4 v2 on hid-playstation/hid-sony: USB 030000004c050000cc09000011810000,
  *            Bluetooth 050000004c050000cc09000000810000 ("PS4 Controller" in SDL's database)
+ *   ds3      a wired DualShock 3 on hid-sony (USB 054c:0268 "Sony PLAYSTATION(R)3 Controller", GUID
+ *            030000004c0500006802000011810000): buttons in hid-sony's codes (the d-pad is four BTN_DPAD_* buttons, no
+ *            hat), sticks ABS_X/Y/RX/RY 0..255, analog triggers ABS_Z/ABS_RZ; USB only
+ *   ps3pad   the owner's third-party pad in PS3 mode (USB 0c12:0e16 "Sony Interactive Entertainment PS4PCPS3Android
+ *            Gamepad", GUID 03000000120c0000160e000011010000): 13 generic joystick buttons (b0..b12), a hat, sticks
+ *            on ABS_X/Y and ABS_Z/RZ, L2/R2 are buttons only; USB only
+ *   psc      the PlayStation Classic's own pad (USB 054c:0cda "Sony Interactive Entertainment Controller", GUID
+ *            030000004c050000da0c000011010000): 10 buttons, no hat, the d-pad on ABS_X/ABS_Y (0 / 1 / 2), no
+ *            sticks, L2/R2/Select/Start are buttons; USB only
  *   generic  a pad SDL knows nothing about (no mapping - what makes the wizard start by itself); USB or BT
  * The face buttons have the Xbox names on every profile (a b x y = Cross Circle Square Triangle on a DS4), so a
- * test script works with any of them.
+ * test script works with any of them; cross circle square triangle work too (not on an x360). Directions work on
+ * every profile as buttons too (`press up`, `release up`, `tap left`), whatever the pad's d-pad is made of.
  *
  * Power and battery:
  *   unplug / plug        a USB pad's cable pulled out / put back; a Bluetooth pad switched off (or out of range) /
@@ -31,15 +41,17 @@
  * the launcher cannot tie a battery to a player: it shows as a pad of its own.
  *
  * Protocol, one command per line, one reply per line ("ok ..." or "err <msg>"):
- *   ping                              ok padsim 5 - then per pad: <n>:<profile>/<usb|bt>/<plugged|unplugged>, and
+ *   ping                              ok padsim 6 - then per pad: <n>:<profile>/<usb|bt>/<plugged|unplugged>, and
  *                                     kbd:<plugged|unplugged>
- *   press <btn> | release <btn>       a b x y l1 r1 l2 r2 select start guide l3 r3 (l2/r2 also move the trigger axis)
+ *   press <btn> | release <btn>       a b x y (or cross circle square triangle) l1 r1 l2 r2 select start guide (ps)
+ *                                     l3 r3, and up down left right; l2/r2 also move the trigger axis where the pad
+ *                                     has one (ds3 also dpup dpdown dpleft dpright, the raw d-pad buttons)
  *   hold <btn> <ms>                   pressed, then released after ms
- *   stick <left|right> <x> <y>        -32768..32767 each
- *   trigger <l2|r2> <0..255>
+ *   stick <left|right> <x> <y>        -32768..32767 each (a psc pad has no sticks)
+ *   trigger <l2|r2> <0..255>          the axis; a pad whose triggers are buttons presses them above 0
  *   dpad <up|down|left|right|center>  also up-left, up-right, down-left, down-right
  *   reset                             everything released and centred
- *   profile <x360|ds4|generic> [usb|bt] | plug | unplug | battery <0..100>|off | cable in|out
+ *   profile <x360|ds4|ds3|ps3pad|psc|generic> [usb|bt] | plug | unplug | battery <0..100>|off | cable in|out
  *
  * A USB keyboard ("AutoBleem Test Keyboard", 1209:ab02, starts unplugged; the kernel repeats a held key):
  *   kbd plug | kbd unplug
@@ -77,6 +89,9 @@ struct button {
     int code;
 };
 
+/* what the d-pad is made of */
+enum { DPAD_HAT, DPAD_BUTTONS, DPAD_AXES };
+
 struct profile {
     const char *name;
     const char *deviceName;
@@ -85,6 +100,10 @@ struct profile {
     int triggerButtons;                                    /* the driver also reports L2/R2 as buttons */
     int hasBattery;
     int smallSticks; /* sticks 0..255 (centre 128), not -32768..32767 */
+    int dpad;        /* DPAD_HAT: ABS_HAT0X/Y; DPAD_BUTTONS: BTN_DPAD_*; DPAD_AXES: the left stick's axes, 0 / 1 / 2 */
+    int rightX, rightY;     /* the right stick's axes, -1: none */
+    int triggerL, triggerR; /* the analog trigger axes, -1: the triggers are buttons (or there are none) */
+    unsigned spareAxes;     /* a bit per ABS code: axes the pad has and nothing drives */
 };
 
 /* xpad */
@@ -95,20 +114,72 @@ static const struct button x360Buttons[] = {
 };
 /* hid-playstation / hid-sony's DualShock 4: Cross South, Circle East, Triangle North, Square West */
 static const struct button ds4Buttons[] = {
-    {"a", BTN_SOUTH},       {"b", BTN_EAST},
-    {"y", BTN_NORTH},       {"x", BTN_WEST},
-    {"l1", BTN_TL},         {"r1", BTN_TR},
-    {"l2", BTN_TL2},        {"r2", BTN_TR2},
-    {"select", BTN_SELECT}, {"start", BTN_START},
-    {"guide", BTN_MODE},    {"l3", BTN_THUMBL},
-    {"r3", BTN_THUMBR},     {0, 0},
+    {"a", BTN_SOUTH},       {"cross", BTN_SOUTH}, {"b", BTN_EAST},
+    {"circle", BTN_EAST},   {"y", BTN_NORTH},     {"triangle", BTN_NORTH},
+    {"x", BTN_WEST},        {"square", BTN_WEST}, {"l1", BTN_TL},
+    {"r1", BTN_TR},         {"l2", BTN_TL2},      {"r2", BTN_TR2},
+    {"select", BTN_SELECT}, {"start", BTN_START}, {"guide", BTN_MODE},
+    {"l3", BTN_THUMBL},     {"r3", BTN_THUMBR},   {0, 0},
+};
+/* hid-sony's DualShock 3 (sixaxis_keymap): the same codes as the DS4's, and the d-pad as four buttons after them
+ * (SDL numbers b0 cross .. b12 r3, b13 up, b14 down, b15 left, b16 right) */
+static const struct button ds3Buttons[] = {
+    {"a", BTN_SOUTH},
+    {"cross", BTN_SOUTH},
+    {"b", BTN_EAST},
+    {"circle", BTN_EAST},
+    {"y", BTN_NORTH},
+    {"triangle", BTN_NORTH},
+    {"x", BTN_WEST},
+    {"square", BTN_WEST},
+    {"l1", BTN_TL},
+    {"r1", BTN_TR},
+    {"l2", BTN_TL2},
+    {"r2", BTN_TR2},
+    {"select", BTN_SELECT},
+    {"start", BTN_START},
+    {"guide", BTN_MODE},
+    {"ps", BTN_MODE},
+    {"l3", BTN_THUMBL},
+    {"r3", BTN_THUMBR},
+    {"dpup", BTN_DPAD_UP},
+    {"dpdown", BTN_DPAD_DOWN},
+    {"dpleft", BTN_DPAD_LEFT},
+    {"dpright", BTN_DPAD_RIGHT},
+    {0, 0},
+};
+/* a third-party pad in PS3 mode (generic HID, joystick buttons b0..b12 in SDL's database line): Square b0, Cross b1,
+ * Circle b2, Triangle b3, L1 b4, R1 b5, L2 b6, R2 b7, Select b8, Start b9, L3 b10, R3 b11, PS b12 */
+static const struct button ps3padButtons[] = {
+    {"x", 0x120},      {"square", 0x120}, {"a", 0x121},        {"cross", 0x121}, {"b", 0x122},
+    {"circle", 0x122}, {"y", 0x123},      {"triangle", 0x123}, {"l1", 0x124},    {"r1", 0x125},
+    {"l2", 0x126},     {"r2", 0x127},     {"select", 0x128},   {"start", 0x129}, {"l3", 0x12a},
+    {"r3", 0x12b},     {"guide", 0x12c},  {"ps", 0x12c},       {0, 0},
+};
+/* the PlayStation Classic's pad, as abpad's psc-kernel layout (apps/abpad kernel_pad.cpp) makes it: BTN_A..BTN_TR2 in
+ * Sony's order Triangle, Circle, Cross, Square, L2, R2, L1, R1, Select, Start */
+static const struct button pscButtons[] = {
+    {"y", 0x130},     {"triangle", 0x130}, {"b", 0x131},      {"circle", 0x131}, {"a", 0x132},
+    {"cross", 0x132}, {"x", 0x133},        {"square", 0x133}, {"l2", 0x134},     {"r2", 0x135},
+    {"l1", 0x136},    {"r1", 0x137},       {"select", 0x138}, {"start", 0x139},  {0, 0},
 };
 
+#define NOT_AXIS (-1)
+
 static const struct profile profiles[] = {
-    {"x360", "Microsoft X-Box 360 pad", 0x045e, 0x028e, 0x0114, 0, x360Buttons, 0, 0, 0},
-    {"ds4", "Wireless Controller", 0x054c, 0x09cc, 0x8111, 0x8100, ds4Buttons, 1, 1, 1},
+    {"x360", "Microsoft X-Box 360 pad", 0x045e, 0x028e, 0x0114, 0, x360Buttons, 0, 0, 0, DPAD_HAT, ABS_RX, ABS_RY,
+     ABS_Z, ABS_RZ, 0},
+    {"ds4", "Wireless Controller", 0x054c, 0x09cc, 0x8111, 0x8100, ds4Buttons, 1, 1, 1, DPAD_HAT, ABS_RX, ABS_RY, ABS_Z,
+     ABS_RZ, 0},
+    {"ds3", "Sony PLAYSTATION(R)3 Controller", 0x054c, 0x0268, 0x8111, 0, ds3Buttons, 1, 0, 1, DPAD_BUTTONS, ABS_RX,
+     ABS_RY, ABS_Z, ABS_RZ, 0},
+    {"ps3pad", "Sony Interactive Entertainment PS4PCPS3Android Gamepad", 0x0c12, 0x0e16, 0x0111, 0, ps3padButtons, 1, 0,
+     1, DPAD_HAT, ABS_Z, ABS_RZ, NOT_AXIS, NOT_AXIS, (1u << ABS_RX) | (1u << ABS_RY)},
+    {"psc", "Sony Interactive Entertainment Controller", 0x054c, 0x0cda, 0x0111, 0, pscButtons, 1, 0, 0, DPAD_AXES,
+     NOT_AXIS, NOT_AXIS, NOT_AXIS, NOT_AXIS, 0},
     /* ids no pad has: SDL has no mapping for it */
-    {"generic", "AutoBleem Test Pad", 0x1209, 0xab01, 0x0100, 0x0100, ds4Buttons, 1, 1, 1},
+    {"generic", "AutoBleem Test Pad", 0x1209, 0xab01, 0x0100, 0x0100, ds4Buttons, 1, 1, 1, DPAD_HAT, ABS_RX, ABS_RY,
+     ABS_Z, ABS_RZ, 0},
 };
 
 /* the USB keyboard: key names as a tester types them, in no particular order */
@@ -214,9 +285,10 @@ static int kbdfd = -1;
 struct pad {
     const struct profile *profile;
     int bluetooth;
-    int fd;    /* the uinput device, -1: unplugged */
-    int level; /* battery percent, -1: no battery node */
-    int cable; /* a charging cable in */
+    int fd;     /* the uinput device, -1: unplugged */
+    int level;  /* battery percent, -1: no battery node */
+    int cable;  /* a charging cable in */
+    int hx, hy; /* the d-pad: -1, 0, 1 on each axis (up is hy -1) */
 };
 
 static struct pad pads[PADS];
@@ -261,6 +333,8 @@ static void mac(int index, char *out, size_t size) {
     snprintf(out, size, "aa:bb:cc:00:ab:%02x", index + 1);
 }
 
+static void resetPad(struct pad *p);
+
 static int plugPad(struct pad *p) {
     if (p->fd >= 0)
         return 0;
@@ -274,17 +348,33 @@ static int plugPad(struct pad *p) {
     for (const struct button *b = pr->buttons; b->name; b++)
         ioctl(fd, UI_SET_KEYBIT, b->code);
     ioctl(fd, UI_SET_EVBIT, EV_ABS);
-    /* both drivers: the sticks on X/Y and RX/RY, the triggers on Z/RZ, the d-pad a hat */
+    /* the left stick on X/Y (the console pad's d-pad: 0 / 1 / 2), the right stick, the triggers and the d-pad hat
+     * where the profile has them */
     int lo = pr->smallSticks ? 0 : -32768, hi = pr->smallSticks ? 255 : 32767;
     int fuzz = pr->smallSticks ? 0 : 16, flat = pr->smallSticks ? 0 : 128;
-    setupAxis(fd, ABS_X, lo, hi, fuzz, flat);
-    setupAxis(fd, ABS_Y, lo, hi, fuzz, flat);
-    setupAxis(fd, ABS_Z, 0, 255, 0, 0);
-    setupAxis(fd, ABS_RX, lo, hi, fuzz, flat);
-    setupAxis(fd, ABS_RY, lo, hi, fuzz, flat);
-    setupAxis(fd, ABS_RZ, 0, 255, 0, 0);
-    setupAxis(fd, ABS_HAT0X, -1, 1, 0, 0);
-    setupAxis(fd, ABS_HAT0Y, -1, 1, 0, 0);
+    if (pr->dpad == DPAD_AXES) {
+        setupAxis(fd, ABS_X, 0, 2, 0, 0);
+        setupAxis(fd, ABS_Y, 0, 2, 0, 0);
+    } else {
+        setupAxis(fd, ABS_X, lo, hi, fuzz, flat);
+        setupAxis(fd, ABS_Y, lo, hi, fuzz, flat);
+    }
+    if (pr->rightX >= 0) {
+        setupAxis(fd, pr->rightX, lo, hi, fuzz, flat);
+        setupAxis(fd, pr->rightY, lo, hi, fuzz, flat);
+    }
+    if (pr->triggerL >= 0) {
+        setupAxis(fd, pr->triggerL, 0, 255, 0, 0);
+        setupAxis(fd, pr->triggerR, 0, 255, 0, 0);
+    }
+    for (int code = 0; code < 32; code++)
+        if (pr->spareAxes & (1u << code))
+            setupAxis(fd, code, 0, 255, 0, 0);
+    if (pr->dpad == DPAD_HAT) {
+        setupAxis(fd, ABS_HAT0X, -1, 1, 0, 0);
+        setupAxis(fd, ABS_HAT0Y, -1, 1, 0, 0);
+    }
+    p->hx = p->hy = 0;
 
     struct uinput_setup setup;
     memset(&setup, 0, sizeof(setup));
@@ -306,6 +396,7 @@ static int plugPad(struct pad *p) {
         return -1;
     }
     p->fd = fd;
+    resetPad(p); /* a new uinput axis reads 0: the sticks to their centre, the console pad's d-pad to 1 */
     return 0;
 }
 
@@ -335,30 +426,81 @@ static void reply(const char *msg) {
     }
 }
 
+/* the d-pad as the profile makes it: the hat, four buttons, or the left stick's two axes (0 / 1 / 2) */
+static void emitDpad(struct pad *p) {
+    switch (p->profile->dpad) {
+    case DPAD_HAT:
+        emit(p, EV_ABS, ABS_HAT0X, p->hx);
+        emit(p, EV_ABS, ABS_HAT0Y, p->hy);
+        break;
+    case DPAD_BUTTONS:
+        emit(p, EV_KEY, BTN_DPAD_LEFT, p->hx < 0);
+        emit(p, EV_KEY, BTN_DPAD_RIGHT, p->hx > 0);
+        emit(p, EV_KEY, BTN_DPAD_UP, p->hy < 0);
+        emit(p, EV_KEY, BTN_DPAD_DOWN, p->hy > 0);
+        break;
+    default:
+        emit(p, EV_ABS, ABS_X, p->hx + 1);
+        emit(p, EV_ABS, ABS_Y, p->hy + 1);
+        break;
+    }
+}
+
 static void resetPad(struct pad *p) {
-    for (const struct button *b = p->profile->buttons; b->name; b++)
+    const struct profile *pr = p->profile;
+    for (const struct button *b = pr->buttons; b->name; b++)
         emit(p, EV_KEY, b->code, 0);
-    emit(p, EV_ABS, ABS_X, stickValue(p, 0));
-    emit(p, EV_ABS, ABS_Y, stickValue(p, 0));
-    emit(p, EV_ABS, ABS_RX, stickValue(p, 0));
-    emit(p, EV_ABS, ABS_RY, stickValue(p, 0));
-    emit(p, EV_ABS, ABS_Z, 0);
-    emit(p, EV_ABS, ABS_RZ, 0);
-    emit(p, EV_ABS, ABS_HAT0X, 0);
-    emit(p, EV_ABS, ABS_HAT0Y, 0);
+    if (pr->dpad != DPAD_AXES) {
+        emit(p, EV_ABS, ABS_X, stickValue(p, 0));
+        emit(p, EV_ABS, ABS_Y, stickValue(p, 0));
+    }
+    if (pr->rightX >= 0) {
+        emit(p, EV_ABS, pr->rightX, stickValue(p, 0));
+        emit(p, EV_ABS, pr->rightY, stickValue(p, 0));
+    }
+    if (pr->triggerL >= 0) {
+        emit(p, EV_ABS, pr->triggerL, 0);
+        emit(p, EV_ABS, pr->triggerR, 0);
+    }
+    p->hx = p->hy = 0;
+    emitDpad(p);
     syn(p);
 }
 
-static int triggerAxis(const char *name) {
+static int triggerAxis(struct pad *p, const char *name) {
     if (!strcmp(name, "l2"))
-        return ABS_Z;
+        return p->profile->triggerL;
     if (!strcmp(name, "r2"))
-        return ABS_RZ;
+        return p->profile->triggerR;
     return -1;
 }
 
+/* "up" "down" "left" "right" as a button: the d-pad's direction, whatever the pad's d-pad is made of */
+static int directionOf(const char *name, int *dx, int *dy) {
+    *dx = *dy = 0;
+    if (!strcmp(name, "up"))
+        *dy = -1;
+    else if (!strcmp(name, "down"))
+        *dy = 1;
+    else if (!strcmp(name, "left"))
+        *dx = -1;
+    else if (!strcmp(name, "right"))
+        *dx = 1;
+    return *dx || *dy;
+}
+
 static int setButton(struct pad *p, const char *name, int down) {
-    int axis = triggerAxis(name);
+    int dx, dy;
+    if (directionOf(name, &dx, &dy)) {
+        if (dx)
+            p->hx = down ? dx : (p->hx == dx ? 0 : p->hx);
+        if (dy)
+            p->hy = down ? dy : (p->hy == dy ? 0 : p->hy);
+        emitDpad(p);
+        syn(p);
+        return 0;
+    }
+    int axis = triggerAxis(p, name);
     int code = buttonCode(p, name);
     if (axis < 0 && code < 0)
         return -1;
@@ -414,7 +556,7 @@ static int syncBattery(struct pad *p) {
 
 static void ping(void) {
     char msg[256];
-    int n = snprintf(msg, sizeof(msg), "ok padsim 5");
+    int n = snprintf(msg, sizeof(msg), "ok padsim 6");
     for (int i = 0; i < PADS; i++)
         n += snprintf(msg + n, sizeof(msg) - n, " %d:%s/%s/%s", i + 1, pads[i].profile->name,
                       pads[i].bluetooth ? "bt" : "usb", pads[i].fd >= 0 ? "plugged" : "unplugged");
@@ -630,7 +772,7 @@ static void handleLine(char *line) {
                 wanted = &profiles[i];
         int bt = n >= 3 && !strcmp(a2, "bt");
         if (!wanted || (n >= 3 && !bt && strcmp(a2, "usb"))) {
-            reply("err profile: x360|ds4|generic [usb|bt]");
+            reply("err profile: x360|ds4|ds3|ps3pad|psc|generic [usb|bt]");
         } else if (bt && !wanted->btVersion) {
             reply("err no such pad over Bluetooth");
         } else {
@@ -693,20 +835,32 @@ static void handleLine(char *line) {
             reply("err unknown stick");
             return;
         }
-        emit(p, EV_ABS, left ? ABS_X : ABS_RX, stickValue(p, clampInt(atoi(a2), -32768, 32767)));
-        emit(p, EV_ABS, left ? ABS_Y : ABS_RY, stickValue(p, clampInt(atoi(a3), -32768, 32767)));
+        const struct profile *pr = p->profile;
+        int ax = left ? ABS_X : pr->rightX, ay = left ? ABS_Y : pr->rightY;
+        if (ax < 0 || (left && pr->dpad == DPAD_AXES)) {
+            reply("err this pad has no such stick");
+            return;
+        }
+        emit(p, EV_ABS, ax, stickValue(p, clampInt(atoi(a2), -32768, 32767)));
+        emit(p, EV_ABS, ay, stickValue(p, clampInt(atoi(a3), -32768, 32767)));
         syn(p);
         reply("ok");
     } else if (!strcmp(cmd, "trigger") && n >= 3) {
-        int axis = triggerAxis(a1);
-        if (axis < 0) {
+        if (strcmp(a1, "l2") && strcmp(a1, "r2")) {
             reply("err unknown trigger");
             return;
         }
+        int axis = triggerAxis(p, a1);
+        int code = p->profile->triggerButtons ? buttonCode(p, a1) : -1;
+        if (axis < 0 && code < 0) {
+            reply("err this pad has no such trigger");
+            return;
+        }
         int value = clampInt(atoi(a2), 0, 255);
-        emit(p, EV_ABS, axis, value);
-        if (p->profile->triggerButtons)
-            emit(p, EV_KEY, axis == ABS_Z ? BTN_TL2 : BTN_TR2, value > 0);
+        if (axis >= 0)
+            emit(p, EV_ABS, axis, value);
+        if (code >= 0)
+            emit(p, EV_KEY, code, value > 0);
         syn(p);
         reply("ok");
     } else if (!strcmp(cmd, "dpad") && n >= 2) {
@@ -723,8 +877,9 @@ static void handleLine(char *line) {
             reply("err unknown direction");
             return;
         }
-        emit(p, EV_ABS, ABS_HAT0X, hx);
-        emit(p, EV_ABS, ABS_HAT0Y, hy);
+        p->hx = hx;
+        p->hy = hy;
+        emitDpad(p);
         syn(p);
         reply("ok");
     } else {

@@ -77,11 +77,15 @@ that really run in the guest (state files and the guest's own process list) and 
 running ones - `sandbox stop <name>` (with its lease) frees a slot.
 
 Scripts: steps separated by ';'. Pad steps: press/release <btn>, hold <btn> <ms>, tap <btn> (a 120 ms hold),
-stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile <x360|ds4|generic>
-[usb|bt] (the pad replugged as that pad - ds4 over bt is a Bluetooth DualShock 4, generic one SDL has no mapping
-for), unplug, plug, battery <0..100> | battery off, cable in|out. Up to four pads: `@2 profile ds4 bt` sends to pad
+stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile
+<x360|ds4|ds3|ps3pad|psc|generic> [usb|bt] (the pad replugged as that pad - ds4 over bt is a Bluetooth DualShock 4,
+ds3 a wired DualShock 3 (d-pad as buttons), ps3pad the owner's third-party PS3-mode pad (0c12:0e16, hat), psc the
+PlayStation Classic's pad (054c:0cda, 10 buttons, d-pad on axes), generic one SDL has no mapping for), unplug, plug,
+battery <0..100> | battery off, cable in|out. Up to four pads: `@2 profile ds4 bt` sends to pad
 2 (no @ = pad 1; pads 2-4 start unplugged). Buttons: a b x y l1 r1 l2 r2
-select start guide l3 r3 - the Xbox names on every profile (a = Cross, b = Circle, x = Square, y = Triangle).
+select start guide l3 r3 - the Xbox names on every profile (a = Cross, b = Circle, x = Square, y = Triangle); cross
+circle square triangle and up down left right (the d-pad's directions, on any profile) work too (not in the sandbox
+driver's own pads, which have only x360, ds4 and generic).
 `wait <ms>`, and in `run` also `shot <name.png>` (the VM's whole screen) and the launcher's own DebugDriver words
 (screen, wait_screen, wait_idle, key, text, grab, menu, quick, items, frames, window, down, up), sent to the stick's
 launcher - so a script written with `@1` before each pad step runs the same in `run` and in `sandbox drive`, where

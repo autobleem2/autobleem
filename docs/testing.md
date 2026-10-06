@@ -106,6 +106,12 @@ The driver can make up to four pads inside the program, with the same commands a
 | `@1 battery 20`, `@1 battery off` | the pad's battery level (not on an x360, which is wired) |
 | `@1 cable in`, `@1 cable out` | a charging cable: "Charging", "Full" at 100, or back on the battery |
 
+The VM's padsim (`abvm.py run` / `pad`) has three more profiles the sandbox driver does not (yet) make: `ds3` (a wired
+DualShock 3, 054c:0268, hid-sony's codes, the d-pad as four buttons), `ps3pad` (the owner's third-party pad in PS3
+mode, 0c12:0e16, 13 generic buttons and a hat) and `psc` (the PlayStation Classic's pad, 054c:0cda, 10 buttons, no
+hat, the d-pad on ABS_X/ABS_Y). In `run` all of them take `cross circle square triangle`, `l1 r1 l2 r2 select start
+guide l3 r3` and `up down left right` (`@1 profile ds3 usb; @1 tap cross; @1 press up`); `dpad` works on every profile.
+
 `@n` picks the pad (1-4); without it the command goes to pad 1. Pad 1 is plugged in as an x360 by its first
 command; pads 2-4 wait for `plug` or `profile`. **Always write the `@n` in a script meant for both the sandbox and
 the VM**: `press x` without it is the driver's older logical press (a Cross, down and up), not padsim's.
