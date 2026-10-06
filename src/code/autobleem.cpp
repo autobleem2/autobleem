@@ -391,15 +391,16 @@ int AutoBleem::run() {
 
     restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
 
-    gui_->display(false);
     // the CRT's safe area (overscan): the 4:3 frame goes into a centred rectangle of the 720x480 output, the margin
-    // from config.ini - only while the window really is the CRT mode (before the keep-mode question, which is drawn in
-    // it too)
+    // from config.ini - only while the window really is the CRT mode. Before display(): its boot splash is the first
+    // 4:3 frame, and it would be shown with the renderer's default margin instead of config.ini's (CRT 4:3 round 2:
+    // Crtmargin=0 still drew the 5 % margin), and before the keep-mode question, which is drawn in it too
     {
         const ableem::Size window = gui_->platform().windowSize();
         const bool crt = OutputMode::parse(OutputMode::CrtToken()).shownAt(window.w, window.h);
         gui_->renderer().setSafeMargin(crt ? OutputMode::crtMargin(cfg_.inifile.values[OutputMode::MarginKey]) : 0);
     }
+    gui_->display(false);
     unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
 
     // Options -> Display on the console: rc/boot.sh has just restarted Weston in the mode to try - kept, or the
