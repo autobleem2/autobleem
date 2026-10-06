@@ -74,6 +74,9 @@ done
 # - payload/ no longer carries a Themes/ folder, so it is copied in separately here
 mkdir -p "$STAGE/Themes"
 cp -a "$REPO/autobleem-themes/Themes/." "$STAGE/Themes/"
+# a theme folder in the repository does not mean it ships: tools/unshipped_themes.txt (ab2)
+. "$REPO/tools/unshipped_themes.sh"
+drop_unshipped_themes "$STAGE/Themes"
 
 # the launcher and its resources
 APP="$STAGE/Autobleem/bin/autobleem"

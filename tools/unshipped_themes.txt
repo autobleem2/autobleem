@@ -1,0 +1,9 @@
+# Theme folders of the autobleem-themes repository that no package ships (one folder name per line; a
+# theme folder in the repository does not mean it ships - the packaging scripts skip what is listed here).
+# Read by tools/unshipped_themes.sh (make_psc_package.sh, make_win_package.sh) and tools/unshipped_themes.py
+# (make_usb.py, install_autobleem.py). autobleem-appliance's tools/release_assets.sh keeps the same list for the
+# release packages (UNSHIPPED_THEMES) - change both.
+#
+# ab2: the experimental first theme, out of every package on 2026-10-06 (the owner). Its folder - with ab.ogg,
+# the owner's own music - stays in the themes repository, and a stick that has it already keeps it.
+ab2

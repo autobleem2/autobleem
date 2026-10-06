@@ -1008,14 +1008,6 @@ Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium)
 Copyright 2016 The Saira Project Authors (omnibus.type@gmail.com), with Reserved Font Name "Saira". The licence text is in the submodule's Themes/default/OFL.txt.
 ```
 
-## Selawik
-
-*autobleem-themes submodule, Themes/ab2/selawik-light.ttf - the ab2 theme's font* - **SIL Open Font License 1.1**
-
-```
-Copyright 2015 Microsoft Corporation (https://github.com/microsoft/Selawik). See the submodule's Themes/ab2/OFL.txt.
-```
-
 ## Space Shooter Redux (Kenney) and "Venus" (SketchyLogic)
 
 *src/resources/surprise_game - the About screen's game* - **CC0 1.0**

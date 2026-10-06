@@ -225,6 +225,13 @@ jobs:
               || { echo "::error::libs.tar.gz has no SDL2_mixer 2.x (x >= 1)"; exit 1; }
             echo "libs.tar.gz: $(tar -tzf stage/Autobleem/lib/libs.tar.gz | grep -E '\.so\.[0-9]+\.[0-9]+' | sed 's|^\./||' | tr '\n' ' ')"
           fi
+          if [ "${{ matrix.target }}" != psc ]; then
+            # the Linux appliances' rc scripts (launch.sh, retroarch.sh, app_*.sh, ab_log.sh): payload_linux/Autobleem/rc
+            # of THIS repository is their only source - autobleem-appliance keeps no copy and takes them from here
+            # (assemble.sh extracts this artifact over its skeleton; tools/make_rpi_package.sh reads the checkout)
+            cp -a payload_linux/Autobleem/rc stage/Autobleem/rc
+            chmod +x stage/Autobleem/rc/*.sh
+          fi
           find stage -type f -name placeholder -delete
           tar -czf "out/launcher-$P-$V.tar.gz" -C stage .
           echo "plat=$P" >> "$GITHUB_OUTPUT"
