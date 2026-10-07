@@ -556,17 +556,18 @@ TEST_CASE("pe_run.sh: no ALSA card lets SDL use the dummy audio driver, a card o
     }
     const string run = "sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\"\n";
     struct Case {
-        const char *cards;      // /proc/asound/cards as the machine has it; nullptr = no such file
-        const char *preset;     // SDL_AUDIODRIVER the caller already has
-        const char *expect;     // what the mod sees
+        const char *cards;  // /proc/asound/cards as the machine has it; nullptr = no such file
+        const char *preset; // SDL_AUDIODRIVER the caller already has
+        const char *expect; // what the mod sees
         bool logged;
     };
     const Case cases[] = {
-        {"--- no soundcards ---\n", "", "dummy", true},                                    // the module is there, no card
-        {nullptr, "", "dummy", true},                                                      // no ALSA at all
-        {" 0 [PCH            ]: HDA-Intel - HDA Intel PCH\n", "", "", false},            // a PC with sound
-        {"--- no soundcards ---\n", "alsa", "alsa", false},                                // a driver was chosen: not ours to change
-        {" 0 [PCH            ]: HDA-Intel - HDA Intel PCH\n                      HDA Intel PCH at 0xf7 irq 31\n", "", "", false},
+        {"--- no soundcards ---\n", "", "dummy", true},                       // the module is there, no card
+        {nullptr, "", "dummy", true},                                         // no ALSA at all
+        {" 0 [PCH            ]: HDA-Intel - HDA Intel PCH\n", "", "", false}, // a PC with sound
+        {"--- no soundcards ---\n", "alsa", "alsa", false},                   // a driver was chosen: not ours to change
+        {" 0 [PCH            ]: HDA-Intel - HDA Intel PCH\n                      HDA Intel PCH at 0xf7 irq 31\n", "",
+         "", false},
     };
     for (const Case &c : cases) {
         PeRun pe;

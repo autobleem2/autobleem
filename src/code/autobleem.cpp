@@ -326,8 +326,8 @@ void AutoBleem::launchGame() {
     PLOG_INFO << "Starting game";
     const bool retroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
     const PsGame *running = session_.runningGame.get();
-    const char *picture = waitingPictureName(running && running->foreign, running && running->app,
-                                             session_.emuMode != EmuMode::Pcsx);
+    const char *picture =
+        waitingPictureName(running && running->foreign, running && running->app, session_.emuMode != EmuMode::Pcsx);
     runOutside(retroArch, picture, [this]() {
         launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint, session_.package.get());
     });
