@@ -19,6 +19,11 @@ screen. For the loop "code -> build -> install in the VM -> try it -> fix" witho
   python tools/vm/abvm.py clip SECONDS OUT.mp4           the VM's screen as a video (ffmpeg on the test machine);
                                                          in `run`: clip start <name.mp4>; ...steps...; clip stop
   python tools/vm/abvm.py restart                        restart the launcher, wait until its DebugDriver answers
+  python tools/vm/abvm.py update [--version V]           the stick to the newest pcusb nightly of the site (or V; a
+                                                         given V is always installed): downloaded into the guest's
+                                                         System/Updates/, sha256 checked, pending.json, then the
+                                                         package update path (autobleem-update); prints VERSION
+                                                         before and after, says "already on <v>" when it is
   python tools/vm/abvm.py remount                        after a hard reset the stick's exFAT may not mount (udev made no
                                                          /dev/disk/by-uuid link, the mount unit failed "Dependency
                                                          failed"): finds the stick's partition from the mount unit,
@@ -118,6 +123,7 @@ docs/pc-test-machine.md (autobleem-main) describes the machine, the VM and padsi
 Never pipes into ssh (on Windows the EOF never arrives): files go by scp, commands as arguments.
 """
 import hashlib
+import json
 import os
 import re
 import shlex
@@ -403,6 +409,54 @@ def restart(timeout=90):
             return
         time.sleep(1)
     raise Fail(f'the launcher did not open its DebugDriver in {timeout} s (journalctl -u autobleem in the guest)')
+
+
+SITE = os.environ.get('ABVM_SITE', 'https://autobleem.retromenele.pl')
+STICK_ROOT = '/media/autobleem'
+
+
+def update(version=None):
+    """the stick to the newest pcusb nightly (or `version`) by the package update path - what the launcher's own
+    Software Update does: the package into System/Updates/ with pending.json, then autobleem-update (install.sh
+    --update: games, saves, settings, Home/ and System/Processors/ are kept). Never `install ... launcher`."""
+    before = guest_run(f'cat {STICK_ROOT}/VERSION', check=False).strip()
+    print(f'VERSION before: {before or "(none)"}')
+    published = ''
+    if not version:
+        latest = json.loads(guest_run(f'curl -fsS -m 30 {SITE}/nightly/latest.json'))
+        version = latest['version']
+        published = (latest.get('files', {}).get('pcusb') or {}).get('sha256', '')
+        if version == before:
+            print(f'already on {version}')
+            return
+    name = f'autobleem-pcusb-i386-{version}.tar.gz'
+    url = f'{SITE}/nightly/{version}/{name}'
+    sums = guest_run(f'curl -fsS -m 30 {url}.sha256', check=False).split()
+    if not sums:
+        raise Fail(f'the site publishes no {name}.sha256 - is {version} a pcusb nightly?')
+    sha = sums[0]
+    if published and published != sha:
+        raise Fail(f'the site disagrees with itself: latest.json says {published}, {name}.sha256 says {sha}')
+    updates = f'{STICK_ROOT}/System/Updates'
+    print(f'downloading {name}')
+    got = guest_run(f'set -e; mkdir -p {updates}; curl -fsS -m 600 -o {updates}/{name} {url}; '
+                    f'sha256sum {updates}/{name}', check=False).split()
+    if not got or got[0] != sha:
+        guest_run(f'rm -f {updates}/{name}', check=False)
+        raise Fail(f'sha256 of the download ({got[0] if got else "nothing downloaded"}) differs from the published {sha}')
+    pending = json.dumps({'autobleem_version': version, 'autobleem_file': name})
+    guest_run(f'printf %s {shlex.quote(pending)} > {updates}/pending.json')
+    print('sha256 ok, applying (autobleem-update)')
+    out = guest_run('sudo systemctl stop autobleem.service; sudo autobleem-update >/tmp/abvm-update.log 2>&1; '
+                    'echo rc=$?; tail -n 3 /tmp/abvm-update.log | cat -v; sudo rm -f /tmp/abvm-update.log', check=False)
+    print(out.strip())
+    ok = re.search(r'^rc=0$', out, re.M) is not None
+    restart()
+    after = guest_run(f'cat {STICK_ROOT}/VERSION', check=False).strip()
+    print(f'VERSION after: {after}')
+    if not ok or after != version:
+        raise Fail(f'the update did not end on {version} (System/Logs/update.log on the stick; the download stays in '
+                   f'System/Updates for another try)')
 
 
 # ------------------------------------------------------------------ the screen
@@ -788,7 +842,7 @@ def lease_subject():
 LOCK_MINUTES = 30      # a lease's default length
 LOCK_KEEPALIVE = 10    # every command of the holder keeps the lease at least this many minutes ahead
 # what changes the VM or its screen; status, shot and lock itself never need the lease
-NEEDS_LEASE = {'install', 'restore', 'restart', 'remount','clip', 'pad', 'run', 'drive', 'padsim-install', 'guest'}
+NEEDS_LEASE = {'install', 'restore', 'restart', 'update', 'remount','clip', 'pad', 'run', 'drive', 'padsim-install', 'guest'}
 WHO = os.environ.get('ABVM_WHO', '')
 
 
@@ -1690,6 +1744,8 @@ def main(argv):
             restore()
         elif cmd == 'restart':
             restart()
+        elif cmd == 'update':
+            update(args[args.index('--version') + 1] if '--version' in args else None)
         elif cmd == 'remount':
             print('\n'.join(remount()))
         elif cmd == 'shot':
