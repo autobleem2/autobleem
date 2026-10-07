@@ -284,6 +284,11 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_package_picker.cpp
         src/code/evoui/screens/evoui_package_picker.h
         src/code/evoui/screens/package_picker_logic.h
+        src/code/evoui/screens/evoui_panel_common.h
+        src/code/evoui/screens/evoui_ra_manager.cpp
+        src/code/evoui/screens/evoui_ra_manager.h
+        src/code/evoui/screens/human_bytes.h
+        src/code/evoui/screens/ra_manager_logic.h
         src/code/evoui/screens/evoui_processors.cpp
         src/code/evoui/screens/evoui_processors.h
         src/code/evoui/screens/evoui_set_picker.cpp

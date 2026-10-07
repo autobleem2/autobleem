@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 589
 
 %1 needs game data it can run: %2.=%1 potřebuje herní data, která umí spustit: %2.
 (changed)=(změněno)
@@ -546,3 +546,49 @@ Install Windows=Nainstalovat Windows
 Run DOS=Spustit DOS
 Uninstall Windows=Odinstalovat Windows
 Press one of the buttons.=Stiskněte jedno z tlačítek.
+Also delete the BIOS files=Smazat také soubory BIOS
+Checking...=Kontroluje se...
+Delete RetroArch and its cores - games, saves and BIOS files stay=Smaže RetroArch a jeho jádra - hry, uložené hry a soubory BIOS zůstanou
+Download RetroArch with its cores and apps=Stáhne RetroArch s jádry a aplikacemi
+Downloading BIOS files=Stahují se soubory BIOS
+Downloading cores=Stahují se jádra
+Downloading libraries and apps=Stahují se knihovny a aplikace
+Downloading RetroArch=Stahuje se RetroArch
+Finishing=Dokončuje se
+Go on=Pokračovat
+Install=Nainstalovat
+Install RetroArch...=Nainstalovat RetroArch...
+Install RetroArch? It is downloaded from the AutoBleem site - this can take a few minutes.=Nainstalovat RetroArch? Stáhne se z webu AutoBleem - může to trvat několik minut.
+Install, update or remove RetroArch=Nainstalovat, aktualizovat nebo odebrat RetroArch
+Installed=Nainstalováno
+Installed by the system - it cannot be removed here=Nainstalováno systémem - zde nelze odebrat
+Installing cores=Instalují se jádra
+Installing RetroArch=Instaluje se RetroArch
+No network connection=Žádné připojení k síti
+No reason given=Důvod nebyl uveden
+Not enough free space on the stick=Na kartě není dost volného místa
+Preparing=Příprava
+Remove=Odebrat
+Remove RetroArch and delete the BIOS files too? Cores that need them will not start until the files are put back.=Odebrat RetroArch a smazat i soubory BIOS? Jádra, která je potřebují, se nespustí, dokud soubory nevrátíte.
+Remove RetroArch and the BIOS files too=Odebere RetroArch i soubory BIOS
+Remove RetroArch? Your games, saves and BIOS files stay.=Odebrat RetroArch? Vaše hry, uložené hry a soubory BIOS zůstanou.
+Removing BIOS files=Odebírají se soubory BIOS
+Removing RetroArch=Odebírá se RetroArch
+RetroArch is installed=RetroArch je nainstalován
+RetroArch is not installed - download it here=RetroArch není nainstalován - stáhněte jej zde
+RetroArch is removed=RetroArch byl odebrán
+RetroArch is updated=RetroArch byl aktualizován
+RetroArch...=RetroArch...
+Start it again to carry on where it stopped=Spusťte to znovu a pokračuje se tam, kde se přestalo
+Stop=Zastavit
+Stop? The job can be carried on later.=Zastavit? Úlohu lze později dokončit.
+Stopped=Zastaveno
+Stopping...=Zastavuje se...
+The installation failed=Instalace se nezdařila
+The removal failed=Odebrání se nezdařilo
+The update failed=Aktualizace se nezdařila
+Up to date=Aktuální
+Update=Aktualizovat
+Update RetroArch? The new version is downloaded from the AutoBleem site.=Aktualizovat RetroArch? Nová verze se stáhne z webu AutoBleem.
+Update to=Aktualizovat na
+Updating RetroArch=Aktualizuje se RetroArch

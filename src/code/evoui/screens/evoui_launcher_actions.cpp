@@ -25,6 +25,7 @@
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
+#include "evoui_ra_manager.h"
 #include "evoui_extensions.h"
 #include "evoui_package_info.h"
 #include "evoui_package_picker.h"
@@ -600,6 +601,7 @@ void GuiLauncher::loop_openSystemMenu() {
         GuiSystemMenu systemMenu(*gui);
         systemMenu.retroArchLabel = retroArchLabel;
         systemMenu.retroArchInstalled = retroArchInstalledCached();
+        systemMenu.raJobSupported = app.raJob().supported();
         systemMenu.scanInProgress = app.scans().scanning();
         systemMenu.networkUnavailable = networkUnavailable();
         systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
@@ -630,6 +632,7 @@ void GuiLauncher::loop_openQuickMenu() {
         quickMenu.kind = GuiSystemMenu::Kind::Quick;
         quickMenu.scanInProgress = app.scans().scanning();
         quickMenu.retroArchInstalled = retroArchInstalledCached(); // the RetroArch cores row needs it
+        quickMenu.raJobSupported = app.raJob().supported();        // and so does Install RetroArch...
         quickMenu.networkUnavailable = networkUnavailable();
         quickMenu.networkProvided = networkProvided() || !quickMenu.networkUnavailable.empty();
         quickMenu.show();
@@ -640,6 +643,21 @@ void GuiLauncher::loop_openQuickMenu() {
         loop_openSystemMenu();
     else
         runMenuAction(action);
+}
+
+//*******************************
+// GuiLauncher::afterRetroArchJob
+//*******************************
+// RetroArch was installed, updated or removed (the RetroArch manager's job ran): everything that depends on it looks
+// again - the cores and playlists, the program's presence (not at the next 2-second check), the sets and the
+// carousel, with the Lightgun and RetroArch sets falling back to PlayStation when it is gone (ra_gates.h)
+void GuiLauncher::afterRetroArchJob() {
+    app.retroArch().reload();
+    raCheckedAt_ = 0;
+    raPlaylists.clear();
+    if (retroArchInstalledCached())
+        raPlaylists = app.retroArch().playlistNames();
+    reloadGames();
 }
 
 //*******************************
@@ -703,6 +721,14 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
         }
         app.session().menuOption = MENU_OPTION_RETRO;
         menuVisible = false;
+        break;
+    }
+
+    case SystemMenuAction::RetroArchManager: {
+        GuiRaManager manager(*gui);
+        manager.show();
+        if (manager.changed)
+            afterRetroArchJob();
         break;
     }
 

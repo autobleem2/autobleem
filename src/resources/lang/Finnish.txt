@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 589
 
 %1 needs game data it can run: %2.=%1 tarvitsee pelitiedot, joita se osaa ajaa: %2.
 (changed)=(muutettu)
@@ -546,3 +546,49 @@ Install Windows=Asenna Windows
 Run DOS=Käynnistä DOS
 Uninstall Windows=Poista Windowsin asennus
 Press one of the buttons.=Paina jotakin painikkeista.
+Also delete the BIOS files=Poista myös BIOS-tiedostot
+Checking...=Tarkistetaan...
+Delete RetroArch and its cores - games, saves and BIOS files stay=Poistaa RetroArchin ja sen ytimet - pelit, tallennukset ja BIOS-tiedostot säilyvät
+Download RetroArch with its cores and apps=Lataa RetroArchin ytimineen ja sovelluksineen
+Downloading BIOS files=Ladataan BIOS-tiedostoja
+Downloading cores=Ladataan ytimiä
+Downloading libraries and apps=Ladataan kirjastoja ja sovelluksia
+Downloading RetroArch=Ladataan RetroArchia
+Finishing=Viimeistellään
+Go on=Jatka
+Install=Asenna
+Install RetroArch...=Asenna RetroArch...
+Install RetroArch? It is downloaded from the AutoBleem site - this can take a few minutes.=Asennetaanko RetroArch? Se ladataan AutoBleemin sivustolta - se voi kestää muutaman minuutin.
+Install, update or remove RetroArch=Asenna, päivitä tai poista RetroArch
+Installed=Asennettu
+Installed by the system - it cannot be removed here=Järjestelmän asentama - ei voi poistaa täältä
+Installing cores=Asennetaan ytimiä
+Installing RetroArch=Asennetaan RetroArchia
+No network connection=Ei verkkoyhteyttä
+No reason given=Syytä ei annettu
+Not enough free space on the stick=Tikulla ei ole tarpeeksi vapaata tilaa
+Preparing=Valmistellaan
+Remove=Poista
+Remove RetroArch and delete the BIOS files too? Cores that need them will not start until the files are put back.=Poistetaanko RetroArch ja BIOS-tiedostot? Niitä tarvitsevat ytimet eivät käynnisty, ennen kuin tiedostot on palautettu.
+Remove RetroArch and the BIOS files too=Poistaa RetroArchin ja BIOS-tiedostot
+Remove RetroArch? Your games, saves and BIOS files stay.=Poistetaanko RetroArch? Pelisi, tallennuksesi ja BIOS-tiedostosi säilyvät.
+Removing BIOS files=Poistetaan BIOS-tiedostoja
+Removing RetroArch=Poistetaan RetroArchia
+RetroArch is installed=RetroArch on asennettu
+RetroArch is not installed - download it here=RetroArchia ei ole asennettu - lataa se tästä
+RetroArch is removed=RetroArch on poistettu
+RetroArch is updated=RetroArch on päivitetty
+RetroArch...=RetroArch...
+Start it again to carry on where it stopped=Käynnistä uudelleen jatkaaksesi siitä, mihin jäi
+Stop=Pysäytä
+Stop? The job can be carried on later.=Pysäytetäänkö? Työtä voi jatkaa myöhemmin.
+Stopped=Pysäytetty
+Stopping...=Pysäytetään...
+The installation failed=Asennus epäonnistui
+The removal failed=Poisto epäonnistui
+The update failed=Päivitys epäonnistui
+Up to date=Ajan tasalla
+Update=Päivitä
+Update RetroArch? The new version is downloaded from the AutoBleem site.=Päivitetäänkö RetroArch? Uusi versio ladataan AutoBleemin sivustolta.
+Update to=Päivitä versioon
+Updating RetroArch=Päivitetään RetroArchia

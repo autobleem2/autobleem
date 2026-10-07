@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 543
+# Untranslated: 1 / Total: 589
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 (changed)=(modificat)
@@ -546,3 +546,49 @@ Install Windows=Installar Windows
 Run DOS=Aviar DOS
 Uninstall Windows=Desinstallar Windows
 Press one of the buttons.=Quichatz un dels botons.
+Also delete the BIOS files=Suprimir tanben los fichièrs BIOS
+Checking...=Verificacion...
+Delete RetroArch and its cores - games, saves and BIOS files stay=Suprimís RetroArch e sos cores - jòcs, salvaments e fichièrs BIOS demòran
+Download RetroArch with its cores and apps=Telecarga RetroArch amb sos cores e sas aplicacions
+Downloading BIOS files=Telecargament dels fichièrs BIOS
+Downloading cores=Telecargament dels cores
+Downloading libraries and apps=Telecargament de bibliotècas e d'aplicacions
+Downloading RetroArch=Telecargament de RetroArch
+Finishing=Acabament
+Go on=Contunhar
+Install=Installar
+Install RetroArch...=Installar RetroArch...
+Install RetroArch? It is downloaded from the AutoBleem site - this can take a few minutes.=Installar RetroArch ? Es telecargat dempuèi lo site d'AutoBleem - pòt prene qualques minutas.
+Install, update or remove RetroArch=Installar, metre a jorn o levar RetroArch
+Installed=Installat
+Installed by the system - it cannot be removed here=Installat pel sistèma - se pòt pas levar aicí
+Installing cores=Installacion dels cores
+Installing RetroArch=Installacion de RetroArch
+No network connection=Pas de connexion ret
+No reason given=Cap de rason balhada
+Not enough free space on the stick=Pas pro d'espaci liure sus la clau
+Preparing=Preparacion
+Remove=Levar
+Remove RetroArch and delete the BIOS files too? Cores that need them will not start until the files are put back.=Levar RetroArch e suprimir tanben los fichièrs BIOS ? Los cores que ne an besonh dimmarraràn pas tant que los fichièrs seràn pas tornats.
+Remove RetroArch and the BIOS files too=Lèva RetroArch e tanben los fichièrs BIOS
+Remove RetroArch? Your games, saves and BIOS files stay.=Levar RetroArch ? Vòstres jòcs, salvaments e fichièrs BIOS demòran.
+Removing BIOS files=Supression dels fichièrs BIOS
+Removing RetroArch=Supression de RetroArch
+RetroArch is installed=RetroArch es installat
+RetroArch is not installed - download it here=RetroArch es pas installat - telecargatz-lo aicí
+RetroArch is removed=RetroArch es levat
+RetroArch is updated=RetroArch es a jorn
+RetroArch...=RetroArch...
+Start it again to carry on where it stopped=Tornatz lançar per contunhar ont s'èra arrestat
+Stop=Arrestar
+Stop? The job can be carried on later.=Arrestar ? La tasca poirà èsser represa pus tard.
+Stopped=Arrestat
+Stopping...=Arrèst...
+The installation failed=L'installacion a fracassat
+The removal failed=La supression a fracassat
+The update failed=La mesa a jorn a fracassat
+Up to date=A jorn
+Update=Metre a jorn
+Update RetroArch? The new version is downloaded from the AutoBleem site.=Metre a jorn RetroArch ? La version novèla es telecargada dempuèi lo site d'AutoBleem.
+Update to=Metre a jorn cap a
+Updating RetroArch=Mesa a jorn de RetroArch

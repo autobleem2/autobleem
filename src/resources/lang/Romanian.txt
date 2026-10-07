@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 589
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 (changed)=(modificat)
@@ -546,3 +546,49 @@ Install Windows=Instalează Windows
 Run DOS=Pornește DOS
 Uninstall Windows=Dezinstalează Windows
 Press one of the buttons.=Apasă unul dintre butoane.
+Also delete the BIOS files=Șterge și fișierele BIOS
+Checking...=Se verifică...
+Delete RetroArch and its cores - games, saves and BIOS files stay=Șterge RetroArch și core-urile sale - jocurile, salvările și fișierele BIOS rămân
+Download RetroArch with its cores and apps=Descarcă RetroArch cu core-uri și aplicații
+Downloading BIOS files=Se descarcă fișierele BIOS
+Downloading cores=Se descarcă core-urile
+Downloading libraries and apps=Se descarcă bibliotecile și aplicațiile
+Downloading RetroArch=Se descarcă RetroArch
+Finishing=Se finalizează
+Go on=Continuă
+Install=Instalează
+Install RetroArch...=Instalează RetroArch...
+Install RetroArch? It is downloaded from the AutoBleem site - this can take a few minutes.=Instalezi RetroArch? Se descarcă de pe site-ul AutoBleem - poate dura câteva minute.
+Install, update or remove RetroArch=Instalează, actualizează sau elimină RetroArch
+Installed=Instalat
+Installed by the system - it cannot be removed here=Instalat de sistem - nu poate fi eliminat de aici
+Installing cores=Se instalează core-urile
+Installing RetroArch=Se instalează RetroArch
+No network connection=Fără conexiune la rețea
+No reason given=Niciun motiv indicat
+Not enough free space on the stick=Spațiu liber insuficient pe stick
+Preparing=Se pregătește
+Remove=Elimină
+Remove RetroArch and delete the BIOS files too? Cores that need them will not start until the files are put back.=Elimini RetroArch și ștergi și fișierele BIOS? Core-urile care au nevoie de ele nu vor porni până când fișierele nu sunt puse la loc.
+Remove RetroArch and the BIOS files too=Elimină RetroArch și fișierele BIOS
+Remove RetroArch? Your games, saves and BIOS files stay.=Elimini RetroArch? Jocurile, salvările și fișierele BIOS rămân.
+Removing BIOS files=Se elimină fișierele BIOS
+Removing RetroArch=Se elimină RetroArch
+RetroArch is installed=RetroArch este instalat
+RetroArch is not installed - download it here=RetroArch nu este instalat - descarcă-l aici
+RetroArch is removed=RetroArch a fost eliminat
+RetroArch is updated=RetroArch a fost actualizat
+RetroArch...=RetroArch...
+Start it again to carry on where it stopped=Pornește din nou pentru a continua de unde s-a oprit
+Stop=Oprește
+Stop? The job can be carried on later.=Oprești? Sarcina poate fi continuată mai târziu.
+Stopped=Oprit
+Stopping...=Se oprește...
+The installation failed=Instalarea a eșuat
+The removal failed=Eliminarea a eșuat
+The update failed=Actualizarea a eșuat
+Up to date=La zi
+Update=Actualizează
+Update RetroArch? The new version is downloaded from the AutoBleem site.=Actualizezi RetroArch? Versiunea nouă se descarcă de pe site-ul AutoBleem.
+Update to=Actualizează la
+Updating RetroArch=Se actualizează RetroArch

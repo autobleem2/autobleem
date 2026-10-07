@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 589
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 (changed)=(değiştirildi)
@@ -546,3 +546,49 @@ Install Windows=Windows'u yükle
 Run DOS=DOS'u çalıştır
 Uninstall Windows=Windows'u kaldır
 Press one of the buttons.=Düğmelerden birine basın.
+Also delete the BIOS files=BIOS dosyalarını da sil
+Checking...=Denetleniyor...
+Delete RetroArch and its cores - games, saves and BIOS files stay=RetroArch'ı ve çekirdeklerini siler - oyunlar, kayıtlar ve BIOS dosyaları kalır
+Download RetroArch with its cores and apps=RetroArch'ı çekirdekleri ve uygulamalarıyla indirir
+Downloading BIOS files=BIOS dosyaları indiriliyor
+Downloading cores=Çekirdekler indiriliyor
+Downloading libraries and apps=Kütüphaneler ve uygulamalar indiriliyor
+Downloading RetroArch=RetroArch indiriliyor
+Finishing=Tamamlanıyor
+Go on=Devam et
+Install=Yükle
+Install RetroArch...=RetroArch'ı yükle...
+Install RetroArch? It is downloaded from the AutoBleem site - this can take a few minutes.=RetroArch yüklensin mi? AutoBleem sitesinden indirilir - birkaç dakika sürebilir.
+Install, update or remove RetroArch=RetroArch'ı yükle, güncelle veya kaldır
+Installed=Yüklü
+Installed by the system - it cannot be removed here=Sistem tarafından yüklendi - buradan kaldırılamaz
+Installing cores=Çekirdekler yükleniyor
+Installing RetroArch=RetroArch yükleniyor
+No network connection=Ağ bağlantısı yok
+No reason given=Neden belirtilmedi
+Not enough free space on the stick=Bellekte yeterli boş alan yok
+Preparing=Hazırlanıyor
+Remove=Kaldır
+Remove RetroArch and delete the BIOS files too? Cores that need them will not start until the files are put back.=RetroArch kaldırılsın ve BIOS dosyaları da silinsin mi? Bunlara ihtiyaç duyan çekirdekler dosyalar geri konana kadar başlamaz.
+Remove RetroArch and the BIOS files too=RetroArch'ı ve BIOS dosyalarını da kaldırır
+Remove RetroArch? Your games, saves and BIOS files stay.=RetroArch kaldırılsın mı? Oyunların, kayıtların ve BIOS dosyaların kalır.
+Removing BIOS files=BIOS dosyaları kaldırılıyor
+Removing RetroArch=RetroArch kaldırılıyor
+RetroArch is installed=RetroArch yüklendi
+RetroArch is not installed - download it here=RetroArch yüklü değil - buradan indirin
+RetroArch is removed=RetroArch kaldırıldı
+RetroArch is updated=RetroArch güncellendi
+RetroArch...=RetroArch...
+Start it again to carry on where it stopped=Kaldığı yerden devam etmek için yeniden başlatın
+Stop=Durdur
+Stop? The job can be carried on later.=Durdurulsun mu? İşe daha sonra devam edilebilir.
+Stopped=Durduruldu
+Stopping...=Durduruluyor...
+The installation failed=Yükleme başarısız oldu
+The removal failed=Kaldırma başarısız oldu
+The update failed=Güncelleme başarısız oldu
+Up to date=Güncel
+Update=Güncelle
+Update RetroArch? The new version is downloaded from the AutoBleem site.=RetroArch güncellensin mi? Yeni sürüm AutoBleem sitesinden indirilir.
+Update to=Şuna güncelle:
+Updating RetroArch=RetroArch güncelleniyor

@@ -465,6 +465,7 @@ int AutoBleem::run() {
     if (updates().checkDue(time(nullptr)))
         updates().startCheck(time(nullptr)); // once a day, and at every start - the launcher asks when it lands
 #endif
+    applyRaJobSetting(); // after the update's own configuration: it takes the catalog from there
     scans().start();
     if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
         scans().requestScan();

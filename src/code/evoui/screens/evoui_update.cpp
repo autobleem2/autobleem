@@ -1,18 +1,17 @@
 #include "evoui_update.h"
 #include "../../app.h"
+#include "evoui_panel_common.h"
 #include "gui/gui.h"
 
 #include <algorithm>
 #include <ctime>
 
 using namespace std;
+using namespace evoui_panel;
 
 namespace {
-const int PanelWidth = 800;                     // at least - wider for a long line
-const int TextInset = PanelStyle::RowInset + 8; // a line's x in the panel, and its right margin
 const int RowHeight = PanelStyle::RowHeight;
 const int RowInset = PanelStyle::RowInset;
-const int LineHeight = 30;
 
 // UpdateService's failure texts are English (it is SDL-free and runs on a worker thread, with no language of its
 // own): the screen puts them through the language files (BUG-46). The folder in "cannot create <folder>" stays as is.
@@ -29,37 +28,6 @@ string errorText(const string &error) {
     if (error == "cannot write pending.json")
         return _("cannot write pending.json");
     return error;
-}
-
-// "42.1 MB"
-string human(uint64_t bytes) {
-    char buf[32];
-    if (bytes >= 1000000)
-        snprintf(buf, sizeof(buf), "%.1f MB", bytes / 1000000.0);
-    else if (bytes >= 1000)
-        snprintf(buf, sizeof(buf), "%.0f KB", bytes / 1000.0);
-    else
-        snprintf(buf, sizeof(buf), "%u B", static_cast<unsigned>(bytes));
-    return buf;
-}
-
-// as wide as the widest of `texts` needs (a nightly's name is long: v2.0.0-alpha2-42-g7f26785-nebaa06), from
-// PanelWidth up to the screen's margins; a line still too long is elided when drawn
-int panelWidthFor(Gui &gui, const vector<pair<const ableem::Font *, string>> &texts) {
-    int widest = 0;
-    for (const auto &t : texts)
-        widest = max(widest, gui.text().textWidth(*t.first, t.second));
-    const int maxPanelWidth = gui.renderer().width() - 2 * PanelStyle::Margin; // the canvas of the frame
-    return min(maxPanelWidth, max(PanelWidth, widest + 2 * TextInset));
-}
-
-// the dimmed launcher's snapshot (Gui::renderBackground) under the panel; returns the panel's rect
-ableem::Rect drawPanel(Gui &gui, const PanelStyle &style, int width, int height) {
-    gui.renderBackground();
-    style.dim(gui.uiContext());
-    ableem::Rect panel{(gui.renderer().width() - width) / 2, (gui.renderer().height() - height) / 2, width, height};
-    style.sheet(gui.uiContext(), panel);
-    return panel;
 }
 } // namespace
 

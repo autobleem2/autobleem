@@ -102,3 +102,9 @@ endif()
 # the picker's rows and where its cursor starts, the second line's fitting at 16:9 and 4:3, "Runs with"
 ab_add_test(test_package_picker screens/test_package_picker.cpp)
 target_include_directories(test_package_picker PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
+# The RetroArch manager's decisions and texts (evoui/screens/ra_manager_logic.h, pure): the menu rows per platform and
+# RetroArch state, the panel's rows and state lines, the questions, the progress panel
+ab_add_test(test_ra_manager_logic screens/test_ra_manager_logic.cpp)
+target_include_directories(test_ra_manager_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+target_compile_definitions(test_ra_manager_logic PRIVATE AB_PLATFORM_DIR="${CMAKE_SOURCE_DIR}/src/resources/platform")

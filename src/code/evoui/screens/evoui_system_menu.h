@@ -30,11 +30,12 @@ enum class SystemMenuAction {
     SoftwareUpdate, // AB_ONLINE_UPDATE builds only
     About,
     PowerOff,
-    Network,         // Network & Controllers: the extension providing the "network" entry, only when one does
-    Store,           // the Quick menu's: the store extension, run directly
-    SystemMenu,      // the Quick menu's last row: the System menu itself
-    RestartLauncher, // the Quick menu's, console / Pi / PC stick only: the launcher process starts over
-    RetroArchCores,  // the Quick menu's, with RetroArch installed: the core that plays each system
+    Network,          // Network & Controllers: the extension providing the "network" entry, only when one does
+    Store,            // the Quick menu's: the store extension, run directly
+    SystemMenu,       // the Quick menu's last row: the System menu itself
+    RestartLauncher,  // the Quick menu's, console / Pi / PC stick only: the launcher process starts over
+    RetroArchCores,   // the Quick menu's, with RetroArch installed: the core that plays each system
+    RetroArchManager, // System menu "RetroArch..." / Quick menu "Install RetroArch...": install, update, remove
 };
 
 //******************
@@ -60,6 +61,7 @@ public:
     Kind kind = Kind::System;
     std::string retroArchLabel = "RetroArch"; // "RetroArch" or "EmulationStation", per retroboot.cfg
     bool retroArchInstalled = true;           // false: the RetroArch item is left out (no RetroArch program)
+    bool raJobSupported = false;              // the platform has a RetroArch runner: the RetroArch... rows show
     bool updateAvailable = false;             // shown as a note on the Software Update row
     bool scanInProgress = false;              // shown as a note on the Re-Scan row, not a disabled state
     bool networkProvided = false;             // an extension provides "network": the Network & Controllers row

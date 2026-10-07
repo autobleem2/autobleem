@@ -295,6 +295,7 @@ public:
     // or none) - what a scan finishing, or the Game Manager/Options changing the roster, needs: the list
     // itself may have gained, lost or reordered entries, so the old carousel index cannot be trusted.
     void reloadGames();
+    void afterRetroArchJob(); // the RetroArch manager's job ran: see its definition
     // which game is highlighted, in a form that survives the list being queried again: a library game by id,
     // a playlist game by its image path (its id is only its position) - and finding it in the new list
     struct GameKey {

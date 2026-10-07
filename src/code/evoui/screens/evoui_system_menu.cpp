@@ -1,5 +1,6 @@
 #include "evoui_system_menu.h"
 #include "gui/gui.h"
+#include "ra_manager_logic.h"
 
 #include <ab_gui/panel.h>
 
@@ -17,7 +18,9 @@ const int HeaderHeight = PanelStyle::HeaderHeight;
 const int FooterHeight = PanelStyle::FooterHeight;
 // the System menu: single-line items and thin headings, so its thirteen items and three headings fit on the
 // screen with the description strip (13 x 31 + 3 x 22 + 34 = 503 of the 512 there is - the owner,
-// 2026-09-26); the Quick menu's few rows are the usual single-line compact row
+// 2026-09-26); the RetroArch... row (where the platform has a runner for it) is the fourteenth and the menu then
+// scrolls, as it does for any list that is longer than the screen; the Quick menu's few rows are the usual
+// single-line compact row
 const int SystemItemHeight = 31;
 const int QuickItemHeight = 44;
 const int HeadingHeight = 22;
@@ -73,6 +76,9 @@ void GuiSystemMenu::init() {
     if (kind == Kind::Quick) {
         addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
         addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
+        if (RaManager::quickMenuInstallRowShown(raJobSupported, retroArchInstalled))
+            addItem(SystemMenuAction::RetroArchManager, "Install RetroArch...", _("Install RetroArch..."),
+                    _("RetroArch is not installed - download it here"));
         if (retroArchInstalled)
             addItem(SystemMenuAction::RetroArchCores, "RetroArch cores", _("RetroArch cores"),
                     _("Choose the core that plays each system"));
@@ -98,6 +104,9 @@ void GuiSystemMenu::init() {
         addHeading(_("System"));
         addItem(SystemMenuAction::Options, "Options", _("Options"), _("Customize AutoBleem settings"));
         addNetwork();
+        if (RaManager::systemMenuRowShown(raJobSupported))
+            addItem(SystemMenuAction::RetroArchManager, "RetroArch...", _("RetroArch..."),
+                    _("Install, update or remove RetroArch"));
         addItem(SystemMenuAction::HardwareInfo, "Hardware Information", _("Hardware Information"),
                 _("Controller and system information"));
 #ifdef AB_ONLINE_UPDATE

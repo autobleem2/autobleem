@@ -106,6 +106,31 @@ void App::applyOnlineSetting() {
     scans_.setProcessorLanguage(cfg_.inifile.values["language"]); // the processors' AB_LANGUAGE
 }
 
+//*******************************
+// installedRetroArchVersion
+//*******************************
+// What the installed RetroArch's stamp says, "" when there is none (RetroArch absent, or not ours): an appliance
+// (the Pi, the PC stick) has the one line install.sh writes; the console the stamp the PC installer and abupdate
+// write next to the binary - a bare version on its first line, or the zip's own key=value file (retroarch_version=,
+// psc_build=) on a stick updated before the zip carried the first line; Windows has libretro's own RetroArch, no
+// stamp; a dev host tests with AB_UPDATE_RETROARCH_VERSION in the environment. Read again after every RetroArch job.
+string installedRetroArchVersion() {
+#if defined(AB_APPLIANCE)
+    ifstream stamp("/usr/local/share/autobleem/retroarch.version");
+    string version;
+    if (stamp && getline(stamp, version))
+        return Strings::trim(version);
+    return "";
+#elif defined(AB_PLATFORM_PSC)
+    return retroarch_version::installed(Env::getPathToUSBRoot());
+#elif defined(AB_PLATFORM_WIN)
+    return "";
+#else
+    const char *raVersion = getenv("AB_UPDATE_RETROARCH_VERSION");
+    return raVersion != nullptr ? raVersion : "";
+#endif
+}
+
 #ifdef AB_ONLINE_UPDATE
 //*******************************
 // App::applyUpdateSetting
@@ -147,12 +172,7 @@ void App::applyUpdateSetting() {
     c.platformKey = "rpi";
     c.arch = "armhf";
 #endif
-    {
-        ifstream stamp("/usr/local/share/autobleem/retroarch.version");
-        string version;
-        if (stamp && getline(stamp, version))
-            c.installedRetroArch = Strings::trim(version);
-    }
+    c.installedRetroArch = installedRetroArchVersion();
 #elif defined(AB_PLATFORM_WIN)
     // the installer exe (AutoBleemSetup-<v>.exe, the site's "win-setup"); RetroArch is libretro's own
     // there and not ours to update (no arch = no RetroArch check)
@@ -168,7 +188,7 @@ void App::applyUpdateSetting() {
     c.arch = "zip";
     // the stamp is a bare version on its first line, or the zip's own key=value file (retroarch_version=,
     // psc_build=) on a stick updated before the zip carried the first line
-    c.installedRetroArch = retroarch_version::installed(Env::getPathToUSBRoot());
+    c.installedRetroArch = installedRetroArchVersion();
 #else
     const char *platform = getenv("AB_UPDATE_PLATFORM");
     c.platformKey = platform != nullptr && *platform != 0 ? platform : "win";
@@ -181,3 +201,30 @@ void App::applyUpdateSetting() {
     updates_.configure(c);
 }
 #endif
+
+//*******************************
+// App::applyRaJobSetting
+//*******************************
+// The RetroArch manager's service (System menu -> RetroArch...): the platform's runner, where RetroArch and its
+// folders are, and - from the online update's own configuration, so there is one source for the site, the catalog
+// and this machine's key - where to look for the newest version. The progress file and the log go to the runtime
+// dir (RAM): the stick is written only by the runner.
+void App::applyRaJobSetting() {
+    RaJobService::Config c;
+    c.jobCommand = Env::raJobCommand();
+    c.usbRoot = Env::getPathToUSBRoot();
+    c.launcherDir = Env::getWorkingPath();
+    c.workDir = Env::getPathToRuntimeDir() + sep + "ra-job";
+    c.retroarchDir = Env::getPathToRetroarchDir();
+    c.binaries = Env::retroArchBinaries();
+#ifdef AB_ONLINE_UPDATE
+    const UpdateService::Config &update = updates_.config();
+    c.repoUrl = update.repoUrl;
+    c.catalog = update.retroarchCatalog;
+    c.arch = update.arch;
+    c.fetchCommand = update.fetchCommand;
+#endif
+    c.installedVersion = [] { return installedRetroArchVersion(); };
+    c.networkUp = [] { return System::hasDefaultRoute(); };
+    raJob_.configure(c);
+}

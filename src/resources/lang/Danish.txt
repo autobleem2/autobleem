@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 589
 
 %1 needs game data it can run: %2.=%1 har brug for spildata, den kan køre: %2.
 (changed)=(ændret)
@@ -546,3 +546,49 @@ Install Windows=Installer Windows
 Run DOS=Kør DOS
 Uninstall Windows=Afinstaller Windows
 Press one of the buttons.=Tryk på en af knapperne.
+Also delete the BIOS files=Slet også BIOS-filerne
+Checking...=Kontrollerer...
+Delete RetroArch and its cores - games, saves and BIOS files stay=Sletter RetroArch og dets cores - spil, gemte spil og BIOS-filer bliver
+Download RetroArch with its cores and apps=Henter RetroArch med cores og apps
+Downloading BIOS files=Henter BIOS-filer
+Downloading cores=Henter cores
+Downloading libraries and apps=Henter biblioteker og apps
+Downloading RetroArch=Henter RetroArch
+Finishing=Gør færdig
+Go on=Fortsæt
+Install=Installer
+Install RetroArch...=Installer RetroArch...
+Install RetroArch? It is downloaded from the AutoBleem site - this can take a few minutes.=Installere RetroArch? Det hentes fra AutoBleems websted - det kan tage nogle minutter.
+Install, update or remove RetroArch=Installer, opdater eller fjern RetroArch
+Installed=Installeret
+Installed by the system - it cannot be removed here=Installeret af systemet - kan ikke fjernes her
+Installing cores=Installerer cores
+Installing RetroArch=Installerer RetroArch
+No network connection=Ingen netværksforbindelse
+No reason given=Ingen årsag angivet
+Not enough free space on the stick=Ikke nok ledig plads på stikket
+Preparing=Forbereder
+Remove=Fjern
+Remove RetroArch and delete the BIOS files too? Cores that need them will not start until the files are put back.=Fjerne RetroArch og slette BIOS-filerne? Cores, der har brug for dem, starter ikke, før filerne er lagt tilbage.
+Remove RetroArch and the BIOS files too=Fjerner RetroArch og BIOS-filerne
+Remove RetroArch? Your games, saves and BIOS files stay.=Fjerne RetroArch? Dine spil, gemte spil og BIOS-filer bliver.
+Removing BIOS files=Fjerner BIOS-filer
+Removing RetroArch=Fjerner RetroArch
+RetroArch is installed=RetroArch er installeret
+RetroArch is not installed - download it here=RetroArch er ikke installeret - hent det her
+RetroArch is removed=RetroArch er fjernet
+RetroArch is updated=RetroArch er opdateret
+RetroArch...=RetroArch...
+Start it again to carry on where it stopped=Start igen for at fortsætte, hvor det stoppede
+Stop=Stop
+Stop? The job can be carried on later.=Stoppe? Opgaven kan fortsættes senere.
+Stopped=Stoppet
+Stopping...=Stopper...
+The installation failed=Installationen mislykkedes
+The removal failed=Fjernelsen mislykkedes
+The update failed=Opdateringen mislykkedes
+Up to date=Opdateret
+Update=Opdater
+Update RetroArch? The new version is downloaded from the AutoBleem site.=Opdatere RetroArch? Den nye version hentes fra AutoBleems websted.
+Update to=Opdater til
+Updating RetroArch=Opdaterer RetroArch

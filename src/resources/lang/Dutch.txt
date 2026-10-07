@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 589
 
 %1 needs game data it can run: %2.=%1 heeft speldata nodig die het kan uitvoeren: %2.
 (changed)=(gewijzigd)
@@ -546,3 +546,49 @@ Install Windows=Windows installeren
 Run DOS=DOS starten
 Uninstall Windows=Windows verwijderen
 Press one of the buttons.=Druk op een van de knoppen.
+Also delete the BIOS files=Ook de BIOS-bestanden verwijderen
+Checking...=Controleren...
+Delete RetroArch and its cores - games, saves and BIOS files stay=Verwijdert RetroArch en zijn cores - spellen, opslagen en BIOS-bestanden blijven
+Download RetroArch with its cores and apps=Downloadt RetroArch met cores en apps
+Downloading BIOS files=BIOS-bestanden downloaden
+Downloading cores=Cores downloaden
+Downloading libraries and apps=Bibliotheken en apps downloaden
+Downloading RetroArch=RetroArch downloaden
+Finishing=Afronden
+Go on=Doorgaan
+Install=Installeren
+Install RetroArch...=RetroArch installeren...
+Install RetroArch? It is downloaded from the AutoBleem site - this can take a few minutes.=RetroArch installeren? Het wordt van de AutoBleem-site gedownload - dit kan enkele minuten duren.
+Install, update or remove RetroArch=RetroArch installeren, bijwerken of verwijderen
+Installed=Geïnstalleerd
+Installed by the system - it cannot be removed here=Door het systeem geïnstalleerd - kan hier niet worden verwijderd
+Installing cores=Cores installeren
+Installing RetroArch=RetroArch installeren
+No network connection=Geen netwerkverbinding
+No reason given=Geen reden opgegeven
+Not enough free space on the stick=Niet genoeg vrije ruimte op de stick
+Preparing=Voorbereiden
+Remove=Verwijderen
+Remove RetroArch and delete the BIOS files too? Cores that need them will not start until the files are put back.=RetroArch verwijderen en ook de BIOS-bestanden wissen? Cores die ze nodig hebben starten pas weer als de bestanden terug zijn.
+Remove RetroArch and the BIOS files too=Verwijdert RetroArch en ook de BIOS-bestanden
+Remove RetroArch? Your games, saves and BIOS files stay.=RetroArch verwijderen? Je spellen, opslagen en BIOS-bestanden blijven.
+Removing BIOS files=BIOS-bestanden verwijderen
+Removing RetroArch=RetroArch verwijderen
+RetroArch is installed=RetroArch is geïnstalleerd
+RetroArch is not installed - download it here=RetroArch is niet geïnstalleerd - download het hier
+RetroArch is removed=RetroArch is verwijderd
+RetroArch is updated=RetroArch is bijgewerkt
+RetroArch...=RetroArch...
+Start it again to carry on where it stopped=Start het opnieuw om verder te gaan waar het stopte
+Stop=Stoppen
+Stop? The job can be carried on later.=Stoppen? De taak kan later worden voortgezet.
+Stopped=Gestopt
+Stopping...=Stoppen...
+The installation failed=De installatie is mislukt
+The removal failed=Het verwijderen is mislukt
+The update failed=De update is mislukt
+Up to date=Bijgewerkt
+Update=Bijwerken
+Update RetroArch? The new version is downloaded from the AutoBleem site.=RetroArch bijwerken? De nieuwe versie wordt van de AutoBleem-site gedownload.
+Update to=Bijwerken naar
+Updating RetroArch=RetroArch bijwerken

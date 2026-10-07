@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 589
 
 %1 needs game data it can run: %2.=%1 necesita datos de juego que pueda ejecutar: %2.
 (changed)=(cambiado)
@@ -546,3 +546,49 @@ Install Windows=Instalar Windows
 Run DOS=Ejecutar DOS
 Uninstall Windows=Desinstalar Windows
 Press one of the buttons.=Pulsa uno de los botones.
+Also delete the BIOS files=Borrar también los archivos BIOS
+Checking...=Comprobando...
+Delete RetroArch and its cores - games, saves and BIOS files stay=Borra RetroArch y sus núcleos - los juegos, las partidas guardadas y los archivos BIOS se conservan
+Download RetroArch with its cores and apps=Descarga RetroArch con sus núcleos y aplicaciones
+Downloading BIOS files=Descargando archivos BIOS
+Downloading cores=Descargando núcleos
+Downloading libraries and apps=Descargando bibliotecas y aplicaciones
+Downloading RetroArch=Descargando RetroArch
+Finishing=Terminando
+Go on=Continuar
+Install=Instalar
+Install RetroArch...=Instalar RetroArch...
+Install RetroArch? It is downloaded from the AutoBleem site - this can take a few minutes.=¿Instalar RetroArch? Se descarga del sitio de AutoBleem; puede tardar unos minutos.
+Install, update or remove RetroArch=Instalar, actualizar o quitar RetroArch
+Installed=Instalado
+Installed by the system - it cannot be removed here=Instalado por el sistema: no se puede quitar desde aquí
+Installing cores=Instalando núcleos
+Installing RetroArch=Instalando RetroArch
+No network connection=Sin conexión de red
+No reason given=No se indicó el motivo
+Not enough free space on the stick=No hay espacio libre suficiente en la memoria USB
+Preparing=Preparando
+Remove=Quitar
+Remove RetroArch and delete the BIOS files too? Cores that need them will not start until the files are put back.=¿Quitar RetroArch y borrar también los archivos BIOS? Los núcleos que los necesitan no arrancarán hasta que se vuelvan a poner.
+Remove RetroArch and the BIOS files too=Quita RetroArch y también los archivos BIOS
+Remove RetroArch? Your games, saves and BIOS files stay.=¿Quitar RetroArch? Tus juegos, partidas guardadas y archivos BIOS se conservan.
+Removing BIOS files=Quitando archivos BIOS
+Removing RetroArch=Quitando RetroArch
+RetroArch is installed=RetroArch está instalado
+RetroArch is not installed - download it here=RetroArch no está instalado: descárgalo aquí
+RetroArch is removed=RetroArch se ha quitado
+RetroArch is updated=RetroArch se ha actualizado
+RetroArch...=RetroArch...
+Start it again to carry on where it stopped=Vuelve a iniciarlo para seguir donde se detuvo
+Stop=Detener
+Stop? The job can be carried on later.=¿Detener? La tarea podrá continuarse más tarde.
+Stopped=Detenido
+Stopping...=Deteniendo...
+The installation failed=La instalación ha fallado
+The removal failed=No se ha podido quitar
+The update failed=La actualización ha fallado
+Up to date=Al día
+Update=Actualizar
+Update RetroArch? The new version is downloaded from the AutoBleem site.=¿Actualizar RetroArch? La versión nueva se descarga del sitio de AutoBleem.
+Update to=Actualizar a
+Updating RetroArch=Actualizando RetroArch

@@ -13,6 +13,7 @@
 #include "core/services/launch.h"
 #include "core/services/lightgun.h"
 #include "core/services/package_service.h"
+#include "core/services/ra_job_service.h"
 #include "core/services/memcard.h"
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
@@ -63,6 +64,10 @@ public:
     UpdateService &updates() { return updates_; }
     void applyUpdateSetting();
 #endif
+    // installing, updating and removing RetroArch (System menu -> RetroArch...): configured from the platform's runner
+    // and the update's catalog facts - at start, after applyUpdateSetting
+    RaJobService &raJob() { return raJob_; }
+    void applyRaJobSetting();
     Session &session() { return session_; }
 
     // what "power off" means for the launcher: on the console the screens unwind (Input::requestQuit) and
@@ -105,6 +110,7 @@ protected:
 #ifdef AB_ONLINE_UPDATE
     UpdateService updates_;
 #endif
+    RaJobService raJob_;
     std::unique_ptr<ProcessRunner> runner_;
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
 
