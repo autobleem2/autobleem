@@ -137,7 +137,10 @@ starts them: the rpi, rpi64 and pcusb launcher artifacts
 (`publish-launcher.yml`) carries `rc/pe_run.sh`, `rc/pe_env.sh`, `rc/pe_compat.ini` (copied from `payload/` - one copy, none in
 `payload_linux/`), the trimmed `rc/pe_gamecontrollerdb.txt` and `abdialog`; the appliance's `assemble.sh` bundles `proc_pe` into
 the `rpi-armhf`, `rpi-arm64` and `pcusb` packages. What the console has and the Pi lacks (`/data/power`, `/tmp/lib`, the dialogs' console stand-ins in
-`rc/pe/`, gl4es in `rc/pe/lib`) is only logged by `pe_env.sh`, the mods bring their own GL layer where they need one.
+`rc/pe/`, gl4es in `rc/pe/lib`) is only logged by `pe_env.sh` - and only when it matters (a program of the App names `libGL.so.1`
+or `libGLU.so.1` and the App carries none), the mods bring their own GL layer where they need one. A machine with no ALSA sound card
+(`/proc/asound/cards` lists none: a VM, a PC with no sound) gets `SDL_AUDIODRIVER=dummy` from `pe_env.sh` for every App - SDL's audio init
+would otherwise end the game at once (Commander Genius) - with a log line; a machine with a card, or a driver already chosen, is untouched.
 `tests/tools/test_pe_rpi_package.py` guards the staging (every Linux appliance target, no psc/win).
 
 **An App ends whole (2026-10-05).** `rc/pe_run.sh` and `rc/app_run.sh` start the App's program with

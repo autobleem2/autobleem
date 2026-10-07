@@ -48,6 +48,37 @@ pe_cfg_get() {
     sed -n -e "s/^$2=//p" "$1" 2>/dev/null | head -n 1 | tr -d '\r"'
 }
 
+# pe_app_needs_lib NAME: true when a program of the App (an ELF file at the top of its folder or one level down) names
+# the library NAME and the App has no copy of it (NAME, or NAME.<version>, down to three levels) - then the loader would
+# have to find it elsewhere. An App that carries its own gl4es (ioquake3) or never asks for GL is not worth a log line.
+pe_app_needs_lib() {
+    [ -z "$(find "$AB_APP_DIR" -maxdepth 3 -name "$1*" 2>/dev/null | head -n 1)" ] || return 1
+    pe_n=0
+    for pe_f in "$AB_APP_DIR"/* "$AB_APP_DIR"/*/*; do
+        [ -f "$pe_f" ] || continue
+        pe_n=$((pe_n + 1))
+        [ "$pe_n" -le 200 ] || return 1 # a folder of game data: not worth a minute on a slow stick
+        [ "$(head -c 4 "$pe_f" 2>/dev/null | tail -c 3)" = ELF ] || continue
+        grep -q "$1" "$pe_f" 2>/dev/null && return 0
+    done
+    return 1
+}
+
+# pe_audio_fallback: no ALSA sound card at all (a PC or VM with none, /proc/asound/cards lists no card) makes SDL's
+# audio init fail ("Failed to init the sound system" in Commander Genius) and the game exits at once: SDL_AUDIODRIVER=dummy
+# lets any App start, silent. Not when the user or the mod's environment already chose a driver, and never on a machine
+# that has a card (the console's own sound is untouched).
+pe_audio_fallback() {
+    [ -z "$SDL_AUDIODRIVER" ] || return 0
+    pe_cards=${PE_ASOUND_CARDS:-/proc/asound/cards}
+    if [ -r "$pe_cards" ] && grep -q '^ *[0-9]' "$pe_cards" 2>/dev/null; then
+        return 0
+    fi
+    SDL_AUDIODRIVER=dummy
+    export SDL_AUDIODRIVER
+    pe_log "no ALSA sound card ($pe_cards lists none) - SDL_AUDIODRIVER=dummy, the App starts without sound"
+}
+
 pe_mounted() {
     grep -q " $1 " /proc/mounts 2>/dev/null
 }
@@ -120,10 +151,12 @@ pe_prepare() {
             ln -sf "$PE_RC_DIR/pe/lib/$pe_lib" "$PE_ROOT/lib/$pe_lib"
         elif [ -e "${PE_APPLIB:-/tmp/applib}/$pe_lib" ]; then
             ln -sf "${PE_APPLIB:-/tmp/applib}/$pe_lib" "$PE_ROOT/lib/$pe_lib"
-        else
-            pe_log "no $pe_lib (neither $PE_RC_DIR/pe/lib nor ${PE_APPLIB:-/tmp/applib}) - a mod that needs gl4es will not start"
+        elif pe_app_needs_lib "$pe_lib"; then
+            # said only when it matters: a program of the App names the library and the App carries none of its own
+            pe_log "no $pe_lib (neither $PE_RC_DIR/pe/lib nor ${PE_APPLIB:-/tmp/applib}) and the App brings none - a program of it that loads $pe_lib will not start"
         fi
     done
+    pe_audio_fallback
     if [ -e "${PE_SDL_DIR:-/tmp/lib}/libSDL2-2.0.so.0" ]; then
         ln -sf "${PE_SDL_DIR:-/tmp/lib}/libSDL2-2.0.so.0" "$PE_ROOT/lib/libSDL2-2.0.so.0"
     else

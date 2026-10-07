@@ -543,3 +543,89 @@ TEST_CASE("no cursor from a pad's touchpad: boot.sh puts the seat rule into /run
     CHECK(tmp.readFile("sys/event4/uevent").empty());
     CHECK(lines.size() == 2);
 }
+
+// a launch.sh that only reports the audio driver it was given
+const char *const AudioLaunch = "#!/bin/sh\n"
+                                "echo \"audio=$SDL_AUDIODRIVER\" >> \"$APP_OUT\"\n"
+                                "exit 0\n";
+
+TEST_CASE("pe_run.sh: no ALSA card lets SDL use the dummy audio driver, a card or a chosen driver is left alone") {
+    if (!haveSh()) {
+        MESSAGE("no sh on this machine - pe_run.sh is not run");
+        return;
+    }
+    const string run = "sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\"\n";
+    struct Case {
+        const char *cards;      // /proc/asound/cards as the machine has it; nullptr = no such file
+        const char *preset;     // SDL_AUDIODRIVER the caller already has
+        const char *expect;     // what the mod sees
+        bool logged;
+    };
+    const Case cases[] = {
+        {"--- no soundcards ---\n", "", "dummy", true},                                    // the module is there, no card
+        {nullptr, "", "dummy", true},                                                      // no ALSA at all
+        {" 0 [PCH            ]: HDA-Intel - HDA Intel PCH\n", "", "", false},            // a PC with sound
+        {"--- no soundcards ---\n", "alsa", "alsa", false},                                // a driver was chosen: not ours to change
+        {" 0 [PCH            ]: HDA-Intel - HDA Intel PCH\n                      HDA Intel PCH at 0xf7 irq 31\n", "", "", false},
+    };
+    for (const Case &c : cases) {
+        PeRun pe;
+        pe.tmp.writeFile("Apps/pe-demo/launch.sh", AudioLaunch);
+        string body = "unset SDL_AUDIODRIVER\n";
+        if (c.cards) {
+            pe.tmp.writeFile("cards.txt", c.cards);
+            body += "export PE_ASOUND_CARDS=\"$AB_ROOT/cards.txt\"\n";
+        } else {
+            body += "export PE_ASOUND_CARDS=\"$AB_ROOT/no-such-cards\"\n";
+        }
+        if (*c.preset)
+            body += string("export SDL_AUDIODRIVER=") + c.preset + "\n";
+        pe.run(body + run);
+        CHECK(pe.out("audio") == string(c.expect));
+        const string log = pe.tmp.readFile("rt/logs/pe/pe_run.log");
+        CHECK((log.find("SDL_AUDIODRIVER=dummy") != string::npos) == c.logged);
+    }
+}
+
+// a program of an App as the loader sees one: an ELF header and the names it asks for
+const char *const ElfNamingGl = "\x7f"
+                                "ELF....libGL.so.1....libSDL2-2.0.so.0";
+
+TEST_CASE("pe_run.sh: the missing-libGL line is said only for an App that names libGL and brings none") {
+    if (!haveSh()) {
+        MESSAGE("no sh on this machine - pe_run.sh is not run");
+        return;
+    }
+    const string run = "sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\"\n";
+    // this stick has no gl4es in rc/pe/lib and no libs pack
+    auto noGl4es = [](PeRun &pe) {
+        pe.run("rm -f \"$AB_ROOT/Autobleem/rc/pe/lib/libGL.so.1\" \"$AB_ROOT/Autobleem/rc/pe/lib/libGLU.so.1\"\n");
+    };
+    {
+        PeRun pe; // an App with no GL at all (a 2D engine): silent
+        noGl4es(pe);
+        pe.tmp.writeFile("Apps/pe-demo/game", "\x7f"
+                                              "ELF....libSDL2-2.0.so.0");
+        pe.run(run);
+        CHECK(pe.tmp.readFile("rt/logs/pe/pe_run.log").find("no libGL") == string::npos);
+    }
+    {
+        PeRun pe; // an App that asks for libGL.so.1 and has none: the line, once, naming the library
+        noGl4es(pe);
+        pe.tmp.writeFile("Apps/pe-demo/game", ElfNamingGl);
+        pe.run(run);
+        const string log = pe.tmp.readFile("rt/logs/pe/pe_run.log");
+        CHECK(log.find("no libGL.so.1 (neither") != string::npos);
+        CHECK(log.find("the App brings none") != string::npos);
+        CHECK(log.find("no libGLU.so.1") == string::npos); // it does not name libGLU
+    }
+    {
+        PeRun pe; // an App that carries its own gl4es (ioquake3): silent
+        noGl4es(pe);
+        pe.tmp.writeFile("Apps/pe-demo/game", ElfNamingGl);
+        pe.tmp.makeSubDir("Apps/pe-demo/lib");
+        pe.tmp.writeFile("Apps/pe-demo/lib/libGL.so.1", "gl4es");
+        pe.run(run);
+        CHECK(pe.tmp.readFile("rt/logs/pe/pe_run.log").find("no libGL.so.1") == string::npos);
+    }
+}
