@@ -28,8 +28,9 @@ private:
     bool openLibrary(); // covers dir + regional.db + internal.db
     // everything around a program run in front of the launcher - the mixer and the pads released, the
     // display given up (a Pi) or kept with a picture on it (Windows), `body` run, the way back to the
-    // carousel; `retroArch` picks the picture and how long the machine gets to settle after
-    void runOutside(bool retroArch, const std::function<void()> &body);
+    // carousel; `retroArch` picks how long the machine gets to settle after, `picture` (a splash/ file) what stands
+    // on the screen while the program starts
+    void runOutside(bool retroArch, const char *picture, const std::function<void()> &body);
     void launchGame();       // the MENU_OPTION_START handling
     void takeAppMessage();   // what an App left in <runtime>/app-message.txt, on the notification line
     void runRetroArchMenu(); // MENU_OPTION_RETRO in direct mode: RetroArch's own menu, then back

@@ -91,6 +91,9 @@ if (Python3_Interpreter_FOUND)
     # tools/unshipped_themes.txt: the theme folders no package ships (ab2) and the scripts that apply the list
     add_test(NAME test_unshipped_themes COMMAND ${Python3_EXECUTABLE}
              ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_unshipped_themes.py)
+    # the PE runner in the Raspberry Pi 32-bit package (one copy in payload/, copied by publish-launcher.yml's rpi branch)
+    add_test(NAME test_pe_rpi_package COMMAND ${Python3_EXECUTABLE}
+             ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_pe_rpi_package.py)
 endif()
 
 # abdialog (src/tools/abdialog), the PE dialogs: the options, the command file the scripts write, the answer codes
@@ -102,3 +105,8 @@ endif()
 # the picker's rows and where its cursor starts, the second line's fitting at 16:9 and 4:3, "Runs with"
 ab_add_test(test_package_picker screens/test_package_picker.cpp)
 target_include_directories(test_package_picker PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
+# The picture that stands on the screen while a program starts (launch_picture.h, pure): RetroArch's for a RetroArch
+# game or another emulator, AutoBleem's for a PS1 game and for an App (which is a foreign entry too)
+ab_add_test(test_launch_picture screens/test_launch_picture.cpp)
+target_include_directories(test_launch_picture PRIVATE ${CMAKE_SOURCE_DIR}/src/code)

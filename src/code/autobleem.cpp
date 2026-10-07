@@ -6,6 +6,7 @@
 #include "core/services/system.h"
 #include <ctime>
 #include "evoui/screens/evoui_launcher.h"
+#include "launch_picture.h"
 #include "gui/screens/gui_keep_display.h"
 
 #include <cstdlib>
@@ -92,7 +93,7 @@ bool AutoBleem::openLibrary() {
 //*******************************
 // AutoBleem::runOutside
 //*******************************
-void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
+void AutoBleem::runOutside(bool retroArch, const char *picture, const std::function<void()> &body) {
     // the extensions first: they may hold textures, and their threads should leave the machine to the game
     extensions_.suspend();
     gui_->finish(); // fades the music out and closes the mixer
@@ -115,7 +116,7 @@ void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
         // Second, giving the display up puts the tty back into text mode, and whatever was last
         // printed on it comes back - a login prompt, a systemd line, the tail of a script. Blanked,
         // the gap reads as black instead of as somebody else's terminal.
-        gui_->showSplashPicture(retroArch ? "retroarch.jpg" : "autobleem.jpg");
+        gui_->showSplashPicture(picture);
         usleep(WaitingPictureDuration * 1000); // long enough to be seen rather than flicker
         gui_->releaseDisplay();
         System::blankConsole();
@@ -127,7 +128,7 @@ void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
     // absplash shows around a RetroArch run is what is under the emulator's window, and what shows the
     // moment that window goes - not the desktop, and not a carousel that is not ready to be used yet
     if (runner_->keepsLauncherWindow()) {
-        gui_->showSplashPicture(retroArch ? "retroarch.jpg" : "autobleem.jpg");
+        gui_->showSplashPicture(picture);
     }
 
     body();
@@ -324,7 +325,10 @@ void AutoBleem::restoreCarouselSession() {
 void AutoBleem::launchGame() {
     PLOG_INFO << "Starting game";
     const bool retroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
-    runOutside(retroArch, [this]() {
+    const PsGame *running = session_.runningGame.get();
+    const char *picture = waitingPictureName(running && running->foreign, running && running->app,
+                                             session_.emuMode != EmuMode::Pcsx);
+    runOutside(retroArch, picture, [this]() {
         launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint, session_.package.get());
     });
 
@@ -376,7 +380,7 @@ void AutoBleem::takeAppMessage() {
 // scanned content in there.
 void AutoBleem::runRetroArchMenu() {
     PLOG_INFO << "Starting RetroArch's menu";
-    runOutside(true, [this]() { launcher_.launchRetroArchMenu(); });
+    runOutside(true, "retroarch.jpg", [this]() { launcher_.launchRetroArchMenu(); });
     retroArch_.reloadPlaylists();
     retroArch_.reloadFavoritesAndHistory();
 }

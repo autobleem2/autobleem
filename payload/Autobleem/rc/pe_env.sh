@@ -97,7 +97,8 @@ pe_prepare() {
     mkdir -p "$PE_ROOT/bin" "$PE_ROOT/lib" "$PE_ROOT/etc/boot_menu" "$PE_ROOT/etc/project_eris/IMG" \
         "$PE_ROOT/etc/project_eris/SUP/launchers/$PE_FILENAME" "$PE_RUN_DIR" "$PE_LOG_DIR" || return 1
     for pe_tool in sdl_text_display sdl_input_text_display sdl_display; do
-        cp -f "$PE_RC_DIR/pe/$pe_tool" "$PE_ROOT/bin/$pe_tool" && chmod 755 "$PE_ROOT/bin/$pe_tool"
+        cp -f "$PE_RC_DIR/pe/$pe_tool" "$PE_ROOT/bin/$pe_tool" 2>/dev/null && chmod 755 "$PE_ROOT/bin/$pe_tool" ||
+            pe_log "no $PE_RC_DIR/pe/$pe_tool - a mod that calls it gets 'not found'"
     done
     # the dialogs are one program (abdialog, src/tools/abdialog) run under the names the 2020 tools had: sdl_display
     # (the text screen, which the mod stops with `killall sdl_display` - the process is found by that name) and
