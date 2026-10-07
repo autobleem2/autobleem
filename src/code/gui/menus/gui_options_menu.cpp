@@ -462,7 +462,8 @@ void GuiOptions::loadFor(int id, const string &nextValue) {
     gui->beginBusy(_("Loading..."), [this]() { render(); });
     if (id == CFG_LANG)
         app.lang().load(Env::getPathToLangDir(), nextValue);
-    gui->loadAssets(theme); // the music only with a theme change
+    // the music with a theme change, and with a language change: the theme may have a track for the language
+    gui->loadAssets(theme || id == CFG_LANG);
     // the new font (and the new theme's panel) decide how many rows fit: take the font and re-count the
     // rows as init() did, then page to the cursor again - rendering with the old count overran the panel
     GuiOptionsMenuBase::init();
