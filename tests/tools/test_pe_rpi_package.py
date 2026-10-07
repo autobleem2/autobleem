@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""The PE runner in the Raspberry Pi 32-bit package (APPS-13; run by ctest, or: python3 this_file.py).
+"""The PE runner in the Linux appliance packages: Raspberry Pi 32-bit, 64-bit and the PC stick (APPS-13; run by ctest, or:
+python3 this_file.py).
 
-The Pi's rc/ comes from payload_linux/Autobleem/rc (publish-launcher.yml); the PE runner files live only in payload/
-(the console's), so the workflow's rpi branch copies them - one copy, never a duplicate - together with the pad table and
-the abdialog program, and no other Linux target gets them (the PE ports are built for the Pi alone)."""
+The appliances' rc/ comes from payload_linux/Autobleem/rc (publish-launcher.yml); the PE runner files live only in payload/
+(the console's), so the workflow's Linux (non-psc) branches copy them - one copy, never a duplicate - together with the pad
+table and the abdialog program; the console's and the Windows product's packages get them from their own paths."""
 
 import os
 import re
@@ -22,10 +23,15 @@ def read(*parts):
 
 
 def rpi_blocks(text):
-    """The workflow's shell blocks that are guarded by `matrix.target }}" = rpi ]`."""
+    """The workflow's staging code that is for every Linux appliance (rpi, rpi64, pcusb): the `else` branch of the console's
+    `matrix.target }}" = psc ]` and the block guarded by `matrix.target }}" != psc ]`."""
     blocks = []
-    for m in re.finditer(r'if \[ "\$\{\{ matrix\.target \}\}" = rpi \]; then\n(.*?)\n\s*fi\n', text, re.S):
-        blocks.append(m.group(1))
+    m = re.search(r'\n(\s*)else\n(\s*case "\$\{\{ matrix\.target \}\}" in\n.*?)\n\1fi\n', text, re.S)
+    assert m, "the else branch of the psc staging"
+    blocks.append(m.group(2))
+    m = re.search(r'if \[ "\$\{\{ matrix\.target \}\}" != psc \]; then\n(.*?)\n\s*chmod \+x stage/Autobleem/rc/\*\.sh', text, re.S)
+    assert m, "the Linux rc staging block"
+    blocks.append(m.group(1))
     return blocks
 
 
@@ -55,13 +61,20 @@ class PeRpiPackageTest(unittest.TestCase):
         self.assertIn("stage/Autobleem/rc/pe/", blocks)
         self.assertNotIn("rc/pe/lib", blocks)  # the console's gl4es stays out of the Pi's package
 
-    def test_no_other_linux_target_gets_them(self):
+    def test_the_console_and_windows_do_not_get_the_linux_runner(self):
         text = read(".github", "workflows", "publish-launcher.yml")
-        # outside the rpi-guarded blocks the runner is not named
+        # outside the Linux blocks the runner is not named
         for block in rpi_blocks(text):
             text = text.replace(block, "")
         self.assertNotIn("pe_run.sh", text)
         self.assertNotIn("pe_gamecontrollerdb", text)
+
+    def test_the_linux_blocks_are_for_every_appliance_target_and_for_no_other(self):
+        text = read(".github", "workflows", "publish-launcher.yml")
+        first, second = rpi_blocks(text)
+        for target in ("rpi)", "rpi64)", "pcusb)"):
+            self.assertIn(target, first)  # the case that names each appliance's build folder
+        self.assertNotIn("= rpi ]", first + second, "no block may be guarded for the 32-bit Pi alone")
 
     def test_the_trimmed_pad_table_tool_is_there(self):
         self.assertTrue(os.path.isfile(os.path.join(REPO, "tools", "make_pe_gamecontrollerdb.py")))

@@ -129,14 +129,16 @@ from ours at package time, under the 128 KB limit of one environment string) bin
 `/media/project_eris` - and removes it all after the mod, also after a TERM (Reset). Tests: `tests/rc/test_pe_run.cpp`
 (the real scripts on a fake mod), `tests/tools/test_make_pe_gamecontrollerdb.py`.
 
-**The Raspberry Pi 32-bit (APPS-13, 2026-10-07).** The PE ports are also built for the Pi (pe_ports `ci/build.sh --target rpi`,
+**The Raspberry Pi 32-bit and 64-bit and the PC stick (APPS-13, 2026-10-07).** The PE ports are also built for the Pi (pe_ports `ci/build.sh --target rpi`,
 `<id>-<version>-rpi.mod`, control line `Platform: RPI armhf`); `proc_pe` 1.3.0 writes `Exec.rpi=run.sh` for such a package (and
-`Exec.psc` for every other), so a machine lists only its own. The same runner starts them: the rpi launcher artifact
+`Exec.psc` for every other), so a machine lists only its own; the same for the 64-bit Pi (`--target rpi64`, `Platform: RPI64 arm64`,
+`Exec.rpi64`) and the PC stick (`--target pcusb`, `Platform: PCUSB i386`, `Exec.pcusb`) from `proc_pe` 1.4.0. The same runner
+starts them: the rpi, rpi64 and pcusb launcher artifacts
 (`publish-launcher.yml`) carries `rc/pe_run.sh`, `rc/pe_env.sh`, `rc/pe_compat.ini` (copied from `payload/` - one copy, none in
 `payload_linux/`), the trimmed `rc/pe_gamecontrollerdb.txt` and `abdialog`; the appliance's `assemble.sh` bundles `proc_pe` into
-the `rpi-armhf` package. What the console has and the Pi lacks (`/data/power`, `/tmp/lib`, the dialogs' console stand-ins in
+the `rpi-armhf`, `rpi-arm64` and `pcusb` packages. What the console has and the Pi lacks (`/data/power`, `/tmp/lib`, the dialogs' console stand-ins in
 `rc/pe/`, gl4es in `rc/pe/lib`) is only logged by `pe_env.sh`, the mods bring their own GL layer where they need one.
-`tests/tools/test_pe_rpi_package.py` guards the staging.
+`tests/tools/test_pe_rpi_package.py` guards the staging (every Linux appliance target, no psc/win).
 
 **An App ends whole (2026-10-05).** `rc/pe_run.sh` and `rc/app_run.sh` start the App's program with
 `ab_app_start` (`rc/app_env.sh`, "The App's processes") and stay its parent: the program gets a mark in its
