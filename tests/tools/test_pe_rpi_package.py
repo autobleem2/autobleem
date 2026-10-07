@@ -13,6 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 WORKFLOW = os.path.join(REPO, ".github", "workflows", "publish-launcher.yml")
 RUNNER = ("pe_run.sh", "pe_env.sh", "pe_compat.ini")
+DIALOGS = ("sdl_text_display", "sdl_input_text_display", "sdl_display")
 
 
 def read(*parts):
@@ -42,6 +43,17 @@ class PeRpiPackageTest(unittest.TestCase):
         self.assertIn("make_pe_gamecontrollerdb.py", blocks)
         self.assertIn("stage/Autobleem/rc/pe_gamecontrollerdb.txt", blocks)
         self.assertIn('cp "$D/abdialog"', blocks)
+
+    def test_the_rpi_package_gets_the_three_dialog_scripts(self):
+        # a mod's launch.sh calls ${PROJECT_ERIS_PATH}/bin/sdl_input_text_display: pe_env.sh copies it from rc/pe/ -
+        # without the script the call is "not found" (127) and the mod's question (TyrQuake's pad choice, DOSBox's
+        # game choice) is never asked (the Pi's first round, 2026-10-07)
+        blocks = "\n".join(rpi_blocks(read(".github", "workflows", "publish-launcher.yml")))
+        for name in DIALOGS:
+            self.assertTrue(os.path.isfile(os.path.join(REPO, "payload", "Autobleem", "rc", "pe", name)), name)
+            self.assertIn("payload/Autobleem/rc/pe/" + name, blocks)
+        self.assertIn("stage/Autobleem/rc/pe/", blocks)
+        self.assertNotIn("rc/pe/lib", blocks)  # the console's gl4es stays out of the Pi's package
 
     def test_no_other_linux_target_gets_them(self):
         text = read(".github", "workflows", "publish-launcher.yml")

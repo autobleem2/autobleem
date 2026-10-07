@@ -238,9 +238,13 @@ jobs:
             if [ "${{ matrix.target }}" = rpi ]; then
               # the PE runner for the Raspberry Pi 32-bit (APPS-13): the console payload's own files - one copy, no
               # duplicate in payload_linux - and the pad table trimmed under the environment-string limit, as
-              # tools/make_psc_package.sh does (the dialogs' stand-in programs in rc/pe/ are console binaries: not shipped,
-              # rc/pe_env.sh links abdialog in their place)
+              # tools/make_psc_package.sh does. rc/pe/ holds the three dialog scripts (sdl_text_display,
+              # sdl_input_text_display and the sdl_display stand-in: shell scripts, not console binaries) that
+              # rc/pe_env.sh copies into the mod's bin/ and puts abdialog under; gl4es (built for the console, in
+              # the pe folder's lib) is not shipped - the Pi's ports carry their own
               cp payload/Autobleem/rc/pe_run.sh payload/Autobleem/rc/pe_env.sh payload/Autobleem/rc/pe_compat.ini stage/Autobleem/rc/
+              mkdir -p stage/Autobleem/rc/pe
+              cp payload/Autobleem/rc/pe/sdl_text_display payload/Autobleem/rc/pe/sdl_input_text_display payload/Autobleem/rc/pe/sdl_display stage/Autobleem/rc/pe/
               python3 tools/make_pe_gamecontrollerdb.py src/resources/gamecontrollerdb.txt stage/Autobleem/rc/pe_gamecontrollerdb.txt
             fi
             chmod +x stage/Autobleem/rc/*.sh
