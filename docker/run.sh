@@ -38,6 +38,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -t 0 ] && OPTS+=(-it)
+export AB_EXTENSION_DIRS="${AB_EXTENSION_DIRS:-../ext_store}"  # diag: not for develop
 # every AB_* variable goes through: the ci/build.sh knobs, and the AB_GIT_* facts for a tree without .git
 for v in "${!AB_@}"; do OPTS+=(-e "$v"); done
 # the pcsx-ab checkout ci/build.sh builds the emulator from, mounted at its own path too (a sibling
