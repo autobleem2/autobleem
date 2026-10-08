@@ -53,6 +53,11 @@ fi
 nxt="${AB_PCSXNXT_DIR:-}"
 [ -z "$nxt" ] && [ -f ../pcsx-abnxt/ci/build.sh ] && nxt="$(cd ../pcsx-abnxt && pwd)"
 [ -n "$nxt" ] && [ -d "$nxt" ] && OPTS+=(-v "$nxt:$nxt")
+# the extension source folders (AB_EXTENSION_DIRS, ;-separated) mounted at their own paths too
+IFS=';' read -ra extdirs <<<"${AB_EXTENSION_DIRS:-}"
+for d in "${extdirs[@]}"; do
+    [ -d "$d" ] && { d="$(cd "$d" && pwd)"; OPTS+=(-v "$d:$d"); }
+done
 # the compiler cache (ci/build.sh puts sccache in front of every compiler): a directory of the host's, so
 # a container's compiles are the next container's cache hits - AB_SCCACHE_DIR names it, AB_NO_SCCACHE=1
 # leaves it out (ci/build.sh then builds without a launcher)
