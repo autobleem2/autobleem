@@ -79,13 +79,13 @@ if (AB_TARGET STREQUAL "psc")
 	# console's glibc 2.24 - takes the -mfpu spelling (its old branch here was armv7ve without NEON).
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0)
 		message(STATUS "CXX Compiler Version > 8")
-		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a+simd -Os -s")
-		SET(CMAKE_CXX_FLAGS " -mfloat-abi=hard -march=armv8-a+simd  -Os -s")
+		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a+simd -Os -g")
+		SET(CMAKE_CXX_FLAGS " -mfloat-abi=hard -march=armv8-a+simd  -Os -g")
         message(STATUS "Newer GCC installed")
 	else()
 		message(STATUS "CXX Compiler Version <= 8")
-		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -s")
-		SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -s")
+		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -g")
+		SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -g")
 	endif()
 	# 64-bit file offsets on the 32-bit console: without them stat() fails (EOVERFLOW) on a file over 2 GB,
 	# so a big Store download or disc image reads as size 0. The PC stick's toolchain does the same.

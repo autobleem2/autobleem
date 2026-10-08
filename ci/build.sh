@@ -36,6 +36,9 @@
 #   AB_BUILD_CHANNEL=dev|nightly|prerelease|release   the channel the launcher's corner tag names (UIREV-40); unset = dev
 #                   (a hand build says DEV + its commit); the publish workflow sets the real one
 set -euo pipefail
+# diag build for BUG-55: keep the launcher unpacked, skip the suites
+export AB_NO_UPX="${AB_NO_UPX:-1}"
+export AB_NO_TESTS="${AB_NO_TESTS:-1}"
 cd "$(dirname "$0")/.."
 REPO="$PWD"
 JOBS="${AB_JOBS:-$(nproc)}"
