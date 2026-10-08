@@ -63,6 +63,7 @@ Choose game data=Choisir les données de jeu
 Choose the core that plays each system=Choisir le core de chaque système
 Choose the games shown: PlayStation or Apps and the group=Choisir les jeux affichés : PlayStation ou applications et le groupe
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Choisir les jeux affichés : PlayStation, RetroArch ou applications et le groupe
+Clean RetroArch game names:=Noms de jeux RetroArch épurés :
 Clock=Fréquence
 Clock:=Horloge :
 Close AutoBleem and start it again=Fermer AutoBleem et le relancer

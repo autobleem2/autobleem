@@ -211,6 +211,9 @@ void GuiOptions::fill() {
         // RetroArch's config_save_on_exit (see Config): whether a change made in RetroArch is kept
         lines.emplace_back(CFG_RA_PERSIST, _("Persist RetroArch config:"), "rapersist", true,
                            vector<string>({"false", "true"}));
+        // the RetroArch game lists without the (region) [!] tags; the files and the PS1 titles are not touched
+        lines.emplace_back(CFG_CLEAN_NAMES, _("Clean RetroArch game names:"), "cleannames", true,
+                           vector<string>({"false", "true"}));
     }
 
     heading(_("Library"));

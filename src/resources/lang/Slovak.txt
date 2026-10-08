@@ -63,6 +63,7 @@ Choose game data=Vyberte herné dáta
 Choose the core that plays each system=Vyberte jadro pre každý systém
 Choose the games shown: PlayStation or Apps and the group=Výber zobrazených hier: PlayStation alebo aplikácie a skupina
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Výber zobrazených hier: PlayStation, RetroArch alebo aplikácie a skupina
+Clean RetroArch game names:=Čisté názvy hier RetroArch:
 Clock=Takt
 Clock:=CPU hodiny
 Close AutoBleem and start it again=Zavrieť AutoBleem a spustiť ho znova

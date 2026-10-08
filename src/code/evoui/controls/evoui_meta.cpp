@@ -12,6 +12,7 @@
 #include "core/main.h"
 #include "core/main.h"
 #include "core/services/environment.h"
+#include <ableem/engine/strings.h>
 #include <ab_gui/context.h>
 #include <ab_gui/style.h>
 
@@ -82,7 +83,11 @@ void PsMeta::updateTexts(PsGamePtr &psGame, ableem::Color _textColor) {
             psGame->region = "";
 
             // the core is the CORE row's; the PUBLISHER row only shows what the database gave the game
-            updateTexts(psGame->title, psGame->publisher, to_string(psGame->year), psGame->serial, psGame->region,
+            // Options -> "Clean RetroArch game names": the shown name without its (region) [!] tags; the title
+            // itself (box art lookup, sorting) and the file stay as they are
+            const bool clean = App::get().config().inifile.values["cleannames"] != "false";
+            updateTexts(clean ? ableem::Strings::stripBracketTags(psGame->title) : psGame->title, psGame->publisher,
+                        to_string(psGame->year), psGame->serial, psGame->region,
                         to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd, psGame->locked,
                         psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign, psGame->app,
                         App::get().clock().displayTime(psGame->last_played), _textColor);

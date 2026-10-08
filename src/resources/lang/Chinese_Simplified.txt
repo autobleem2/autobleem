@@ -63,6 +63,7 @@ Choose game data=选择游戏数据
 Choose the core that plays each system=为每个系统选择核心
 Choose the games shown: PlayStation or Apps and the group=选择显示的游戏：PlayStation 或应用，以及分组
 Choose the games shown: PlayStation, RetroArch or Apps and the group=选择显示的游戏：PlayStation、RetroArch 或应用，以及分组
+Clean RetroArch game names:=简洁的RetroArch游戏名称：
 Clock=时钟频率
 Clock:=时钟：
 Close AutoBleem and start it again=关闭 AutoBleem 并重新启动

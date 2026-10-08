@@ -63,6 +63,7 @@ Choose game data=Välj speldata
 Choose the core that plays each system=Välj core för varje system
 Choose the games shown: PlayStation or Apps and the group=Välj vilka spel som visas: PlayStation eller appar och gruppen
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Välj vilka spel som visas: PlayStation, RetroArch eller appar och gruppen
+Clean RetroArch game names:=Rena RetroArch-spelnamn:
 Clock=Klockfrekvens
 Clock:=Klocka:
 Close AutoBleem and start it again=Stäng AutoBleem och starta det igen

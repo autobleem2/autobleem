@@ -63,6 +63,7 @@ Choose game data=Causir las donadas de jòc
 Choose the core that plays each system=Causir lo core per cada sistèma
 Choose the games shown: PlayStation or Apps and the group=Causir los jòcs afichats : PlayStation o aplicacions e lo grop
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Causir los jòcs afichats : PlayStation, RetroArch o aplicacions e lo grop
+Clean RetroArch game names:=Noms de jòcs RetroArch netejats :
 Clock=Frequéncia
 Clock:=Frequéncia :
 Close AutoBleem and start it again=Tampar AutoBleem e lo tornar aviar

@@ -63,6 +63,7 @@ Choose game data=Alege datele jocului
 Choose the core that plays each system=Alege core-ul pentru fiecare sistem
 Choose the games shown: PlayStation or Apps and the group=Alege jocurile afișate: PlayStation sau aplicații și grupul
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Alege jocurile afișate: PlayStation, RetroArch sau aplicații și grupul
+Clean RetroArch game names:=Nume curate pentru jocurile RetroArch:
 Clock=Frecvență
 Clock:=Ceas:
 Close AutoBleem and start it again=Închide AutoBleem și pornește-l din nou

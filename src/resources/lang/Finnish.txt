@@ -63,6 +63,7 @@ Choose game data=Valitse pelitiedot
 Choose the core that plays each system=Valitse kunkin järjestelmän ydin
 Choose the games shown: PlayStation or Apps and the group=Valitse näytettävät pelit: PlayStation tai sovellukset ja ryhmä
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Valitse näytettävät pelit: PlayStation, RetroArch tai sovellukset ja ryhmä
+Clean RetroArch game names:=Siistit RetroArch-pelien nimet:
 Clock=Kellotaajuus
 Clock:=Kello:
 Close AutoBleem and start it again=Sulje AutoBleem ja käynnistä se uudelleen

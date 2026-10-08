@@ -63,6 +63,7 @@ Choose game data=Kies speldata
 Choose the core that plays each system=Kies de core voor elk systeem
 Choose the games shown: PlayStation or Apps and the group=Kies de getoonde spellen: PlayStation of apps en de groep
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Kies de getoonde spellen: PlayStation, RetroArch of apps en de groep
+Clean RetroArch game names:=Schone RetroArch-spelnamen:
 Clock=Klok
 Clock:=Klok:
 Close AutoBleem and start it again=Sluit AutoBleem af en start het opnieuw

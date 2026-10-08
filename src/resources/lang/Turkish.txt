@@ -63,6 +63,7 @@ Choose game data=Oyun verisini seç
 Choose the core that plays each system=Her sistem için çekirdeği seçin
 Choose the games shown: PlayStation or Apps and the group=Gösterilen oyunları seçin: PlayStation veya uygulamalar ve grup
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Gösterilen oyunları seçin: PlayStation, RetroArch veya uygulamalar ve grup
+Clean RetroArch game names:=Temiz RetroArch oyun adları:
 Clock=Saat hızı
 Clock:=Saat hızı:
 Close AutoBleem and start it again=AutoBleem'i kapat ve yeniden başlat
