@@ -184,8 +184,10 @@ build_psc() {
     build_pcsx psc build_psc/emu-stage/emu
     build_pcsx psc build_psc/emu-stage/emunxt nxt
     banner "psc: configure + build (build_psc, toolchain $toolchain, $ab_toolchain_cmake)"
+    local ext_opt=()
+    [ -n "${AB_EXTENSION_DIRS:-}" ] && ext_opt=("-DAB_EXTENSION_DIRS=$AB_EXTENSION_DIRS")
     configure build_psc -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_TOOLCHAIN_FILE="$ab_toolchain_cmake" -DAB_PSC_TOOLCHAIN="$toolchain"
+        -DCMAKE_TOOLCHAIN_FILE="$ab_toolchain_cmake" -DAB_PSC_TOOLCHAIN="$toolchain" "${ext_opt[@]}"
     ninja -C build_psc -j "$JOBS"
     banner "psc: the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH ($ab_check_psc_binary)"
     local bin
