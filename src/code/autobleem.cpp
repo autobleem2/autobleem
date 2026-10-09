@@ -400,6 +400,28 @@ int AutoBleem::run() {
     }
     string pathToGamesDir = Env::getPathToGamesDir();
 
+    restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
+
+    // the safe area (overscan): the 4:3 frame goes into a centred rectangle of the output, the margin from config.ini -
+    // the tube's on the 720x480 CRT mode, the VGA one (0 unless set) on any other 4:3 size. Before display(): its boot
+    // splash is the first 4:3 frame, and it would be shown with the renderer's default margin instead of config.ini's
+    // (CRT 4:3 round 2: Crtmargin=0 still drew the 5 % margin), and before the keep-mode question, which is drawn in
+    // it too
+    // RetroArch's core info and playlists are read on a worker while the window, fonts and theme come up; the
+    // first screen only waits for them when it shows a RetroArch set (GuiLauncher::loadAssets)
+    if (Env::retroArchInstalled())
+        retroArch_.startBackgroundLoad();
+    applySafeMargin();
+    {
+        ableem::StartupTimer timer("display-and-theme"); // window, fonts, the theme's assets
+        gui_->display(false);
+    }
+    ableem::StartupTimer::milestone("splash-shown");
+    unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
+
+    // what used to stand between the process and the splash (a black screen of seconds on the Pi 400): the memory
+    // card restore and the scan triggers run now, with the splash up. Both finish before anything can start a game
+    // or a scan - the flags are read by the scan trigger below.
     {
         ableem::StartupTimer timer("memcard-restore");
         MemcardManager memcardOperation(pathToGamesDir);
@@ -419,24 +441,6 @@ int AutoBleem::run() {
                          "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
     bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
     fingerprintTimer.stop();
-
-    restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
-
-    // the safe area (overscan): the 4:3 frame goes into a centred rectangle of the output, the margin from config.ini -
-    // the tube's on the 720x480 CRT mode, the VGA one (0 unless set) on any other 4:3 size. Before display(): its boot
-    // splash is the first 4:3 frame, and it would be shown with the renderer's default margin instead of config.ini's
-    // (CRT 4:3 round 2: Crtmargin=0 still drew the 5 % margin), and before the keep-mode question, which is drawn in
-    // it too
-    // RetroArch's core info and playlists are read on a worker while the window, fonts and theme come up; the
-    // first screen only waits for them when it shows a RetroArch set (GuiLauncher::loadAssets)
-    if (Env::retroArchInstalled())
-        retroArch_.startBackgroundLoad();
-    applySafeMargin();
-    {
-        ableem::StartupTimer timer("display-and-theme"); // window, fonts, the theme's assets
-        gui_->display(false);
-    }
-    unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
 
     // Options -> Display on the console: rc/boot.sh has just restarted Weston in the mode to try - kept, or the
     // launcher leaves again at once for the old one. Elsewhere the mode is tried in-process, nothing is pending.
