@@ -184,7 +184,7 @@ void Carousel::setInitialPositions(int selectedIndex, bool waitForCovers) {
                 const string &path = item.artPath();
                 if (path.empty()) {
                     item.loadTex(renderer, spareTarget()); // a dev host's internal game: no file to decode
-                    item.artFailed = !item.coverPng.valid();
+                    item.artFailed = !item.coverPng.valid() && !item.artPending;
                 } else if (loader_.take(path, image)) {
                     item.loadFromImage(renderer, image, spareTarget());
                     item.artFailed = !item.coverPng.valid();
@@ -299,6 +299,8 @@ bool Carousel::pumpCovers() {
             const string &path = game.artPath();
             if (path.empty()) { // a dev host's internal game: its picture comes from the metadata
                 game.loadTex(gui_.renderer(), spareTarget());
+                if (game.artPending)
+                    continue; // asked again on a later pump, once the metadata is ready
             } else {
                 ableem::Image image;
                 if (!loader_.take(path, image))

@@ -70,6 +70,7 @@ struct PsCarouselGame : public PsGamePtr {
     // covers no longer shown up to a limit, and lets the longest unused go first
     unsigned long lastWanted = 0;
     bool artFailed = false; // its image could not be read: not asked for again
+    bool artPending = false; // loadTex found the metadata still loading: no art is not cached, ask again
 
     // the image file the cover is made from (see the .cpp), worked out on first use
     const std::string &artPath();

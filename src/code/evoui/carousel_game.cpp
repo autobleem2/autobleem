@@ -145,8 +145,13 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer, Texture target) {
         return;
     const string &path = artPath();
     Texture artTex;
+    artPending = false;
 #ifdef AB_DEBUG_HOST
     if (path.empty() && (*this)->internal) {
+        if (!App::get().library().metadata().ready()) {
+            artPending = true; // the lookup is still loading: "not found" now would be cached as "no art"
+            return;
+        }
         GameMetadata md;
         if (App::get().library().metadata().findBySerial((*this)->serial, md) && !md.bytes.empty())
             artTex = Texture::loadMemory(renderer, md.bytes.data(), md.bytes.size());
