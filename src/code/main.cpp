@@ -16,6 +16,7 @@
 #include "core/services/system_info.h"
 #include "core/version.h"
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 #ifdef AB_PLATFORM_WIN
 #include <windows.h>
 #endif
@@ -61,6 +62,8 @@ static int runAutobleem(int argc, char *argv[]) {
     }
     (void)launcherMutex; // held until the process ends
 #endif
+    ableem::StartupTimer::origin(); // the "startup: at <name>" lines count from here (steady_clock, no wall clock)
+
     // stdout/stderr go to AB_out.txt/AB_err.txt in the logs dir (see run.sh). without this they are block buffered
     // and the last lines before a crash never reach the file, which is exactly when they are needed.
     cout.setf(ios::unitbuf);
@@ -90,10 +93,12 @@ static int runAutobleem(int argc, char *argv[]) {
     argc = static_cast<int>(args.size());
     argv = args.data();
 
+    ableem::StartupTimer environmentTimer("environment-setup");
     if (!EnvironmentSetup::fromArguments(argc, argv)) {
         PLOG_ERROR << "AutoBleem " << Version::FULL_VERSION << ": cannot start";
         return EXIT_FAILURE;
     }
+    environmentTimer.stop(); // logs before the file appender exists: console (AB_out.txt) only
     if (sysInfoOnly) {
         // this is the command's output, not a log line
         for (const InfoSection &section : SystemInfoService().collect()) {

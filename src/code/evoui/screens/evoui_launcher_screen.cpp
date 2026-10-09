@@ -26,6 +26,7 @@
 #include <vector>
 #include <ableem/engine/ext_trace.h>
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 
 using namespace std;
 
@@ -806,10 +807,22 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
 // exists (its index may have moved), else the first one
 void GuiLauncher::refreshPlaylistNames() {
     raPlaylists.clear();
+    raPlaylistsPending = false;
     if (Env::retroArchInstalled()) // the program, as everywhere (no folder: no playlists)
         raPlaylists = app.retroArch().playlistNames();
+    pickPlaylistNames();
+}
 
+//*******************************
+// GuiLauncher::pickPlaylistNames
+//*******************************
+// raPlaylists is current: the selection (and the session's copy) keeps its playlist by name where it still
+// exists, else the first one. A selection that only carried an index (loadAssets ran before the playlists were
+// read) is given its name from that index first.
+void GuiLauncher::pickPlaylistNames() {
     auto pick = [&](GameSetSelection &sel) {
+        if (sel.raPlaylistName.empty() && sel.raPlaylistIndex < raPlaylists.size())
+            sel.raPlaylistName = raPlaylists[sel.raPlaylistIndex];
         auto it = find(raPlaylists.begin(), raPlaylists.end(), sel.raPlaylistName);
         if (it != raPlaylists.end()) {
             sel.raPlaylistIndex = static_cast<int>(it - raPlaylists.begin());
@@ -823,6 +836,34 @@ void GuiLauncher::refreshPlaylistNames() {
     };
     pick(selection);
     pick(app.session().launcher);
+}
+
+//*******************************
+// GuiLauncher::loadPlaylistNames / pollBackgroundData
+//*******************************
+// wait false: the names if the background load is done, else raPlaylistsPending and an empty list (never a
+// blocking read); wait true: the names, waiting for the load if it is still under way.
+void GuiLauncher::loadPlaylistNames(bool wait) {
+    raPlaylists.clear();
+    raPlaylistsPending = false;
+    if (!Env::retroArchInstalled())
+        return;
+    if (app.retroArch().tryPlaylistNames(raPlaylists))
+        return;
+    if (wait)
+        raPlaylists = app.retroArch().playlistNames(); // joins the worker
+    else
+        raPlaylistsPending = true;
+}
+
+// once a frame: what the background loads finished since the last one
+void GuiLauncher::pollBackgroundData() {
+    if (raPlaylistsPending && app.retroArch().ready()) {
+        loadPlaylistNames(false); // ready() is true: the names, no wait
+        pickPlaylistNames();
+        forgetSetCounts(); // the picker's RetroArch rows were not counted yet
+        PLOG_INFO << "RetroArch playlists arrived: " << raPlaylists.size();
+    }
 }
 
 //*******************************
@@ -934,11 +975,17 @@ void GuiLauncher::renderPlayFrame() {
 //*******************************
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
+    ableem::StartupTimer assetsTimer("launcher-load-assets");
     forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
-    raPlaylists.clear();
-    if (Env::retroArchInstalled()) { // the program, as everywhere (no folder: no playlists)
-        raPlaylists = app.retroArch().playlistNames();
+    // a remembered Lightgun set is not offered without RetroArch: back to the PlayStation set
+    app.session().launcher.set = setOrFallback(app.session().launcher.set, Env::retroArchInstalled());
+    // the RetroArch and Lightgun sets list the playlists' games: that first screen waits for them. Any other
+    // does not - the names arrive later (pollBackgroundData)
+    {
+        ableem::StartupTimer timer("launcher-playlist-names");
+        loadPlaylistNames(app.session().launcher.set == GameSet::RetroArch ||
+                          app.session().launcher.set == GameSet::Lightgun);
     }
     // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the
     // same name here once left the members empty, and the first RetroArch game selected on a fresh screen
@@ -947,8 +994,6 @@ void GuiLauncher::loadAssets() {
     texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
              _("Resume game from saved state point")};
 
-    // a remembered Lightgun set is not offered without RetroArch: back to the PlayStation set
-    app.session().launcher.set = setOrFallback(app.session().launcher.set, Env::retroArchInstalled());
     selection = app.session().launcher;
     if (selection.set != GameSet::PS1)
         selection.ps1SelectState = Ps1SelectState::AllGames; // see rememberSelection()
@@ -1030,7 +1075,10 @@ void GuiLauncher::loadAssets() {
     frontElemets.clear();
     carousel.games.clear();
     carousel.initPositions();
-    switchSet(selection.set, true);
+    {
+        ableem::StartupTimer timer("launcher-first-set");
+        switchSet(selection.set, true);
+    }
     showSetName();
 
     gameName = "";
