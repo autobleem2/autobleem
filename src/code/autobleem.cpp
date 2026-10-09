@@ -13,6 +13,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 #include <ableem/engine/update_catalog.h>
 #include "core/version.h"
 #include <ableem/engine/theme_spec.h>
@@ -75,7 +76,7 @@ unique_ptr<ProcessRunner> AutoBleem::makeProcessRunner() {
 // AutoBleem::openLibrary
 //*******************************
 bool AutoBleem::openLibrary() {
-    if (!gameLibrary.openCoversAndUsbGames()) {
+    if (!gameLibrary.openCoversAndUsbGames(true /* the rdb and covers dbs load in the background */)) {
         return false;
     }
 
@@ -390,25 +391,14 @@ void AutoBleem::runRetroArchMenu() {
 // the whole program from here on. main() only wraps this so a stray exception is logged instead of a silent abort.
 //*******************************
 int AutoBleem::run() {
-    if (!openLibrary()) {
-        return EXIT_FAILURE;
+    ableem::StartupTimer::milestone("run-entered");
+    {
+        ableem::StartupTimer timer("open-library");
+        if (!openLibrary()) {
+            return EXIT_FAILURE;
+        }
     }
     string pathToGamesDir = Env::getPathToGamesDir();
-
-    MemcardManager memcardOperation(pathToGamesDir);
-    memcardOperation.restoreAll(Env::getPathToSaveStatesDir());
-
-    // the same triggers the classic menu's forceScan prompt used to check, minus autobleem.prev (a
-    // GamesFingerprint now stands in for it - see ScanService); moving loose game files into their own
-    // sub-directories is ScanService's worker's job now, the first thing runScan() does.
-    bool fingerprintOnDiskMatches = ScanService::fingerprintsMatchDisk();
-    // RetroBoot's EmulationStation reads this list; without RetroBoot nobody does, and its absence must not
-    // cost a full scan on every boot (it did, on the Pi)
-    bool gamelistXmlExists =
-        !Env::hasRetroBoot() ||
-        DirEntry::exists(Env::getPathToRetroarchDir() + sep +
-                         "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
-    bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
 
     restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
 
@@ -417,9 +407,40 @@ int AutoBleem::run() {
     // splash is the first 4:3 frame, and it would be shown with the renderer's default margin instead of config.ini's
     // (CRT 4:3 round 2: Crtmargin=0 still drew the 5 % margin), and before the keep-mode question, which is drawn in
     // it too
+    // RetroArch's core info and playlists are read on a worker while the window, fonts and theme come up; the
+    // first screen only waits for them when it shows a RetroArch set (GuiLauncher::loadAssets)
+    if (Env::retroArchInstalled())
+        retroArch_.startBackgroundLoad();
     applySafeMargin();
-    gui_->display(false);
+    {
+        ableem::StartupTimer timer("display-and-theme"); // window, fonts, the theme's assets
+        gui_->display(false);
+    }
+    ableem::StartupTimer::milestone("splash-shown");
     unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
+
+    // what used to stand between the process and the splash (a black screen of seconds on the Pi 400): the memory
+    // card restore and the scan triggers run now, with the splash up. Both finish before anything can start a game
+    // or a scan - the flags are read by the scan trigger below.
+    {
+        ableem::StartupTimer timer("memcard-restore");
+        MemcardManager memcardOperation(pathToGamesDir);
+        memcardOperation.restoreAll(Env::getPathToSaveStatesDir());
+    }
+
+    // the same triggers the classic menu's forceScan prompt used to check, minus autobleem.prev (a
+    // GamesFingerprint now stands in for it - see ScanService); moving loose game files into their own
+    // sub-directories is ScanService's worker's job now, the first thing runScan() does.
+    ableem::StartupTimer fingerprintTimer("fingerprint-check");
+    bool fingerprintOnDiskMatches = ScanService::fingerprintsMatchDisk();
+    // RetroBoot's EmulationStation reads this list; without RetroBoot nobody does, and its absence must not
+    // cost a full scan on every boot (it did, on the Pi)
+    bool gamelistXmlExists =
+        !Env::hasRetroBoot() ||
+        DirEntry::exists(Env::getPathToRetroarchDir() + sep +
+                         "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
+    bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
+    fingerprintTimer.stop();
 
     // Options -> Display on the console: rc/boot.sh has just restarted Weston in the mode to try - kept, or the
     // launcher leaves again at once for the old one. Elsewhere the mode is tried in-process, nothing is pending.
@@ -441,7 +462,9 @@ int AutoBleem::run() {
         useDefaultThemeFor(inUse);
     }
 
-    if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
+    // the files only: the databases themselves are still being read on the library's worker, and a stick that
+    // has the files but broken ones is told in the log (covers-dbs-open) rather than stopped for
+    if (!ableem::MetadataLookup::sourcesPresent(Env::getPathToCoversDBDir(), Env::getPathToPlayStationRdbFile())) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
         // every game would otherwise scan in with no title/cover. RetroArch's "Sony - PlayStation.rdb"
         // is the other source, so a stick with that tree but no covers*.db is fine. After display(): the
@@ -469,7 +492,9 @@ int AutoBleem::run() {
     if (updates().checkDue(time(nullptr)))
         updates().startCheck(time(nullptr)); // once a day, and at every start - the launcher asks when it lands
 #endif
+    ableem::StartupTimer scansTimer("scans-start");
     scans().start();
+    scansTimer.stop();
     if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
         scans().requestScan();
     }
@@ -477,6 +502,7 @@ int AutoBleem::run() {
     // the extensions (docs/extensions-plan.md): what is in Extensions/, the crash guard's verdict on the last
     // run - an extension that was running when the launcher died is disabled and the user told - and the
     // background ones started
+    ableem::StartupTimer extensionsTimer("extensions-start");
     extensionCatalog_.scan();
     const string crashed = extensionCatalog_.takeCrashed();
     if (!crashed.empty()) {
@@ -484,6 +510,7 @@ int AutoBleem::run() {
         extensionRequests_.message = (info ? info->title : crashed) + " " + _("stopped AutoBleem and was disabled");
     }
     extensions_.startBackground();
+    extensionsTimer.stop();
 
     // On the console a Quit event is never a window's close button: it is SDL giving up on the display -
     // seen on the PSC on 2026-09-20 coming back from RetroArch 1.22.2 (Doom): the GPU had not returned the

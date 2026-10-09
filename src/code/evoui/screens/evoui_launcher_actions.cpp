@@ -60,6 +60,7 @@ const char *const NetworkEntry = "network";
 void GuiLauncher::loop_chooseSet() {
     powerOffShift = false;
     const long started = gui->platform().ticks();
+    resolvePlaylistNames(); // the picker lists the playlists: wait for the background load if it is not done
     const bool counted = !setCountsValid;
     if (counted) {
         setCounts = app.gameQuery().setCounts(raPlaylists);

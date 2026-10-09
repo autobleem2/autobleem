@@ -455,6 +455,18 @@ public:
     abgui::TweenOwner fadeOwner; // after the float it writes: it goes first and stops the tween
     std::vector<std::string> raPlaylists;
     void refreshPlaylistNames(); // after the scan rewrote playlists
+    // RetroArch's playlists are read on a worker at startup (RetroArchService::startBackgroundLoad). The first
+    // screen waits for them only when it shows a RetroArch set; otherwise raPlaylists is empty and
+    // raPlaylistsPending says "ask again next frame" - pollBackgroundData() fills them in and forgets the picker's
+    // counts. Whoever needs the names at once (the set picker) calls resolvePlaylistNames(), which waits.
+    bool raPlaylistsPending = false;
+    void loadPlaylistNames(bool wait);
+    void resolvePlaylistNames() {
+        if (raPlaylistsPending)
+            loadPlaylistNames(true);
+    }
+    void pickPlaylistNames(); // keeps the selected playlist by name (or by index when only that was remembered)
+    void pollBackgroundData();
 
     LauncherScreenState state = LauncherScreenState::Games;
     void switchState(LauncherScreenState state, int time);
