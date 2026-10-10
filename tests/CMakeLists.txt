@@ -63,6 +63,10 @@ target_include_directories(test_resume_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/co
 ab_add_test(test_set_banner screens/test_set_banner.cpp)
 target_include_directories(test_set_banner PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
 
+# UIREV-54: the hold of a notification set while the launcher loads (evoui/startup_toast.h, pure)
+ab_add_test(test_startup_toast screens/test_startup_toast.cpp)
+target_include_directories(test_startup_toast PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
+
 # BUG-41: the Memory Cards counter's text (gui/menus/memcard_counter.h, pure) - "Card n/N", "0/0" with no cards
 ab_add_test(test_memcard_counter screens/test_memcard_counter.cpp)
 target_include_directories(test_memcard_counter PRIVATE ${CMAKE_SOURCE_DIR}/src/code/gui)
