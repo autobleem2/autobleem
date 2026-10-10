@@ -100,6 +100,8 @@ void GuiSystemMenu::init() {
         addNetwork();
         addItem(SystemMenuAction::HardwareInfo, "Hardware Information", _("Hardware Information"),
                 _("Controller and system information"));
+        addItem(SystemMenuAction::PadDaemon, "Virtual gamepad", _("Virtual gamepad"),
+                _("The pads Apps are given"));
 #ifdef AB_ONLINE_UPDATE
         addItem(SystemMenuAction::SoftwareUpdate, "Software Update", _("Software Update"),
                 _("Check the download site for a newer version"), updateAvailable ? _("Update available") : "");

@@ -57,6 +57,10 @@ with `VirtualPad=false` (the terminal) gets `abpadd --exit-only` on the console 
 `app_env.sh`): no SDL, no shim, SIGTERM on the press. **Windows** has no abpad: an App there is left
 through its own menu, which each port's readme names (the owner's choice).
 
+`abpadd --list` opens each pad once, prints one tab-separated line per pad (index, connected, SDL driver,
+mapping database/guessed, buttons, axes, hats, GUID, name; `apps/abpad/src/core/pad_list.h`) and exits. System ->
+Virtual gamepad (`GuiPadDaemon`) runs it to show what the daemon would see (the daemon itself only runs while an App does).
+
 ## Multi-platform Apps (2026-09-24, autobleem-main `docs/archive/app-format-plan.md` and `docs/history/launcher-multiplatform-apps.md`)
 
 One `Apps/<name>/` folder, a binary per platform key in `bin/<key>/`, resolved by `AppManifest`

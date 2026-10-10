@@ -12,6 +12,7 @@
 #include "gui/screens/gui_confirm.h"
 #include "gui/screens/gui_about.h"
 #include "gui/screens/gui_hardware_info.h"
+#include "../../gui/screens/gui_pad_daemon.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
 #include "gui/menus/gui_app_settings_menu.h"
 #include "gui/menus/gui_game_editor_ra_menu.h"
@@ -740,6 +741,12 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
         // Network & Controllers now, and its facts page is this one's
         GuiHardwareInfo infoScreen(*gui);
         infoScreen.show();
+        break;
+    }
+
+    case SystemMenuAction::PadDaemon: {
+        GuiPadDaemon padScreen(*gui);
+        padScreen.show();
         break;
     }
 

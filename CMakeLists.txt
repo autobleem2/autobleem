@@ -211,6 +211,8 @@ add_library(ab_ui STATIC
         src/code/gui/screens/gui_select_memcard.h
         src/code/gui/screens/gui_keep_display.cpp
         src/code/gui/screens/gui_keep_display.h
+        src/code/gui/screens/gui_pad_daemon.cpp
+        src/code/gui/screens/gui_pad_daemon.h
         src/code/gui/game_detail_pane.cpp
         src/code/gui/game_detail_pane.h
         src/code/gui/menus/gui_game_editor_menu.cpp
@@ -228,7 +230,7 @@ add_library(ab_ui STATIC
         src/code/gui/menus/gui_options_menu_base.cpp
         src/code/gui/menus/gui_options_menu_base.h
 )
-target_link_libraries(ab_ui ab_classic)
+target_link_libraries(ab_ui ab_classic abpad_core)
 target_include_directories(ab_ui PUBLIC src/code)
 
 # ab_evoui: the EvolutionUI launcher (src/code/evoui/) - the screen, the carousel, the launcher's own
