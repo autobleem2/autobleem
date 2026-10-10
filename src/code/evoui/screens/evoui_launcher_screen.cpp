@@ -1754,12 +1754,22 @@ void GuiLauncher::draw() {
         if (playFramed && obj.get() == playButton)
             continue;
         if (playFramed && obj.get() == playText) { // its pulse drives the frame, in the images' place in the order
-            if (playText->visible)
+            if (playText->visible) {
+                std::unique_ptr<ableem::StartupTimer> playTimer;
+                if (timeDraw)
+                    playTimer = std::make_unique<ableem::StartupTimer>("draw-element play frame");
                 renderPlayFrame();
+            }
             continue;
         }
-        obj->render();
+        if (timeDraw) {
+            ableem::StartupTimer elementTimer("draw-element " + obj->name);
+            obj->render();
+        } else {
+            obj->render();
+        }
     }
+    drawMark("draw-front-loop");
     drawWide([this] { renderSnap(); }); // a theme's snapPanel is a 1280x720 rect
     drawMark("draw-front-elements");
 
@@ -1785,6 +1795,7 @@ void GuiLauncher::draw() {
     // (G5r5), nor the pad batteries and the top-right bubbles: what a screen over it draws is its own
     if (!snapshotFrame) {
         updateHintsIfNeeded();
+        drawMark("draw-hints-laid-out");
         PanelStyle style = gui->panelStyle();
         // an item that does nothing in this state (line 2) is drawn at 35 %: the chip and the label together
         auto drawHint = [&](const Hint &hint, int chipY, int labelY) {
