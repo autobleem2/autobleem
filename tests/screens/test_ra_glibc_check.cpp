@@ -5,8 +5,9 @@
 
 #include "ra_glibc_check.h"
 
+#include <cstdint>
 #include <cstdio>
-#include <filesystem>
+#include <cstdlib>
 #include <fstream>
 #include <string>
 
@@ -139,17 +140,18 @@ string tinyElf(bool is64, bool bigEndian = false) {
 }
 
 // a file in the temp folder; the caller removes it
-std::filesystem::path writeTemp(const char *name, const string &bytes) {
-    const std::filesystem::path path = std::filesystem::temp_directory_path() / name;
+string writeTemp(const char *name, const string &bytes) {
+    const char *folder = std::getenv("TMPDIR");
+    const string path = string(folder != nullptr && *folder != '\0' ? folder : "/tmp") + "/" + name;
     std::ofstream out(path, std::ios::binary);
     out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
     return path;
 }
 
 GlibcVersion checkBytes(const char *name, const string &bytes) {
-    const std::filesystem::path path = writeTemp(name, bytes);
-    const GlibcVersion v = highestGlibcNeededInFile(path.string());
-    std::remove(path.string().c_str());
+    const string path = writeTemp(name, bytes);
+    const GlibcVersion v = highestGlibcNeededInFile(path);
+    std::remove(path.c_str());
     return v;
 }
 
@@ -188,15 +190,15 @@ TEST_CASE("a truncated ELF is unknown and does not crash") {
 
 TEST_CASE("a second look at an unchanged file does not read it again, a changed one is read") {
     const string whole = tinyElf(true);
-    const std::filesystem::path path = writeTemp("ab_ra_glibc_cache.bin", whole);
+    const string path = writeTemp("ab_ra_glibc_cache.bin", whole);
     const int before = glibcFileParses();
-    CHECK(highestGlibcNeededInFile(path.string()).minor == 28);
-    CHECK(highestGlibcNeededInFile(path.string()).minor == 28);
+    CHECK(highestGlibcNeededInFile(path).minor == 28);
+    CHECK(highestGlibcNeededInFile(path).minor == 28);
     CHECK(glibcFileParses() == before + 1);
     writeTemp("ab_ra_glibc_cache.bin", whole.substr(0, 40)); // other size
-    CHECK_FALSE(highestGlibcNeededInFile(path.string()).known());
+    CHECK_FALSE(highestGlibcNeededInFile(path).known());
     CHECK(glibcFileParses() == before + 2);
-    std::remove(path.string().c_str());
+    std::remove(path.c_str());
 }
 
 TEST_CASE("a missing file is unknown, so the program is let start") {

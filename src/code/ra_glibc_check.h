@@ -11,13 +11,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <filesystem>
 #include <fstream>
 #include <istream>
 #include <map>
 #include <mutex>
 #include <string>
 #include <vector>
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef __GLIBC__
 #include <gnu/libc-version.h>
@@ -220,19 +222,18 @@ inline int &glibcFileParses() {
 // RetroArch in the process does not read the file again; a file that cannot be looked at is unknown, not kept.
 inline GlibcVersion highestGlibcNeededInFile(const std::string &path) {
     struct Entry {
-        uintmax_t size;
-        std::filesystem::file_time_type time;
+        long long size;
+        long long time;
         GlibcVersion version;
     };
     static std::map<std::string, Entry> cache;
     static std::mutex lock;
 
-    std::error_code sizeError;
-    std::error_code timeError;
-    const uintmax_t size = std::filesystem::file_size(path, sizeError);
-    const auto time = std::filesystem::last_write_time(path, timeError);
-    if (sizeError || timeError)
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0)
         return GlibcVersion();
+    const long long size = static_cast<long long>(info.st_size);
+    const long long time = static_cast<long long>(info.st_mtime);
 
     std::lock_guard<std::mutex> guard(lock);
     auto found = cache.find(path);
