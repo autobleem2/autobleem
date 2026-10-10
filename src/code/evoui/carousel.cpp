@@ -315,6 +315,17 @@ bool Carousel::pumpCovers() {
 }
 
 //*******************************
+// Carousel::shownCoversDone
+//*******************************
+bool Carousel::shownCoversDone() const {
+    for (const auto &game : games) {
+        if (game.visible && !game.placeholder && !game.coverPng.valid() && !game.artFailed)
+            return false;
+    }
+    return true;
+}
+
+//*******************************
 // Carousel::stepStart / uiTweens / startMove
 //*******************************
 // when a scroll step begins: now - or, for a held stick's step that follows the last one (not eased, and

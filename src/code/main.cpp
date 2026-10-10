@@ -15,7 +15,9 @@
 #include "core/services/environment_setup.h"
 #include "core/services/system_info.h"
 #include "core/version.h"
+#include "gui/gui.h"
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 #ifdef AB_PLATFORM_WIN
 #include <windows.h>
 #endif
@@ -63,6 +65,8 @@ static int runAutobleem(int argc, char *argv[]) {
 #endif
     // stdout/stderr go to AB_out.txt/AB_err.txt in the logs dir (see run.sh). without this they are block buffered
     // and the last lines before a crash never reach the file, which is exactly when they are needed.
+    ableem::StartupTimer::origin(); // the "startup: at <name>" lines count from here (steady_clock, no wall clock)
+
     cout.setf(ios::unitbuf);
     cerr.setf(ios::unitbuf);
 
@@ -127,6 +131,8 @@ static int runAutobleem(int argc, char *argv[]) {
     for (int i = 0; i < argc; i++)
         PLOG_INFO << "  argv[" << i << "] = " << argv[i];
 
+    // the pad mappings and the pad probe run on the boot splash (Gui::display), not before the window
+    Gui::deferPadSetup();
     AutoBleem app;
     return app.run();
 }

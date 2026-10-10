@@ -26,6 +26,7 @@
 #include <vector>
 #include <ableem/engine/ext_trace.h>
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 
 using namespace std;
 
@@ -932,8 +933,40 @@ void GuiLauncher::renderPlayFrame() {
 //*******************************
 // GuiLauncher::loadAssets
 //*******************************
+//*******************************
+// GuiLauncher::warmUpFirstFrame
+//*******************************
+// the same layout loadAssets() picks; the fonts stay in ThemeAssets::fixedFonts() and the icons in the Gui's icon
+// set until the next theme load or display release, when they are opened again on first use as before
+void GuiLauncher::warmUpFirstFrame(Gui &gui) {
+    EvoLayout layout = EvoLayout::wide();
+    if (gui.renderer().fourByThreeOutput()) {
+        const ableem::ThemeLayout4x3 theme4x3 = ableem::loadThemeLayout4x3(App::get().theme().loadedPath());
+        if (theme4x3.set)
+            layout = EvoLayout::fromLayout4x3(theme4x3);
+    }
+    // PsMeta::render: the title, the values, the labels, the icon row's text
+    const MetaLayout::Metrics &m = layout.meta.metrics;
+    Fonts &fixed = ThemeAssets::fixedFonts();
+    fixed.boldAtSize(m.titleSize);
+    fixed.atSize(FONT_MED, m.valueSize);
+    fixed.boldAtSize(m.labelSize);
+    if (m.infoSize != 15)
+        fixed.boldAtSize(m.infoSize);
+    for (const char *icon : {"players", "disc", "internal", "usb", "hd", "sd", "lock", "unlock", "favorite",
+                             "retroarch", "lightgun", "lightgun2"}) {
+        gui.uiContext().icon(icon);
+        gui.uiContext().iconHalo(icon);
+    }
+    // updateHints: the label sizes HintBar::layoutGrid tries after the fixed 22, largest first
+    for (int size : {20, 18, 16})
+        fixed.atSize(FONT_MED, size);
+}
+
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
+    ableem::StartupTimer::milestone("launcher-load-assets-start");
+    ableem::StartupTimer assetsTimer("launcher-load-assets"); // the first set, the carousel, the screen's elements
     forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();
@@ -1032,6 +1065,7 @@ void GuiLauncher::loadAssets() {
     carousel.initPositions();
     switchSet(selection.set, true);
     showSetName();
+    ableem::StartupTimer::milestone("launcher-set-loaded");
 
     gameName = "";
     publisher = "";
@@ -1676,6 +1710,15 @@ void GuiLauncher::renderWelcomeCard() {
 // GuiLauncher::draw
 //*******************************
 void GuiLauncher::draw() {
+    // the process's first launcher picture, timed in parts ("startup: at draw-*")
+    static bool firstDrawTimed = false;
+    const bool timeDraw = !firstDrawTimed;
+    firstDrawTimed = true;
+    auto drawMark = [timeDraw](const char *name) {
+        if (timeDraw)
+            ableem::StartupTimer::milestone(name);
+    };
+    drawMark("draw-start");
     if (ableem::ext_trace::active())
         ableem::ext_trace::note(std::string("launcher draw") + (snapshotFrame ? " (snapshot frame)" : "") +
                                 " fadeAlpha=" + std::to_string(fadeAlpha));
@@ -1707,6 +1750,7 @@ void GuiLauncher::draw() {
     // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
     if (gui->launcherLogo().valid())
         renderer.copy(gui->launcherLogo(), nullptr, layout.logoSet ? &layout.logo : &gui->launcherLogoRect());
+    drawMark("draw-behind-row");
     // an empty "all games" shelf gives way to the welcome card: no empty cover frame, no arrow
     const bool welcome = welcomeCardShows();
     if (welcome) {
@@ -1714,6 +1758,7 @@ void GuiLauncher::draw() {
             renderWelcomeCard();
     } else if (!benchSkips("carousel"))
         carousel.render();
+    drawMark("draw-carousel");
     // a theme with the `play` frame (G5j) draws Play as that frame, the icon and the label - not the two images
     // and their outline
     const bool playFramed = gui->uiContext().frame("play").valid();
@@ -1739,13 +1784,24 @@ void GuiLauncher::draw() {
         if (playFramed && obj.get() == playButton)
             continue;
         if (playFramed && obj.get() == playText) { // its pulse drives the frame, in the images' place in the order
-            if (playText->visible)
+            if (playText->visible) {
+                std::unique_ptr<ableem::StartupTimer> playTimer;
+                if (timeDraw)
+                    playTimer = std::make_unique<ableem::StartupTimer>("draw-element play frame");
                 renderPlayFrame();
+            }
             continue;
         }
-        obj->render();
+        if (timeDraw) {
+            ableem::StartupTimer elementTimer("draw-element " + obj->name);
+            obj->render();
+        } else {
+            obj->render();
+        }
     }
+    drawMark("draw-front-loop");
     drawWide([this] { renderSnap(); }); // a theme's snapPanel is a 1280x720 rect
+    drawMark("draw-front-elements");
 
     // any other set with no games shows only the empty shelf: one line under it says so
     if (carousel.games.empty() && !welcome && !snapshotFrame && !benchSkips("carousel")) {
@@ -1762,12 +1818,14 @@ void GuiLauncher::draw() {
 
     if (!benchSkips("menu"))
         menu->render();
+    drawMark("draw-menu");
 
     // the footer's two hint lines, built from the state and the selection - see buildHintLines(). Rebuilt
     // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed. Not in the backdrop's frame
     // (G5r5), nor the pad batteries and the top-right bubbles: what a screen over it draws is its own
     if (!snapshotFrame) {
         updateHintsIfNeeded();
+        drawMark("draw-hints-laid-out");
         PanelStyle style = gui->panelStyle();
         // an item that does nothing in this state (line 2) is drawn at 35 %: the chip and the label together
         auto drawHint = [&](const Hint &hint, int chipY, int labelY) {
@@ -1819,6 +1877,7 @@ void GuiLauncher::draw() {
             }
         }
 
+        drawMark("draw-hints");
         // top-left corner, one icon per known wireless pad (C8); the channel tag (UIREV-40) under its plate
         renderChannelWatermark(renderPadBatteries());
 
@@ -1845,6 +1904,7 @@ void GuiLauncher::draw() {
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.fillRect();
     }
+    drawMark("draw-end");
 }
 
 //*******************************
