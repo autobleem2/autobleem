@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 544
 
 %1 needs game data it can run: %2.=%1 potřebuje herní data, která umí spustit: %2.
 (changed)=(změněno)
@@ -378,6 +378,7 @@ RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot a emulační jádra
 RetroArch cores=Jádra RetroArch
 RetroArch is not installed=RetroArch není nainstalovaný
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=RetroArch potřebuje novější systémovou knihovnu, než má tato konzole - použijte RetroArch dodávaný s AutoBleem
 ROMs=ROMy
 Run=Spustit
 Run again=Spustit znovu

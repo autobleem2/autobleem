@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 544
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 (changed)=(ändrad)
@@ -378,6 +378,7 @@ RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot och emuleringskärnor
 RetroArch cores=RetroArch-cores
 RetroArch is not installed=RetroArch är inte installerat
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=RetroArch kräver ett nyare systembibliotek än den här konsolen har - använd den RetroArch som följer med AutoBleem
 ROMs=ROM-filer
 Run=Kör
 Run again=Kör igen

@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 544
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 (changed)=(modificat)
@@ -378,6 +378,7 @@ RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot si nuclee de emulare
 RetroArch cores=Core-uri RetroArch
 RetroArch is not installed=RetroArch nu este instalat
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=RetroArch are nevoie de o bibliotecă de sistem mai nouă decât cea a acestei console - folosiți RetroArch-ul livrat cu AutoBleem
 ROMs=ROM-uri
 Run=Pornește
 Run again=Rulează din nou

@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 544
 
 %1 needs game data it can run: %2.=%1 需要它能运行的游戏数据：%2。
 (changed)=(已更改)
@@ -378,6 +378,7 @@ RetroArch=RetroArch
 RetroArch and emulation cores=RetroArch 与模拟器核心
 RetroArch cores=RetroArch 核心
 RetroArch is not installed=未安装 RetroArch
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=RetroArch 需要比本主机更新的系统库 - 请使用 AutoBleem 自带的 RetroArch
 ROMs=ROM
 Run=运行
 Run again=重新运行

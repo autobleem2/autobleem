@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 544
 
 %1 needs game data it can run: %2.=%1 needs game data it can run: %2.
 (changed)=(changed)
@@ -378,6 +378,7 @@ RetroArch=RetroArch
 RetroArch and emulation cores=RetroArch and emulation cores
 RetroArch cores=RetroArch cores
 RetroArch is not installed=RetroArch is not installed
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem
 ROMs=ROMs
 Run=Run
 Run again=Run again
