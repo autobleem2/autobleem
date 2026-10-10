@@ -1680,6 +1680,15 @@ void GuiLauncher::renderWelcomeCard() {
 // GuiLauncher::draw
 //*******************************
 void GuiLauncher::draw() {
+    // the process's first launcher picture, timed in parts ("startup: at draw-*")
+    static bool firstDrawTimed = false;
+    const bool timeDraw = !firstDrawTimed;
+    firstDrawTimed = true;
+    auto drawMark = [timeDraw](const char *name) {
+        if (timeDraw)
+            ableem::StartupTimer::milestone(name);
+    };
+    drawMark("draw-start");
     if (ableem::ext_trace::active())
         ableem::ext_trace::note(std::string("launcher draw") + (snapshotFrame ? " (snapshot frame)" : "") +
                                 " fadeAlpha=" + std::to_string(fadeAlpha));
@@ -1711,6 +1720,7 @@ void GuiLauncher::draw() {
     // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
     if (gui->launcherLogo().valid())
         renderer.copy(gui->launcherLogo(), nullptr, layout.logoSet ? &layout.logo : &gui->launcherLogoRect());
+    drawMark("draw-behind-row");
     // an empty "all games" shelf gives way to the welcome card: no empty cover frame, no arrow
     const bool welcome = welcomeCardShows();
     if (welcome) {
@@ -1718,6 +1728,7 @@ void GuiLauncher::draw() {
             renderWelcomeCard();
     } else if (!benchSkips("carousel"))
         carousel.render();
+    drawMark("draw-carousel");
     // a theme with the `play` frame (G5j) draws Play as that frame, the icon and the label - not the two images
     // and their outline
     const bool playFramed = gui->uiContext().frame("play").valid();
@@ -1750,6 +1761,7 @@ void GuiLauncher::draw() {
         obj->render();
     }
     drawWide([this] { renderSnap(); }); // a theme's snapPanel is a 1280x720 rect
+    drawMark("draw-front-elements");
 
     // any other set with no games shows only the empty shelf: one line under it says so
     if (carousel.games.empty() && !welcome && !snapshotFrame && !benchSkips("carousel")) {
@@ -1766,6 +1778,7 @@ void GuiLauncher::draw() {
 
     if (!benchSkips("menu"))
         menu->render();
+    drawMark("draw-menu");
 
     // the footer's two hint lines, built from the state and the selection - see buildHintLines(). Rebuilt
     // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed. Not in the backdrop's frame
@@ -1823,6 +1836,7 @@ void GuiLauncher::draw() {
             }
         }
 
+        drawMark("draw-hints");
         // top-left corner, one icon per known wireless pad (C8); the channel tag (UIREV-40) under its plate
         renderChannelWatermark(renderPadBatteries());
 
@@ -1849,6 +1863,7 @@ void GuiLauncher::draw() {
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.fillRect();
     }
+    drawMark("draw-end");
 }
 
 //*******************************

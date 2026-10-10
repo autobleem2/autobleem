@@ -34,6 +34,11 @@ void GuiLauncher::loop() {
     motionDir = 0;
     queuedScroll = 0;
 
+    static bool loopEnteredLogged = false;
+    if (!loopEnteredLogged) {
+        loopEnteredLogged = true;
+        ableem::StartupTimer::milestone("menu-loop-entered");
+    }
     while (menuVisible) {
         retranslateMenu(); // Options may have changed the language on the way back into this loop
 
@@ -69,10 +74,12 @@ void GuiLauncher::loop() {
         // hold Active until they end
         gui->uiContext().stack().tweens().applyFrameNeed(gui->input());
         if (gui->input().frameDue()) {
-            render();
             // the process's first menu frame and the first frame with the row's covers all up, once each
             static bool firstFrameLogged = false;
             static bool coversLogged = false;
+            if (!firstFrameLogged)
+                ableem::StartupTimer::milestone("menu-first-render-start");
+            render();
             if (!firstFrameLogged) {
                 firstFrameLogged = true;
                 ableem::StartupTimer::milestone("menu-first-frame");
