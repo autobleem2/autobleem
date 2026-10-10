@@ -7,6 +7,7 @@
 #include "core/keyboard_mode.h"
 #include "core/key_names.h"
 #include "core/mapping.h"
+#include "core/pad_list.h"
 #include "core/profile.h"
 #include "core/shared_state.h"
 #include "core/shm_block.h"
@@ -1666,6 +1667,79 @@ TEST_CASE("keyboard mode: a profile's key lines - aliases, comments, an empty va
     CHECK(keyCodeFromName("Escape").sdl1Sym == 27);
     CHECK_FALSE(keyCodeFromName("f13").valid());
     CHECK_FALSE(keyCodeFromName("").valid());
+}
+
+//*******************************
+// the pad list (abpadd --list)
+//*******************************
+TEST_CASE("pad list: a line says what the daemon sees of a pad and reads back whole") {
+    PadListEntry pad;
+    pad.index = 1;
+    pad.connected = true;
+    pad.driver = "hidapi";
+    pad.mapping = "database";
+    pad.buttons = 13;
+    pad.axes = 6;
+    pad.hats = 1;
+    pad.guid = "030000004c050000e60c000011810000";
+    pad.name = "PS5 Controller";
+
+    string line = formatPadListLine(pad);
+    CHECK(line == "pad\t1\t1\thidapi\tdatabase\t13\t6\t1\t030000004c050000e60c000011810000\tPS5 Controller");
+
+    PadListEntry back;
+    REQUIRE(parsePadListLine(line, back));
+    CHECK(back.index == 1);
+    CHECK(back.connected);
+    CHECK(back.driver == "hidapi");
+    CHECK(back.mapping == "database");
+    CHECK(back.buttons == 13);
+    CHECK(back.axes == 6);
+    CHECK(back.hats == 1);
+    CHECK(back.guid == pad.guid);
+    CHECK(back.name == "PS5 Controller");
+
+    SUBCASE("a pad that cannot be opened is listed, not connected") {
+        pad.connected = false;
+        PadListEntry unusable;
+        REQUIRE(parsePadListLine(formatPadListLine(pad), unusable));
+        CHECK_FALSE(unusable.connected);
+    }
+
+    SUBCASE("a tab or line break in a name cannot break the line") {
+        pad.name = "Odd\tPad\r\nTwo";
+        PadListEntry odd;
+        REQUIRE(parsePadListLine(formatPadListLine(pad), odd));
+        CHECK(odd.name == "Odd Pad  Two");
+        CHECK(formatPadListLine(pad).find('\n') == string::npos);
+    }
+
+    SUBCASE("a trailing line break from a pipe is tolerated") {
+        PadListEntry piped;
+        CHECK(parsePadListLine(line + "\r\n", piped));
+        CHECK(piped.name == "PS5 Controller");
+    }
+}
+
+TEST_CASE("pad list: what is not a pad line is left out") {
+    vector<string> lines = {
+        "abpadd: 3 mappings from /x/gamecontrollerdb.txt",
+        "pad\t0\t1\tevdev\tguessed\t10\t2\t0\tg0\tOne",
+        "pad\tx\t1\tevdev\tguessed\t10\t2\t0\tg1\tBad index",
+        "pad\t1\t1\tevdev\tguessed\t10\t2\tg2\tToo few fields",
+        "padx\t2\t1\tevdev\tguessed\t10\t2\t0\tg3\tWrong word",
+        "",
+        "pad\t2\t0\t?\tdatabase\t0\t0\t0\tg4\tTwo",
+    };
+    vector<PadListEntry> pads = parsePadList(lines);
+    REQUIRE(pads.size() == 2);
+    CHECK(pads[0].name == "One");
+    CHECK(pads[0].index == 0);
+    CHECK(pads[1].name == "Two");
+    CHECK_FALSE(pads[1].connected);
+    CHECK(pads[1].driver == "?");
+
+    CHECK(parsePadList({}).empty()); // no pads: the daemon prints nothing
 }
 
 TEST_CASE("keyboard mode: a profile file that is missing changes nothing") {

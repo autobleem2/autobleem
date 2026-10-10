@@ -8,11 +8,12 @@
 // It is a separate process because it has to be: an SDL 1.2 app cannot have a libSDL2 loaded beside
 // its own SDL, both exporting SDL_Init, SDL_PollEvent and SDL_NumJoysticks.
 //
-//   abpadd [--shm PATH] [--db FILE] [--watch-pid N] [--rate HZ] [--kernel psc|x360] [--probe] [--exit-only]
-//          [--verbose]
+//   abpadd [--shm PATH] [--db FILE] [--watch-pid N] [--rate HZ] [--kernel psc|x360] [--probe] [--list]
+//          [--exit-only] [--verbose]
 //
 // --probe prints what SDL makes of every pad and exits, which is how to find out on a console whether
-// a pad is mapped at all and what the launcher would call it. --exit-only watches the console's Reset
+// a pad is mapped at all and what the launcher would call it. --list is the same facts as one tab-separated line
+// per pad on stdout (core/pad_list.h) - read-only, what the launcher's "Virtual gamepad" page runs. --exit-only watches the console's Reset
 // button for the app and does nothing else (an App with VirtualPad=false - see ResetWatch).
 //
 // --kernel psc|x360 is the kernel pad (core/kernel_pad.h) for an App no preload reaches: the daemon makes a uinput
@@ -26,6 +27,7 @@
 
 #include "core/kernel_pad.h"
 #include "core/mapping.h"
+#include "core/pad_list.h"
 #include "core/profile.h"
 #include "core/shared_state.h"
 #include "core/shm_block.h"
@@ -772,6 +774,46 @@ int probe() {
     return 0;
 }
 
+//*******************************
+// listPads - the pads SDL offers, one machine-readable line each on stdout (core/pad_list.h), and out
+//*******************************
+// What the launcher's page runs: --probe's facts without its prose, and nothing written anywhere. A pad is opened
+// to be read and closed again; the daemon's own state block is neither touched nor needed.
+int listPads(int settleMilliseconds) {
+    settle(settleMilliseconds);
+    for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+        PadListEntry entry;
+        entry.index = i;
+        SDL_Joystick *joystick = SDL_JoystickOpen(i);
+        if (!joystick) {
+            const char *name = SDL_JoystickNameForIndex(i);
+            entry.name = (name && *name) ? name : "(no name)";
+            entry.guid = guidOf(SDL_JoystickGetDeviceGUID(i));
+            entry.driver = driverOf(entry.guid);
+            entry.mapping = "guessed";
+            printf("%s\n", formatPadListLine(entry).c_str());
+            continue;
+        }
+        const char *name = SDL_JoystickName(joystick);
+        entry.connected = true;
+        entry.name = (name && *name) ? name : "(no name)";
+        entry.guid = guidOf(SDL_JoystickGetGUID(joystick));
+        entry.driver = driverOf(entry.guid);
+        entry.buttons = SDL_JoystickNumButtons(joystick);
+        entry.axes = SDL_JoystickNumAxes(joystick);
+        entry.hats = SDL_JoystickNumHats(joystick);
+        char *mapping = SDL_GameControllerMappingForGUID(SDL_JoystickGetGUID(joystick));
+        entry.mapping = mapping ? "database" : "guessed";
+        if (mapping) {
+            SDL_free(mapping);
+        }
+        SDL_JoystickClose(joystick);
+        printf("%s\n", formatPadListLine(entry).c_str());
+    }
+    fflush(stdout);
+    return 0;
+}
+
 } // namespace
 
 //*******************************
@@ -850,6 +892,7 @@ int main(int argc, char *argv[]) {
     int rate = 250; // Hz - far more than any game reads its pad at, and a rounding error of a core
     long watchPid = 0;
     bool probeOnly = false;
+    bool listOnly = false;
     bool watchOnly = false;
     bool exitOnlyMode = false;
     string kernelMode; // "psc" / "x360": the kernel pad
@@ -873,6 +916,8 @@ int main(int argc, char *argv[]) {
             kernelMode = argv[++i];
         } else if (argument == "--probe") {
             probeOnly = true;
+        } else if (argument == "--list") {
+            listOnly = true;
         } else if (argument == "--watch") {
             watchOnly = true;
         } else if (argument == "--exit-only") {
@@ -881,7 +926,7 @@ int main(int argc, char *argv[]) {
             g_verbose = true;
         } else {
             say("usage: abpadd [--shm PATH] [--db FILE] [--mappings FILE] [--watch-pid N]");
-            say("              [--quit-hotkey a+b] [--rate HZ] [--kernel psc|x360] [--probe] [--watch]");
+            say("              [--quit-hotkey a+b] [--rate HZ] [--kernel psc|x360] [--probe] [--list] [--watch]");
             say("              [--exit-only] [--verbose]");
             return argument == "--help" ? 0 : 2;
         }
@@ -931,6 +976,11 @@ int main(int argc, char *argv[]) {
 
     if (probeOnly) {
         int result = probe();
+        SDL_Quit();
+        return result;
+    }
+    if (listOnly) {
+        int result = listPads(1500);
         SDL_Quit();
         return result;
     }

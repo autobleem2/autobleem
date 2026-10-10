@@ -14,6 +14,8 @@ add_library(abpad_core STATIC
         src/core/key_names.h
         src/core/mapping.cpp
         src/core/mapping.h
+        src/core/pad_list.cpp
+        src/core/pad_list.h
         src/core/profile.cpp
         src/core/profile.h
         src/core/shared_state.cpp
