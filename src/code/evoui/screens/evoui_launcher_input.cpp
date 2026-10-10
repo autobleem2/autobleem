@@ -17,6 +17,7 @@
 #include <iostream>
 #include <sstream>
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 
 using namespace std;
 
@@ -67,8 +68,20 @@ void GuiLauncher::loop() {
         // what the tweens running ask for on top: the ambient loops ask Ambient, the state-change transitions
         // hold Active until they end
         gui->uiContext().stack().tweens().applyFrameNeed(gui->input());
-        if (gui->input().frameDue())
+        if (gui->input().frameDue()) {
             render();
+            // the process's first menu frame and the first frame with the row's covers all up, once each
+            static bool firstFrameLogged = false;
+            static bool coversLogged = false;
+            if (!firstFrameLogged) {
+                firstFrameLogged = true;
+                ableem::StartupTimer::milestone("menu-first-frame");
+            }
+            if (!coversLogged && carousel.shownCoversDone()) {
+                coversLogged = true;
+                ableem::StartupTimer::milestone("covers-shown");
+            }
+        }
 
         // CONSOLE-13: a held direction's release can be read by a screen opened over this one (Options, and
         // the busy job that ends it) and never reach this loop; Input's own d-pad state is the truth - it is

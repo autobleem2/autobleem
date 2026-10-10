@@ -16,6 +16,7 @@
 #include "core/services/system_info.h"
 #include "core/version.h"
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 #ifdef AB_PLATFORM_WIN
 #include <windows.h>
 #endif
@@ -63,6 +64,8 @@ static int runAutobleem(int argc, char *argv[]) {
 #endif
     // stdout/stderr go to AB_out.txt/AB_err.txt in the logs dir (see run.sh). without this they are block buffered
     // and the last lines before a crash never reach the file, which is exactly when they are needed.
+    ableem::StartupTimer::origin(); // the "startup: at <name>" lines count from here (steady_clock, no wall clock)
+
     cout.setf(ios::unitbuf);
     cerr.setf(ios::unitbuf);
 

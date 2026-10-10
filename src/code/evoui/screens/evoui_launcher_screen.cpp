@@ -26,6 +26,7 @@
 #include <vector>
 #include <ableem/engine/ext_trace.h>
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 
 using namespace std;
 
@@ -934,6 +935,7 @@ void GuiLauncher::renderPlayFrame() {
 //*******************************
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
+    ableem::StartupTimer assetsTimer("launcher-load-assets"); // the first set, the carousel, the screen's elements
     forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();

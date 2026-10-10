@@ -71,6 +71,8 @@ public:
     // puts the covers the CoverLoader has finished on the GPU, the nearest first - one a frame while the
     // row moves, two at rest; true if it did any. Once a frame from the launcher's loop.
     bool pumpCovers();
+    // every cover shown in the row is up (or could not be read): what the 'startup: at covers-shown' line waits for
+    bool shownCoversDone() const;
     // start the scroll animation towards the next / previous game, `speed` milliseconds long; eased
     // (easeOutCubic) for a tap, linear for a held stick so that one step runs into the next. Each is one tween run
     // on the program's Tweens (carousel_motion.h, G5o5), so the DebugDriver is busy until the covers rest
