@@ -110,3 +110,8 @@ target_include_directories(test_package_picker PRIVATE ${CMAKE_SOURCE_DIR}/src/c
 # game or another emulator, AutoBleem's for a PS1 game and for an App (which is a foreign entry too)
 ab_add_test(test_launch_picture screens/test_launch_picture.cpp)
 target_include_directories(test_launch_picture PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
+
+# Whether the RetroArch program needs a newer glibc than the console's (ra_glibc_check.h, pure): the GLIBC_x.y names
+# in its binary against the running libc
+ab_add_test(test_ra_glibc_check screens/test_ra_glibc_check.cpp)
+target_include_directories(test_ra_glibc_check PRIVATE ${CMAKE_SOURCE_DIR}/src/code)

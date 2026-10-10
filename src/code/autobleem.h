@@ -31,6 +31,9 @@ private:
     // carousel; `retroArch` picks how long the machine gets to settle after, `picture` (a splash/ file) what stands
     // on the screen while the program starts
     void runOutside(bool retroArch, const char *picture, const std::function<void()> &body);
+    // RetroArch needs a newer system library than this console has: said on the notification line, true - the
+    // program is not started (it would be refused by the loader at once, with nothing on the screen)
+    bool retroArchRefused();
     void launchGame();       // the MENU_OPTION_START handling
     void takeAppMessage();   // what an App left in <runtime>/app-message.txt, on the notification line
     void runRetroArchMenu(); // MENU_OPTION_RETRO in direct mode: RetroArch's own menu, then back

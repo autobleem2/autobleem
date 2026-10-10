@@ -7,6 +7,7 @@
 #include <ctime>
 #include "evoui/screens/evoui_launcher.h"
 #include "launch_picture.h"
+#include "ra_glibc_check.h"
 #include "gui/screens/gui_keep_display.h"
 
 #include <cstdlib>
@@ -92,9 +93,33 @@ bool AutoBleem::openLibrary() {
 }
 
 //*******************************
+// AutoBleem::retroArchRefused
+//*******************************
+// A RetroArch built on a newer system than the console's (a later build next to a stock RetroBoot 1.1 tree) asks
+// for GLIBC_2.xx the console's loader does not have, and exits at once with only a line in its own stderr: the
+// check is made on its binary before it is started (ra_glibc_check.h), and the player told what to do instead.
+bool AutoBleem::retroArchRefused() {
+    const string binary = LaunchService::retroArchExecutable();
+    if (binary.empty())
+        return false;
+    const GlibcVersion needed = highestGlibcNeededInFile(binary);
+    const GlibcVersion have = runningGlibc();
+    if (!needsNewerGlibc(needed, have))
+        return false;
+    PLOG_WARNING << binary << " needs GLIBC_" << needed.major << "." << needed.minor << ", the console has "
+                 << have.major << "." << have.minor << " - RetroArch is not started";
+    extensionRequests_.message = _("RetroArch needs a newer system library than this console has - use the RetroArch "
+                                   "that comes with AutoBleem");
+    return true;
+}
+
+//*******************************
 // AutoBleem::runOutside
 //*******************************
 void AutoBleem::runOutside(bool retroArch, const char *picture, const std::function<void()> &body) {
+    if (retroArch && retroArchRefused())
+        return;
+
     // the extensions first: they may hold textures, and their threads should leave the machine to the game
     extensions_.suspend();
     gui_->finish(); // fades the music out and closes the mixer
@@ -587,6 +612,12 @@ int AutoBleem::run() {
             // it would check the last game's resume point and call the run a crash (BUG-39)
             continue;
 #endif
+        }
+
+        // the console leaves for rc/retroarch.sh to run RetroArch: not when the loader would refuse it
+        if (session_.menuOption == MENU_OPTION_RETRO && !Env::directLaunch() && retroArchRefused()) {
+            session_.menuOption = MENU_OPTION_IDLE;
+            continue;
         }
 
         // for the rc scripts, when the process is about to leave - never for a game, which comes back here:
