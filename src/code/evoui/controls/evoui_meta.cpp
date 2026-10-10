@@ -14,6 +14,7 @@
 #include "core/services/environment.h"
 #include <ab_gui/context.h>
 #include <ab_gui/style.h>
+#include <ableem/engine/startup_timer.h>
 
 using namespace std;
 
@@ -113,6 +114,15 @@ void PsMeta::render() {
     }
 
     if (visible) {
+        // the process's first details section, timed in parts ("startup: at meta-*")
+        static bool firstTimed = false;
+        const bool timeParts = !firstTimed;
+        firstTimed = true;
+        auto mark = [timeParts](const char *name) {
+            if (timeParts)
+                ableem::StartupTimer::milestone(name);
+        };
+        mark("meta-start");
         const MetaLayout::Metrics &m = metrics;
         // the row's own icons at their size on the 1280x720 section, at the section's icon size on another (4:3)
         const int ownIcon = m.iconSize == MetaLayout::IconSize ? 0 : m.iconSize;
@@ -148,10 +158,13 @@ void PsMeta::render() {
         // the title - a name too long for the space up to screenRight is drawn in the largest size that fits, and
         // elided there when even the smallest does not
         auto nameFont = fixed.boldAtSize(m.titleSize);
+        mark("meta-title-font");
         if (x + nameFont.width(gameName) > screenRight)
             nameFont = text.fittingFont(FONT_BOLD, m.titleSize, m.titleMinSize, gameName, screenRight - x);
+        mark("meta-title-fitted");
         text.renderText_WithColor(nameFont, text.elide(nameFont, gameName, screenRight - x), x, y, style.text,
                                   XALIGN_LEFT);
+        mark("meta-title-drawn");
 
         // the rule under it: the `edge` role at 78 %
         renderer.setBlendMode(ableem::BlendMode::Blend);
@@ -192,6 +205,7 @@ void PsMeta::render() {
                                       style.text, XALIGN_LEFT);
             rowY += m.rowPitch;
         }
+        mark("meta-facts-drawn");
 
         // the icon row: text centred on the icons' height
         const ableem::Font &rowFont = m.infoSize == 15 ? fonts[FONT_15_BOLD] : fixed.boldAtSize(m.infoSize);
@@ -232,6 +246,7 @@ void PsMeta::render() {
         const int count = static_cast<int>(badges.size());
         for (int i = 0; i < count; i++)
             drawIcon(badges[i], x + m.badgeX(count, i), iconY, m.iconSize);
+        mark("meta-icons-drawn");
     }
 }
 
