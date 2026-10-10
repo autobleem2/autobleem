@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1 necesita datos de juego que pueda ejecutar: %2.
 (changed)=(cambiado)
@@ -290,6 +290,7 @@ Not available for this system=No disponible para este sistema
 Not available on this system=No disponible en este sistema
 Not charging=No cargando
 Not connected=No conectado
+Not enough space to unpack the theme.=No hay espacio suficiente para descomprimir el tema.
 Not installed=No instalado
 Not recognised. If this is a game, see the manual: Your own games.=No reconocido. Si es un juego, consulta el manual: Tus propios juegos.
 not used by the PS1 emulator=no utilizado por el emulador de PS1
@@ -462,6 +463,8 @@ Temperature=Temperatura
 Testing=Testers
 The installer could not be started - it is in System/Updates=No se pudo iniciar el instalador - está en System/Updates
 The Store is not installed=La Store no está instalada
+The theme zip could not be unpacked.=No se pudo descomprimir el zip del tema.
+The theme zip is broken.=El zip del tema está dañado.
 The update is downloaded - the installer is opening...=La actualización se ha descargado - abriendo el instalador...
 Theme Hospital data=Datos de Theme Hospital
 Theme switched to the default (CRT 4:3)=Tema cambiado al predeterminado (CRT 4:3)

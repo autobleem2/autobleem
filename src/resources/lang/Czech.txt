@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1 potřebuje herní data, která umí spustit: %2.
 (changed)=(změněno)
@@ -290,6 +290,7 @@ Not available for this system=Není k dispozici pro tento systém
 Not available on this system=V tomto systému není k dispozici
 Not charging=Nenabíjí se
 Not connected=Nepřipojeno
+Not enough space to unpack the theme.=Není dost místa na rozbalení motivu.
 Not installed=Nenainstalováno
 Not recognised. If this is a game, see the manual: Your own games.=Nerozpoznáno. Pokud jde o hru, viz příručka: Vaše vlastní hry.
 not used by the PS1 emulator=nepoužívá jej PS1 emulátor
@@ -462,6 +463,8 @@ Temperature=Teplota
 Testing=Testování
 The installer could not be started - it is in System/Updates=Instalátor se nepodařilo spustit - je v System/Updates
 The Store is not installed=Store není nainstalován
+The theme zip could not be unpacked.=Zip motivu se nepodařilo rozbalit.
+The theme zip is broken.=Zip motivu je poškozený.
 The update is downloaded - the installer is opening...=Aktualizace je stažena - otevírá se instalátor...
 Theme Hospital data=Data Theme Hospital
 Theme switched to the default (CRT 4:3)=Motiv změněn na výchozí (CRT 4:3)

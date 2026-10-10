@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 543
+# Untranslated: 1 / Total: 546
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 (changed)=(modificat)
@@ -290,6 +290,7 @@ Not available for this system=Pas disponibla per aqueste sistèma
 Not available on this system=Pas disponible sus aqueste sistèma
 Not charging=Càrga pas
 Not connected=Pas connectat
+Not enough space to unpack the theme.=I a pas pro d'espaci per descomprimir lo tèma.
 Not installed=Pas installat
 Not recognised. If this is a game, see the manual: Your own games.=Pas reconegut. S'es un jòc, vejatz lo manual : Vòstres pròpris jòcs.
 not used by the PS1 emulator=pas utilizat per l'emulator PS1
@@ -462,6 +463,8 @@ Temperature=Temperatura
 Testing=Ensag
 The installer could not be started - it is in System/Updates=L'installador a pas pogut èsser aviat - es dins System/Updates
 The Store is not installed=Lo Store es pas installat
+The theme zip could not be unpacked.=Lo zip del tèma a pas pogut èsser descomprimit.
+The theme zip is broken.=Lo zip del tèma es corromput.
 The update is downloaded - the installer is opening...=La mesa a jorn es telecargada - l'installador se dobrís...
 Theme Hospital data=Donadas Theme Hospital
 Theme switched to the default (CRT 4:3)=

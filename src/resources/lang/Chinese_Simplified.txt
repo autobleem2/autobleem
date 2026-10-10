@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1 需要它能运行的游戏数据：%2。
 (changed)=(已更改)
@@ -290,6 +290,7 @@ Not available for this system=不适用于此系统
 Not available on this system=在此系统上不可用
 Not charging=未充电
 Not connected=未连接
+Not enough space to unpack the theme.=空间不足，无法解压主题。
 Not installed=未安装
 Not recognised. If this is a game, see the manual: Your own games.=未识别。如果这是游戏，请参阅手册：你自己的游戏。
 not used by the PS1 emulator=PS1 模拟器未使用
@@ -462,6 +463,8 @@ Temperature=温度
 Testing=测试
 The installer could not be started - it is in System/Updates=无法启动安装程序 - 它位于 System/Updates
 The Store is not installed=商店未安装
+The theme zip could not be unpacked.=无法解压主题压缩包。
+The theme zip is broken.=主题压缩包已损坏。
 The update is downloaded - the installer is opening...=更新已下载 - 正在打开安装程序...
 Theme Hospital data=Theme Hospital 数据
 Theme switched to the default (CRT 4:3)=主题已切换为默认主题 (CRT 4:3)

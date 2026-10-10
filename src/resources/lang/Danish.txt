@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1 har brug for spildata, den kan køre: %2.
 (changed)=(ændret)
@@ -290,6 +290,7 @@ Not available for this system=Ikke tilgængelig til dette system
 Not available on this system=Ikke tilgængelig på dette system
 Not charging=Oplader ikke
 Not connected=Ikke forbundet
+Not enough space to unpack the theme.=Der er ikke plads nok til at pakke temaet ud.
 Not installed=Ikke installeret
 Not recognised. If this is a game, see the manual: Your own games.=Ikke genkendt. Hvis det er et spil, se manualen: Dine egne spil.
 not used by the PS1 emulator=bruges ikke af PS1-emulatoren
@@ -462,6 +463,8 @@ Temperature=Temperatur
 Testing=Test
 The installer could not be started - it is in System/Updates=Installationsprogrammet kunne ikke startes - det ligger i System/Updates
 The Store is not installed=Store er ikke installeret
+The theme zip could not be unpacked.=Temaets zip-fil kunne ikke pakkes ud.
+The theme zip is broken.=Temaets zip-fil er beskadiget.
 The update is downloaded - the installer is opening...=Opdateringen er hentet - installationsprogrammet åbnes...
 Theme Hospital data=Theme Hospital-data
 Theme switched to the default (CRT 4:3)=Tema skiftet til standardtemaet (CRT 4:3)

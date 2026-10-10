@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 (changed)=(ändrad)
@@ -290,6 +290,7 @@ Not available for this system=Inte tillgänglig för det här systemet
 Not available on this system=Inte tillgängligt på det här systemet
 Not charging=Laddar inte
 Not connected=Inte ansluten
+Not enough space to unpack the theme.=Det finns inte tillräckligt med utrymme för att packa upp temat.
 Not installed=Inte installerad
 Not recognised. If this is a game, see the manual: Your own games.=Inte igenkänt. Om det är ett spel, se manualen: Dina egna spel.
 not used by the PS1 emulator=används inte av PS1-emulatorn
@@ -462,6 +463,8 @@ Temperature=Temperatur
 Testing=Testning
 The installer could not be started - it is in System/Updates=Installationsprogrammet kunde inte startas - det ligger i System/Updates
 The Store is not installed=Store är inte installerad
+The theme zip could not be unpacked.=Temats zip-fil kunde inte packas upp.
+The theme zip is broken.=Temats zip-fil är trasig.
 The update is downloaded - the installer is opening...=Uppdateringen är nedladdad - installationsprogrammet öppnas...
 Theme Hospital data=Theme Hospital-data
 Theme switched to the default (CRT 4:3)=Tema ändrat till standardtemat (CRT 4:3)

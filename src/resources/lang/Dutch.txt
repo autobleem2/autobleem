@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1 heeft speldata nodig die het kan uitvoeren: %2.
 (changed)=(gewijzigd)
@@ -290,6 +290,7 @@ Not available for this system=Niet beschikbaar voor dit systeem
 Not available on this system=Niet beschikbaar op dit systeem
 Not charging=Laadt niet
 Not connected=Niet verbonden
+Not enough space to unpack the theme.=Niet genoeg ruimte om het thema uit te pakken.
 Not installed=Niet geïnstalleerd
 Not recognised. If this is a game, see the manual: Your own games.=Niet herkend. Is dit een spel, zie dan de handleiding: Je eigen spellen.
 not used by the PS1 emulator=wordt niet gebruikt door de PS1-emulator
@@ -462,6 +463,8 @@ Temperature=Temperatuur
 Testing=Testen
 The installer could not be started - it is in System/Updates=Het installatieprogramma kon niet worden gestart - het staat in System/Updates
 The Store is not installed=De Store is niet geïnstalleerd
+The theme zip could not be unpacked.=Het thema-zipbestand kon niet worden uitgepakt.
+The theme zip is broken.=Het thema-zipbestand is beschadigd.
 The update is downloaded - the installer is opening...=De update is gedownload - het installatieprogramma wordt geopend...
 Theme Hospital data=Theme Hospital-data
 Theme switched to the default (CRT 4:3)=Thema gewijzigd naar het standaardthema (CRT 4:3)

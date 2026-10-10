@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 (changed)=(değiştirildi)
@@ -290,6 +290,7 @@ Not available for this system=Bu sistem için kullanılamaz
 Not available on this system=Bu sistemde kullanılamıyor
 Not charging=Şarj olmuyor
 Not connected=Bağlı değil
+Not enough space to unpack the theme.=Temayı açmak için yeterli alan yok.
 Not installed=Yüklü değil
 Not recognised. If this is a game, see the manual: Your own games.=Tanınmadı. Bu bir oyunsa kılavuza bakın: Kendi oyunlarınız.
 not used by the PS1 emulator=PS1 emülatörü tarafından kullanılmıyor
@@ -462,6 +463,8 @@ Temperature=Sıcaklık
 Testing=Deneme
 The installer could not be started - it is in System/Updates=Yükleyici başlatılamadı - System/Updates içinde
 The Store is not installed=Store yüklü değil
+The theme zip could not be unpacked.=Tema zip dosyası açılamadı.
+The theme zip is broken.=Tema zip dosyası bozuk.
 The update is downloaded - the installer is opening...=Güncelleme indirildi - yükleyici açılıyor...
 Theme Hospital data=Theme Hospital verisi
 Theme switched to the default (CRT 4:3)=Tema varsayılan temaya değiştirildi (CRT 4:3)

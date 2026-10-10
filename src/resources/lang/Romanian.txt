@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 (changed)=(modificat)
@@ -290,6 +290,7 @@ Not available for this system=Indisponibilă pentru acest sistem
 Not available on this system=Nu este disponibil pe acest sistem
 Not charging=Nu se încarcă
 Not connected=Neconectat
+Not enough space to unpack the theme.=Nu este suficient spațiu pentru a dezarhiva tema.
 Not installed=Neinstalat
 Not recognised. If this is a game, see the manual: Your own games.=Nerecunoscut. Dacă este un joc, vezi manualul: Jocurile tale.
 not used by the PS1 emulator=nefolosit de emulatorul PS1
@@ -462,6 +463,8 @@ Temperature=Temperatură
 Testing=Testare
 The installer could not be started - it is in System/Updates=Programul de instalare nu a putut fi pornit - se află în System/Updates
 The Store is not installed=Store nu este instalat
+The theme zip could not be unpacked.=Arhiva zip a temei nu a putut fi dezarhivată.
+The theme zip is broken.=Arhiva zip a temei este deteriorată.
 The update is downloaded - the installer is opening...=Actualizarea a fost descărcată - se deschide programul de instalare...
 Theme Hospital data=Date Theme Hospital
 Theme switched to the default (CRT 4:3)=Tema a fost schimbată cu cea implicită (CRT 4:3)

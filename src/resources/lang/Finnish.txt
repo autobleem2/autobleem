@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 546
 
 %1 needs game data it can run: %2.=%1 tarvitsee pelitiedot, joita se osaa ajaa: %2.
 (changed)=(muutettu)
@@ -290,6 +290,7 @@ Not available for this system=Ei saatavilla tälle järjestelmälle
 Not available on this system=Ei käytettävissä tässä järjestelmässä
 Not charging=Ei lataudu
 Not connected=Ei yhteyttä
+Not enough space to unpack the theme.=Teeman purkamiseen ei ole tarpeeksi tilaa.
 Not installed=Ei asennettu
 Not recognised. If this is a game, see the manual: Your own games.=Ei tunnistettu. Jos tämä on peli, katso ohje: Omat pelisi.
 not used by the PS1 emulator=ei käytössä PS1-emulaattorissa
@@ -462,6 +463,8 @@ Temperature=Lämpötila
 Testing=Testausta
 The installer could not be started - it is in System/Updates=Asennusohjelmaa ei voitu käynnistää - se on kansiossa System/Updates
 The Store is not installed=Storea ei ole asennettu
+The theme zip could not be unpacked.=Teeman zip-tiedostoa ei voitu purkaa.
+The theme zip is broken.=Teeman zip-tiedosto on rikki.
 The update is downloaded - the installer is opening...=Päivitys on ladattu - asennusohjelma avautuu...
 Theme Hospital data=Theme Hospital-data
 Theme switched to the default (CRT 4:3)=Teema vaihdettu oletusteemaan (CRT 4:3)
