@@ -13,8 +13,8 @@
 //
 // --probe prints what SDL makes of every pad and exits, which is how to find out on a console whether
 // a pad is mapped at all and what the launcher would call it. --list is the same facts as one tab-separated line
-// per pad on stdout (core/pad_list.h) - read-only, what the launcher's "Virtual gamepad" page runs. --exit-only watches the console's Reset
-// button for the app and does nothing else (an App with VirtualPad=false - see ResetWatch).
+// per pad on stdout (core/pad_list.h) - read-only, what the launcher's "Virtual gamepad" page runs. --exit-only
+// watches the console's Reset button for the app and does nothing else (an App with VirtualPad=false - see ResetWatch).
 //
 // --kernel psc|x360 is the kernel pad (core/kernel_pad.h) for an App no preload reaches: the daemon makes a uinput
 // device with that pad's identity before anything else, holds the real pads with EVIOCGRAB, reads them, and puts the

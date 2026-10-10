@@ -4,7 +4,8 @@
 // The pads abpadd sees, as `abpadd --list` prints them and the launcher's page reads them: one line per pad, fields
 // separated by tabs, the name last. Read-only - the query opens each pad, looks, and closes it.
 //
-//     pad <TAB> index <TAB> connected <TAB> driver <TAB> mapping <TAB> buttons <TAB> axes <TAB> hats <TAB> guid <TAB> name
+//     pad <TAB> index <TAB> connected <TAB> driver <TAB> mapping <TAB> buttons <TAB> axes <TAB> hats <TAB> guid
+//         <TAB> name
 //
 //   connected  1 when the daemon could open the pad (0: SDL lists it but it cannot be read)
 //   driver     the SDL driver the pad's GUID says it came through: "hidapi", "evdev" or "?"
