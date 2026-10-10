@@ -465,6 +465,7 @@ The installer could not be started - it is in System/Updates=L'installador a pas
 The Store is not installed=Lo Store es pas installat
 The theme zip could not be unpacked.=Lo zip del tèma a pas pogut èsser descomprimit.
 The theme zip is broken.=Lo zip del tèma es corromput.
+Theme not found, using the default theme.=Tèma pas trobat, lo tèma per defaut es utilizat.
 The update is downloaded - the installer is opening...=La mesa a jorn es telecargada - l'installador se dobrís...
 Theme Hospital data=Donadas Theme Hospital
 Theme switched to the default (CRT 4:3)=

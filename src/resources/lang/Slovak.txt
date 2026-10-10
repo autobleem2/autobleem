@@ -465,6 +465,7 @@ The installer could not be started - it is in System/Updates=Inštalátor sa nep
 The Store is not installed=Store nie je nainštalovaný
 The theme zip could not be unpacked.=Zip motívu sa nepodarilo rozbaliť.
 The theme zip is broken.=Zip motívu je poškodený.
+Theme not found, using the default theme.=Motív sa nenašiel, používa sa predvolený motív.
 The update is downloaded - the installer is opening...=Aktualizácia je stiahnutá - otvára sa inštalátor...
 Theme Hospital data=Dáta Theme Hospital
 Theme switched to the default (CRT 4:3)=Motív zmenený na predvolený (CRT 4:3)

@@ -465,6 +465,7 @@ The installer could not be started - it is in System/Updates=Nie udało się uru
 The Store is not installed=Store nie jest zainstalowany
 The theme zip could not be unpacked.=Nie udało się rozpakować pliku zip motywu.
 The theme zip is broken.=Plik zip motywu jest uszkodzony.
+Theme not found, using the default theme.=Nie znaleziono motywu, używany jest motyw domyślny.
 The update is downloaded - the installer is opening...=Aktualizacja pobrana - otwieranie instalatora...
 Theme Hospital data=Dane Theme Hospital
 Theme switched to the default (CRT 4:3)=Motyw zmieniony na domyślny (CRT 4:3)

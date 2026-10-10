@@ -465,6 +465,7 @@ The installer could not be started - it is in System/Updates=Installationsprogra
 The Store is not installed=Store är inte installerad
 The theme zip could not be unpacked.=Temats zip-fil kunde inte packas upp.
 The theme zip is broken.=Temats zip-fil är trasig.
+Theme not found, using the default theme.=Temat hittades inte, standardtemat används.
 The update is downloaded - the installer is opening...=Uppdateringen är nedladdad - installationsprogrammet öppnas...
 Theme Hospital data=Theme Hospital-data
 Theme switched to the default (CRT 4:3)=Tema ändrat till standardtemat (CRT 4:3)

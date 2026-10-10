@@ -465,6 +465,7 @@ The installer could not be started - it is in System/Updates=Yükleyici başlat�
 The Store is not installed=Store yüklü değil
 The theme zip could not be unpacked.=Tema zip dosyası açılamadı.
 The theme zip is broken.=Tema zip dosyası bozuk.
+Theme not found, using the default theme.=Tema bulunamadı, varsayılan tema kullanılıyor.
 The update is downloaded - the installer is opening...=Güncelleme indirildi - yükleyici açılıyor...
 Theme Hospital data=Theme Hospital verisi
 Theme switched to the default (CRT 4:3)=Tema varsayılan temaya değiştirildi (CRT 4:3)

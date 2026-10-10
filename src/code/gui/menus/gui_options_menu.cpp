@@ -464,6 +464,8 @@ string GuiOptions::themeFallbackText(ThemeZipCache::Fallback reason) {
         return _("The theme zip is broken.");
     case ThemeZipCache::Fallback::CannotUnpack:
         return _("The theme zip could not be unpacked.");
+    case ThemeZipCache::Fallback::Missing:
+        return _("Theme not found, using the default theme.");
     case ThemeZipCache::Fallback::None:
         break;
     }
@@ -492,7 +494,7 @@ void GuiOptions::loadFor(int id, const string &nextValue) {
     // UIREV-50/54: the picked zip was not used - Theme::load() already put theme=default into config.ini, which the
     // row shows (it reads the config each frame); the toast says why
     if (theme) {
-        const string why = themeFallbackText(Theme::fallbackReason());
+        const string why = themeFallbackText(Theme::takeFallbackReason());
         if (!why.empty())
             themeToast.show(why, "", 0, 0, 2 * DefaultShowingTimeout);
     }

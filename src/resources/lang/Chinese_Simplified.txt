@@ -465,6 +465,7 @@ The installer could not be started - it is in System/Updates=无法启动安装�
 The Store is not installed=商店未安装
 The theme zip could not be unpacked.=无法解压主题压缩包。
 The theme zip is broken.=主题压缩包已损坏。
+Theme not found, using the default theme.=找不到主题，改用默认主题。
 The update is downloaded - the installer is opening...=更新已下载 - 正在打开安装程序...
 Theme Hospital data=Theme Hospital 数据
 Theme switched to the default (CRT 4:3)=主题已切换为默认主题 (CRT 4:3)
