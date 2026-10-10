@@ -473,6 +473,10 @@ int AutoBleem::run() {
             ableem::StartupTimer timer("retroarch-load");
             retroArch().playlistNames();
         },
+        [&]() {
+            ableem::StartupTimer timer("launcher-warm-up");
+            GuiLauncher::warmUpFirstFrame(*gui_);
+        },
     });
     gui_->display(false);
     GuiSplash::runPendingWork();

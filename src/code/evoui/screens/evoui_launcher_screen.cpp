@@ -933,6 +933,36 @@ void GuiLauncher::renderPlayFrame() {
 //*******************************
 // GuiLauncher::loadAssets
 //*******************************
+//*******************************
+// GuiLauncher::warmUpFirstFrame
+//*******************************
+// the same layout loadAssets() picks; the fonts stay in ThemeAssets::fixedFonts() and the icons in the Gui's icon
+// set until the next theme load or display release, when they are opened again on first use as before
+void GuiLauncher::warmUpFirstFrame(Gui &gui) {
+    EvoLayout layout = EvoLayout::wide();
+    if (gui.renderer().fourByThreeOutput()) {
+        const ableem::ThemeLayout4x3 theme4x3 = ableem::loadThemeLayout4x3(App::get().theme().loadedPath());
+        if (theme4x3.set)
+            layout = EvoLayout::fromLayout4x3(theme4x3);
+    }
+    // PsMeta::render: the title, the values, the labels, the icon row's text
+    const MetaLayout::Metrics &m = layout.meta.metrics;
+    Fonts &fixed = ThemeAssets::fixedFonts();
+    fixed.boldAtSize(m.titleSize);
+    fixed.atSize(FONT_MED, m.valueSize);
+    fixed.boldAtSize(m.labelSize);
+    if (m.infoSize != 15)
+        fixed.boldAtSize(m.infoSize);
+    for (const char *icon : {"players", "disc", "internal", "usb", "hd", "sd", "lock", "unlock", "favorite",
+                             "retroarch", "lightgun", "lightgun2"}) {
+        gui.uiContext().icon(icon);
+        gui.uiContext().iconHalo(icon);
+    }
+    // updateHints: the label sizes HintBar::layoutGrid tries after the fixed 22, largest first
+    for (int size : {20, 18, 16})
+        fixed.atSize(FONT_MED, size);
+}
+
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
     ableem::StartupTimer::milestone("launcher-load-assets-start");

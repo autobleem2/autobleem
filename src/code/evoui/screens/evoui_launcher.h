@@ -74,6 +74,9 @@ public:
     void useFrameCanvas(); // the 4:3 layout's 640x480, else the 1280x720 one (also for a transition's picture of it)
                            // before each frame: the busy state ends, the state selector follows the menu
     void draw() override;  // the frame's picture: the stack clears before and presents after
+    // what the first launcher picture would otherwise open itself (~250 ms on the PSC): the details section's font
+    // sizes and icons, the hint bar's label sizes - a start-up step on the splash, which waits for its hold anyway
+    static void warmUpFirstFrame(Gui &gui);
 
     // these variables are used by the loop routines
     long motionStart = 0; // when the stick went left/right and stayed; 0 once it is centred again
