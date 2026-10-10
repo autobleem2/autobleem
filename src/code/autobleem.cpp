@@ -445,9 +445,9 @@ int AutoBleem::run() {
         [&]() {
             if (!libraryOpen)
                 return;
-            ableem::StartupTimer timer("memcard-restore");
-            MemcardManager memcardOperation(pathToGamesDir);
-            memcardOperation.restoreAll(Env::getPathToSaveStatesDir());
+            // a game that crashed with a set or RetroArch's card copied in: its journal says which - no walk
+            ableem::StartupTimer timer("memcard-recover");
+            memcards().recoverAfterCrash();
         },
         [&]() {
             if (!libraryOpen)
