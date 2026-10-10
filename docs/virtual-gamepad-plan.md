@@ -190,8 +190,10 @@ key.dpup = Up
 4. The SDL 1.2 half of those entry points, behind the ABI detection. **Done**, and the detection was
    rewritten to ask "is there an SDL 1.2 here?" rather than look for an SDL2 symbol - see the decision
    above for why sdl12-compat makes the other way round unsafe.
-5. Keyboard mode: the profile's keys pushed as key events. **Written, never exercised** - it is what
-   would make a keyboard-only DOS port playable, and no App tried so far has needed it.
+5. Keyboard mode: the profile's keys pushed as key events. **Written; its logic (KeyboardMode) is now
+   unit-tested** (pad -> key events, a key shared by two elements, release), but it has still not run with a
+   keyboard-only App on a device. Limits: only key *events* are delivered (`SDL_GetKeyState` /
+   `SDL_GetKeyboardState` are not interposed), and a negative axis direction is not a key press.
 6. `app_env.sh` on both platforms, the default profile, the home on the stick, and the packages
    shipping `Autobleem/bin/abpad/`. **Done.**
 7. The `SDL_GameController*` entry points. **Done**, and brought forward rather than left to an "if

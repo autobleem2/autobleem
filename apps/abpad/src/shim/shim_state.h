@@ -8,6 +8,7 @@
 // the steady state and never touches a device: everything hard already happened in abpadd.
 
 #include "core/key_names.h"
+#include "core/keyboard_mode.h"
 #include "core/mapping.h"
 #include "core/profile.h"
 #include "core/shared_state.h"
@@ -17,6 +18,7 @@
 #include <cstdio>
 #include <deque>
 #include <string>
+#include <vector>
 
 namespace abpad {
 
@@ -86,7 +88,8 @@ private:
     int sdl2_ = -1;
     Profile profile_;
     const VirtualLayout *layout_ = nullptr;
-    KeyCode keys_[ElementCount];
+    KeyboardMode keyboard_; // keyboard mode: the profile's keys and what is down
+    std::vector<KeyChange> keyChanges_;
 
     ShmBlock block_;
     const SharedState *shared_ = nullptr;
@@ -96,7 +99,6 @@ private:
 
     RawPadState raw_[MaxPads];
     ControllerState controller_[MaxPads];
-    bool lastHeld_[MaxPads][ElementCount] = {}; // keyboard mode: what was down last time round
     RawPadState rawBefore_[MaxPads];
     ControllerState controllerBefore_[MaxPads];
     bool announcedPads_ = false;

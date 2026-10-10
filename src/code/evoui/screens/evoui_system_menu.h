@@ -24,6 +24,7 @@ enum class SystemMenuAction {
     MemoryCards,
     GameManager,
     HardwareInfo,
+    PadDaemon, // the pads the virtual gamepad daemon sees (GuiPadDaemon)
     Options,
     Extensions,     // the Extensions list (docs/extensions-plan.md), on every target
     Processors,     // the scanner processors' sequences (autobleem-main's docs/archive/scanner-processors-plan.md)
