@@ -85,7 +85,8 @@ inline bool needsNewerGlibc(const GlibcVersion &needed, const GlibcVersion &have
 
 namespace glibc_elf {
 
-constexpr size_t MaxSectionTable = 4u << 20; // bytes a section header table, a version section or a string table may take
+// bytes a section header table, a version section or a string table may take
+constexpr size_t MaxSectionTable = 4u << 20;
 constexpr uint32_t ShtGnuVerneed = 0x6ffffffe;
 
 inline uint64_t le(const std::vector<char> &b, size_t at, size_t width) {
@@ -149,8 +150,7 @@ inline GlibcVersion highestGlibcNeededInElf(std::istream &in) {
             return best;
         shnum = is64 ? le(table, 0x20, 8) : le(table, 0x14, 4);
     }
-    if (shnum == 0 || shnum > MaxSectionTable / shentsize ||
-        !readAt(in, shoff, shnum * shentsize, fileSize, table))
+    if (shnum == 0 || shnum > MaxSectionTable / shentsize || !readAt(in, shoff, shnum * shentsize, fileSize, table))
         return best;
 
     struct Section {
@@ -191,7 +191,8 @@ inline GlibcVersion highestGlibcNeededInElf(std::istream &in) {
             for (size_t n = 0; n < count && aux + 16 <= needs.size() && aux >= need; ++n) {
                 const uint64_t nameAt = le(needs, aux + 8, 4);
                 if (nameAt < names.size()) {
-                    const std::string name(names.data() + nameAt, strnlen(names.data() + nameAt, names.size() - nameAt));
+                    const char *text = names.data() + nameAt;
+                    const std::string name(text, strnlen(text, names.size() - nameAt));
                     if (name.compare(0, 6, "GLIBC_") == 0) {
                         const GlibcVersion v = parseGlibcVersion(name.substr(6));
                         if (best < v)
