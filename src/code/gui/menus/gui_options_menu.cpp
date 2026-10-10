@@ -5,7 +5,9 @@
 #include "core/services/system.h"
 #include "core/services/environment.h"
 #include "core/services/theme_converter.h"
+#include "core/services/theme.h"
 #include "core/services/theme_zip_cache.h"
+#include "core/model/timing.h"
 #include "core/services/output_mode.h"
 
 using namespace std;
@@ -320,6 +322,7 @@ void GuiOptions::draw() {
     gui->renderScrollMarkers(firstVisibleIndex > 0, lastVisibleIndex < count - 1);
 
     gui->renderStatus(getStatusLine());
+    themeToast.render(*gui, gui->platform().ticks());
 }
 
 //*******************************
@@ -451,6 +454,23 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
 }
 
 //*******************************
+// GuiOptions::themeFallbackText
+//*******************************
+string GuiOptions::themeFallbackText(ThemeZipCache::Fallback reason) {
+    switch (reason) {
+    case ThemeZipCache::Fallback::NoSpace:
+        return _("Not enough space to unpack the theme.");
+    case ThemeZipCache::Fallback::Broken:
+        return _("The theme zip is broken.");
+    case ThemeZipCache::Fallback::CannotUnpack:
+        return _("The theme zip could not be unpacked.");
+    case ThemeZipCache::Fallback::None:
+        break;
+    }
+    return "";
+}
+
+//*******************************
 // GuiOptions::loadFor
 //*******************************
 void GuiOptions::loadFor(int id, const string &nextValue) {
@@ -469,6 +489,13 @@ void GuiOptions::loadFor(int id, const string &nextValue) {
     GuiOptionsMenuBase::init();
     computePagePosition();
     gui->endBusy();
+    // UIREV-50/54: the picked zip was not used - Theme::load() already put theme=default into config.ini, which the
+    // row shows (it reads the config each frame); the toast says why
+    if (theme) {
+        const string why = themeFallbackText(Theme::fallbackReason());
+        if (!why.empty())
+            themeToast.show(why, "", 0, 0, 2 * DefaultShowingTimeout);
+    }
     // the language and the fonts change what the launcher under the panel shows: the snapshot is taken again, once,
     // into a render target (no readback); after endBusy(), as the launcher's frame ends the busy state itself
     if (id != CFG_THEME && backdropRefresh && gui->hasLauncherBackdrop())

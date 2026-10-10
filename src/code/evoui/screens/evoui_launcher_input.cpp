@@ -7,6 +7,8 @@
 #include "gui/screens/gui_confirm.h"
 #include "evoui_btn_guide.h"
 #include "core/model/timing.h"
+#include "core/services/theme.h"
+#include "gui/menus/gui_options_menu.h"
 #include "core/model/pad_assignment.h"
 
 #include <ab_gui/hold_repeat.h>
@@ -33,6 +35,15 @@ void GuiLauncher::loop() {
     motionStart = 0;
     motionDir = 0;
     queuedScroll = 0;
+
+    // UIREV-50/54: the start-up load fell back to the default theme (the picked zip was not used): said once
+    static bool startupThemeToldAbout = false;
+    if (!startupThemeToldAbout) {
+        startupThemeToldAbout = true;
+        const string why = GuiOptions::themeFallbackText(Theme::fallbackReason());
+        if (!why.empty())
+            notificationLines[1].setText(why, 2 * DefaultShowingTimeout);
+    }
 
     while (menuVisible) {
         retranslateMenu(); // Options may have changed the language on the way back into this loop

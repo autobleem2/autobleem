@@ -6,6 +6,8 @@
 #include "gui_options_menu_base.h"
 #include "gui/gui.h"
 #include "gui/hold_repeat.h"
+#include "core/services/theme_zip_cache.h"
+#include "../../evoui/controls/evoui_notification_bubble.h"
 #include <functional>
 #include <string>
 #include <vector>
@@ -46,7 +48,10 @@ enum {
 //********************
 class GuiOptions : public GuiOptionsMenuBase {
 public:
-    explicit GuiOptions(ableem::GuiBase &_gui) : GuiOptionsMenuBase(_gui) {}
+    explicit GuiOptions(ableem::GuiBase &_gui) : GuiOptionsMenuBase(_gui) {
+        themeToast.fitWidth = true;
+        themeToast.width = 840;
+    }
 
     void init() override;
     // the rows packed at the font's height, scrolling when more than fit (the base's paging), in groups
@@ -81,8 +86,13 @@ private:
     void endHold();
     void flushPendingReload();
     void loadFor(int id, const std::string &nextValue); // the load itself, under the spinner
+    // UIREV-50/54: the toast over the panel when the theme just loaded fell back to the default one
+    NotificationBubble themeToast;
 
 public:
+    // the short text for why the picked theme zip was not used ("" for None) - Options' toast and the launcher's
+    // (a fallback at start-up)
+    static std::string themeFallbackText(ThemeZipCache::Fallback reason);
     std::vector<std::string> getThemes();
     std::vector<std::string> getFonts(); // every .ttf/.otf in Fonts::userFontDirs
     std::vector<std::string> getJewels();
