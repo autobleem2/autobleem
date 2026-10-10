@@ -1072,6 +1072,7 @@ void GuiLauncher::loadAssets() {
     // created above, so no later load or line reset can take it away before the first frame
     {
         const string why = GuiOptions::themeFallbackText(Theme::takeFallbackReason());
+        PLOG_INFO << "DBG54 toast site why='" << why << "'";
         if (!why.empty())
             notificationLines[1].setText(why, 2 * DefaultShowingTimeout);
     }

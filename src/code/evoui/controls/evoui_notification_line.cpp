@@ -1,5 +1,6 @@
 #include "evoui_notification_line.h"
 #include "gui/gui.h"
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -11,6 +12,7 @@ const int Gap = 8; // between stacked bubbles
 // NotificationLine::setText
 //*******************************
 void NotificationLine::setText(const string &text, long timeLimit) {
+    PLOG_INFO << "DBG54 NotificationLine::setText '" << text << "' limit=" << timeLimit << " this=" << (const void *)this;
     bubble.show(text, "", 0, 0, timeLimit);
 }
 
@@ -27,6 +29,7 @@ void NotificationLine::render(Gui &gui, long now, int top) {
 //*******************************
 void NotificationLines::create(int count, int maxWidth, int right) {
     // a bubble owns its tweens and is never copied or moved (they write its floats): built in place
+    PLOG_INFO << "DBG54 NotificationLines::create count=" << count;
     lines = vector<NotificationLine>(static_cast<size_t>(count));
     for (NotificationLine &line : lines) {
         line.bubble.fitWidth = true;
