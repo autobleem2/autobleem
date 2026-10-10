@@ -476,6 +476,7 @@ int AutoBleem::run() {
     });
     gui_->display(false);
     GuiSplash::runPendingWork();
+    ableem::StartupTimer::milestone("splash-closed");
     unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
     if (!libraryOpen) {
         return EXIT_FAILURE;
@@ -534,6 +535,7 @@ int AutoBleem::run() {
     if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
         scans().requestScan();
     }
+    ableem::StartupTimer::milestone("scans-started");
 
     // the extensions (docs/extensions-plan.md): what is in Extensions/, the crash guard's verdict on the last
     // run - an extension that was running when the launcher died is disabled and the user told - and the
@@ -545,6 +547,7 @@ int AutoBleem::run() {
         extensionRequests_.message = (info ? info->title : crashed) + " " + _("stopped AutoBleem and was disabled");
     }
     extensions_.startBackground();
+    ableem::StartupTimer::milestone("extensions-started");
 
     // On the console a Quit event is never a window's close button: it is SDL giving up on the display -
     // seen on the PSC on 2026-09-20 coming back from RetroArch 1.22.2 (Doom): the GPU had not returned the

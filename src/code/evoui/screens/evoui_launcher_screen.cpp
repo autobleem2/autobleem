@@ -935,6 +935,7 @@ void GuiLauncher::renderPlayFrame() {
 //*******************************
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
+    ableem::StartupTimer::milestone("launcher-load-assets-start");
     ableem::StartupTimer assetsTimer("launcher-load-assets"); // the first set, the carousel, the screen's elements
     forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
@@ -1034,6 +1035,7 @@ void GuiLauncher::loadAssets() {
     carousel.initPositions();
     switchSet(selection.set, true);
     showSetName();
+    ableem::StartupTimer::milestone("launcher-set-loaded");
 
     gameName = "";
     publisher = "";
