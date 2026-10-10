@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 544
 
 %1 needs game data it can run: %2.=%1 precisa de dados de jogo que consiga executar: %2.
 (changed)=(alterado)
@@ -378,6 +378,7 @@ RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot e núcleos de emulação
 RetroArch cores=Cores do RetroArch
 RetroArch is not installed=RetroArch não está instalado
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=O RetroArch precisa de uma biblioteca do sistema mais nova do que a deste console - use o RetroArch que acompanha o AutoBleem
 ROMs=ROMs
 Run=Executar
 Run again=Executar de novo

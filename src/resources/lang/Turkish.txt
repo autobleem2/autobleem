@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 544
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 (changed)=(değiştirildi)
@@ -378,6 +378,7 @@ RetroArch=RetroArch is not installed
 RetroArch and emulation cores=Retroboot ve çekirdek emülasyonları
 RetroArch cores=RetroArch çekirdekleri
 RetroArch is not installed=RetroArch yüklü değil
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=RetroArch, bu konsolda bulunandan daha yeni bir sistem kitaplığı gerektiriyor - AutoBleem ile gelen RetroArch'ı kullanın
 ROMs=ROM'lar
 Run=Çalıştır
 Run again=Yeniden çalıştır

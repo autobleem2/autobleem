@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 543
+# Untranslated: 1 / Total: 544
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 (changed)=(modificat)
@@ -378,6 +378,7 @@ RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot e còrs d'emulacion
 RetroArch cores=Cores RetroArch
 RetroArch is not installed=RetroArch es pas installat
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=RetroArch a besonh d'una bibliotèca sistèma mai recenta que la d'aquesta consòla - utilizatz lo RetroArch provesit amb AutoBleem
 ROMs=ROMs
 Run=Aviar
 Run again=Tornar aviar

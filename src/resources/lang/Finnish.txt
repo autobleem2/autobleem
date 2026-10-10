@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 543
+# Untranslated: 0 / Total: 544
 
 %1 needs game data it can run: %2.=%1 tarvitsee pelitiedot, joita se osaa ajaa: %2.
 (changed)=(muutettu)
@@ -378,6 +378,7 @@ RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot ja emulaatio ytimet
 RetroArch cores=RetroArch-ytimet
 RetroArch is not installed=RetroArch ei ole asennettu
+RetroArch needs a newer system library than this console has - use the RetroArch that comes with AutoBleem=RetroArch tarvitsee uudemman järjestelmäkirjaston kuin tässä konsolissa on - käytä AutoBleemin mukana tulevaa RetroArchia
 ROMs=ROMit
 Run=Käynnistä
 Run again=Suorita uudelleen
