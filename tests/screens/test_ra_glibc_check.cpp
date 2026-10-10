@@ -83,11 +83,11 @@ string tinyElf(bool is64, bool bigEndian = false) {
     const size_t stringsAt = headerSize;
     const size_t needAt = stringsAt + strings.size();
     string needs;
-    put(needs, 1, 2); // vn_version
-    put(needs, 3, 2); // vn_cnt
-    put(needs, 1, 4); // vn_file
+    put(needs, 1, 2);  // vn_version
+    put(needs, 3, 2);  // vn_cnt
+    put(needs, 1, 4);  // vn_file
     put(needs, 16, 4); // vn_aux
-    put(needs, 0, 4); // vn_next
+    put(needs, 0, 4);  // vn_next
     const uint32_t nameAt[3] = {11, 22, 33};
     for (int i = 0; i < 3; ++i) {
         put(needs, 0, 4); // vna_hash
@@ -99,18 +99,20 @@ string tinyElf(bool is64, bool bigEndian = false) {
     const size_t shoff = needAt + needs.size();
 
     string f;
-    f += string("\x7f" "ELF", 4);
+    f += string("\x7f"
+                "ELF",
+                4);
     f.push_back(is64 ? 2 : 1);
     f.push_back(bigEndian ? 2 : 1);
     f.push_back(1);
     f.append(9, '\0');
-    put(f, 3, 2); // e_type
-    put(f, 0x28, 2); // e_machine
-    put(f, 1, 4); // e_version
-    put(f, 0, is64 ? 8 : 4); // e_entry
-    put(f, 0, is64 ? 8 : 4); // e_phoff
+    put(f, 3, 2);                // e_type
+    put(f, 0x28, 2);             // e_machine
+    put(f, 1, 4);                // e_version
+    put(f, 0, is64 ? 8 : 4);     // e_entry
+    put(f, 0, is64 ? 8 : 4);     // e_phoff
     put(f, shoff, is64 ? 8 : 4); // e_shoff
-    put(f, 0, 4); // e_flags
+    put(f, 0, 4);                // e_flags
     put(f, headerSize, 2);
     put(f, 0, 2); // e_phentsize
     put(f, 0, 2); // e_phnum
@@ -134,7 +136,7 @@ string tinyElf(bool is64, bool bigEndian = false) {
         f.resize(start + shentsize, '\0');
     };
     header(0, 0, 0, 0);
-    header(3, stringsAt, strings.size(), 0); // SHT_STRTAB
+    header(3, stringsAt, strings.size(), 0);     // SHT_STRTAB
     header(0x6ffffffe, needAt, needs.size(), 1); // SHT_GNU_verneed, linked to the strings
     return f;
 }

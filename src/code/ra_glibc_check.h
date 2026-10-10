@@ -29,12 +29,8 @@ struct GlibcVersion {
     int major = 0;
     int minor = 0;
 
-    bool known() const {
-        return major > 0;
-    }
-    bool operator<(const GlibcVersion &o) const {
-        return major != o.major ? major < o.major : minor < o.minor;
-    }
+    bool known() const { return major > 0; }
+    bool operator<(const GlibcVersion &o) const { return major != o.major ? major < o.major : minor < o.minor; }
 };
 
 // "2.28" or "2.28.1" (a libc's own version string): the first two numbers; an unknown version when there are none
