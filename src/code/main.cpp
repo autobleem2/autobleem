@@ -15,6 +15,7 @@
 #include "core/services/environment_setup.h"
 #include "core/services/system_info.h"
 #include "core/version.h"
+#include "gui/gui.h"
 #include <ableem/engine/log.h>
 #include <ableem/engine/startup_timer.h>
 #ifdef AB_PLATFORM_WIN
@@ -130,6 +131,8 @@ static int runAutobleem(int argc, char *argv[]) {
     for (int i = 0; i < argc; i++)
         PLOG_INFO << "  argv[" << i << "] = " << argv[i];
 
+    // the pad mappings and the pad probe run on the boot splash (Gui::display), not before the window
+    Gui::deferPadSetup();
     AutoBleem app;
     return app.run();
 }
