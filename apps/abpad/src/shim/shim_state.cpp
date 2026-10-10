@@ -43,8 +43,9 @@ ShimState::ShimState() {
     for (int i = 0; i < ElementCount; ++i) {
         string name = profile_.keyFor(static_cast<Element>(i));
         if (!name.empty()) {
-            keys_[i] = keyCodeFromName(name);
-            if (!keys_[i].valid()) {
+            KeyCode key = keyCodeFromName(name);
+            keyboard_.bind(static_cast<Element>(i), key);
+            if (!key.valid()) {
                 log("abpad: %s is bound to \"%s\", which is not a key name I know",
                     elementName(static_cast<Element>(i)), name.c_str());
             }
@@ -278,21 +279,14 @@ void ShimState::update() {
                 diffController(pad, previous, controller);
             }
             if (profile_.wantsKeyboard()) {
-                for (int i = 0; i < ElementCount; ++i) {
-                    if (!keys_[i].valid()) {
-                        continue;
-                    }
-                    Element element = static_cast<Element>(i);
-                    bool was = lastHeld_[pad][i];
-                    bool now = controller.held(element);
-                    if (was != now) {
-                        ShimEvent event;
-                        event.kind = now ? ShimEvent::Kind::KeyDown : ShimEvent::Kind::KeyUp;
-                        event.pad = pad;
-                        event.key = keys_[i];
-                        events_.push_back(event);
-                    }
-                    lastHeld_[pad][i] = now;
+                keyChanges_.clear();
+                keyboard_.update(pad, controller, keyChanges_);
+                for (const KeyChange &change : keyChanges_) {
+                    ShimEvent event;
+                    event.kind = change.down ? ShimEvent::Kind::KeyDown : ShimEvent::Kind::KeyUp;
+                    event.pad = pad;
+                    event.key = change.key;
+                    events_.push_back(event);
                 }
             }
         }

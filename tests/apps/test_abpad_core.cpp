@@ -4,6 +4,7 @@
 // key table keyboard mode sends.
 
 #include "core/kernel_pad.h"
+#include "core/keyboard_mode.h"
 #include "core/key_names.h"
 #include "core/mapping.h"
 #include "core/profile.h"
@@ -1484,3 +1485,192 @@ TEST_CASE("the shared block replaces a stale block it may not open, and refuses 
     CHECK(static_cast<char *>(first.data())[0] == 'x');
 }
 #endif
+
+//*******************************
+// keyboard mode
+//*******************************
+namespace {
+
+// a keyboard mode wired the way the shim wires it from a profile text
+KeyboardMode keyboardFrom(const string &profileText) {
+    istringstream text(profileText);
+    Profile profile;
+    profile.loadStream(text);
+    KeyboardMode keyboard;
+    for (int i = 0; i < ElementCount; ++i) {
+        string name = profile.keyFor(static_cast<Element>(i));
+        if (!name.empty()) {
+            keyboard.bind(static_cast<Element>(i), keyCodeFromName(name));
+        }
+    }
+    return keyboard;
+}
+
+vector<KeyChange> feed(KeyboardMode &keyboard, int pad, const ControllerState &state) {
+    vector<KeyChange> out;
+    keyboard.update(pad, state, out);
+    return out;
+}
+
+} // namespace
+
+TEST_CASE("keyboard mode: a press is a key down, a release a key up, and holding says nothing more") {
+    KeyboardMode keyboard = keyboardFrom("mode = keyboard\nkey.a = Left Ctrl\nkey.dpup = Up\nkey.start = Return\n");
+
+    CHECK(feed(keyboard, 0, ControllerState()).empty());
+
+    vector<KeyChange> down = feed(keyboard, 0, pressing({Element::A, Element::DpUp}));
+    REQUIRE(down.size() == 2);
+    CHECK(down[0].down);
+    CHECK(down[0].key.sdl1Sym == 306); // Left Ctrl in SDL 1.2
+    CHECK(down[0].key.sdl2Scancode == 224);
+    CHECK(down[1].down);
+    CHECK(down[1].key.sdl1Sym == 273); // Up
+    CHECK(down[1].key.sdl2Scancode == 82);
+
+    CHECK(feed(keyboard, 0, pressing({Element::A, Element::DpUp})).empty()); // held: no repeat events
+
+    vector<KeyChange> some = feed(keyboard, 0, pressing({Element::A}));
+    REQUIRE(some.size() == 1);
+    CHECK_FALSE(some[0].down);
+    CHECK(some[0].key.sdl1Sym == 273);
+
+    vector<KeyChange> up = feed(keyboard, 0, ControllerState());
+    REQUIRE(up.size() == 1);
+    CHECK_FALSE(up[0].down);
+    CHECK(up[0].key.sdl2Scancode == 224);
+}
+
+TEST_CASE("keyboard mode: an element with no key, or a key name nobody knows, sends nothing") {
+    KeyboardMode keyboard = keyboardFrom("key.a = Space\nkey.b = NoSuchKey\n");
+    CHECK(feed(keyboard, 0, pressing({Element::B, Element::X, Element::Start})).empty());
+    CHECK(feed(keyboard, 0, pressing({Element::A})).size() == 1);
+}
+
+TEST_CASE("keyboard mode: a trigger or stick is a key once past the button threshold") {
+    KeyboardMode keyboard = keyboardFrom("key.r2 = Right Shift\nkey.leftx = Right\n");
+    ControllerState state;
+    state.set(Element::RightTrigger, static_cast<int16_t>(AxisButtonThreshold - 1));
+    CHECK(feed(keyboard, 0, state).empty());
+    state.set(Element::RightTrigger, static_cast<int16_t>(AxisButtonThreshold));
+    state.set(Element::LeftX, static_cast<int16_t>(20000));
+    CHECK(feed(keyboard, 0, state).size() == 2);
+    state.set(Element::RightTrigger, static_cast<int16_t>(0));
+    state.set(Element::LeftX, static_cast<int16_t>(0));
+    vector<KeyChange> released = feed(keyboard, 0, state);
+    REQUIRE(released.size() == 2);
+    CHECK_FALSE(released[0].down);
+    CHECK_FALSE(released[1].down);
+}
+
+TEST_CASE("keyboard mode: a pad that goes away lets go of every key it held") {
+    KeyboardMode keyboard = keyboardFrom("key.a = Space\nkey.dpleft = Left\nkey.dpright = Right\n");
+    SharedState shared;
+    initSharedState(shared);
+    ControllerState pads[MaxPads];
+    pads[0] = pressing({Element::A, Element::DpLeft});
+    bool connected[MaxPads] = {true, false, false, false};
+    publishPads(shared, pads, connected, 1);
+
+    // what ShimState::update() does with a snapshot
+    auto step = [&]() {
+        Snapshot snapshot;
+        REQUIRE(readSnapshot(shared, snapshot));
+        ControllerState controller;
+        if (0 < snapshot.padCount && snapshot.connected[0]) {
+            controller = snapshot.pads[0];
+        }
+        return feed(keyboard, 0, controller);
+    };
+
+    CHECK(step().size() == 2);
+
+    connected[0] = false;
+    publishPads(shared, pads, connected, 1); // unplugged while A and left are down
+    vector<KeyChange> lifted = step();
+    REQUIRE(lifted.size() == 2);
+    CHECK_FALSE(lifted[0].down);
+    CHECK_FALSE(lifted[1].down);
+    CHECK(step().empty());
+
+    connected[0] = true;
+    publishPads(shared, pads, connected, 1); // plugged back in with the buttons still down: pressed afresh
+    CHECK(step().size() == 2);
+}
+
+TEST_CASE("keyboard mode: two elements on one key keep it down until both are let go") {
+    KeyboardMode keyboard = keyboardFrom("key.a = Return\nkey.start = Return\n");
+
+    vector<KeyChange> first = feed(keyboard, 0, pressing({Element::A}));
+    REQUIRE(first.size() == 1);
+    CHECK(first[0].down);
+    CHECK(feed(keyboard, 0, pressing({Element::A, Element::Start})).empty()); // already down
+    CHECK(feed(keyboard, 0, pressing({Element::Start})).empty());             // A let go, Start still holds it
+    vector<KeyChange> last = feed(keyboard, 0, ControllerState());
+    REQUIRE(last.size() == 1);
+    CHECK_FALSE(last[0].down);
+}
+
+TEST_CASE("keyboard mode: two players on one key keep it down until both are let go") {
+    KeyboardMode keyboard = keyboardFrom("key.a = Space\n");
+    CHECK(feed(keyboard, 0, pressing({Element::A})).size() == 1);
+    CHECK(feed(keyboard, 1, pressing({Element::A})).empty());
+    CHECK(feed(keyboard, 0, ControllerState()).empty());
+    vector<KeyChange> last = feed(keyboard, 1, ControllerState());
+    REQUIRE(last.size() == 1);
+    CHECK_FALSE(last[0].down);
+
+    vector<KeyChange> none;
+    keyboard.update(MaxPads, pressing({Element::A}), none); // a pad that cannot exist is ignored
+    keyboard.update(-1, pressing({Element::A}), none);
+    CHECK(none.empty());
+}
+
+TEST_CASE("keyboard mode: the d-pad a stick stands in for reaches the keys (the movement aid)") {
+    KeyboardMode keyboard = keyboardFrom("key.dpright = Right\nkey.dpup = Up\n");
+    ControllerState stick;
+    stick.set(Element::LeftX, static_cast<int16_t>(32767));
+    ControllerState seen = controllerView(VirtualPadKind::X360, stick, MovementAid::StickToDpad);
+    vector<KeyChange> changes = feed(keyboard, 0, seen);
+    REQUIRE(changes.size() == 1);
+    CHECK(changes[0].key.sdl2Scancode == 79); // Right
+
+    // and the same stick on a profile that asks for the pad as it is presses nothing
+    KeyboardMode plain = keyboardFrom("key.dpright = Right\n");
+    CHECK(feed(plain, 0, controllerView(VirtualPadKind::X360, stick, MovementAid::AsIs)).empty());
+}
+
+TEST_CASE("keyboard mode: a profile's key lines - aliases, comments, an empty value, case") {
+    Profile profile;
+    istringstream text("mode = Keys\n"
+                       "KEY.Cross = lctrl\n"
+                       "key.circle = F5   # trailing comment\n"
+                       "key.l1 = kp_enter\n"
+                       "; key.r1 = Q\n"
+                       "key.select = Escape\n"
+                       "key.square = Z\n"
+                       "key.square =\n"
+                       "key.nothing = X\n");
+    profile.loadStream(text);
+    CHECK(profile.mode == PadMode::Keyboard);
+    CHECK(profile.keyFor(Element::A) == "lctrl");
+    CHECK(profile.keyFor(Element::B) == "F5");
+    CHECK(profile.keyFor(Element::LeftShoulder) == "kp_enter");
+    CHECK(profile.keyFor(Element::RightShoulder).empty());
+    CHECK(profile.keyFor(Element::Back) == "Escape");
+    CHECK(profile.keyFor(Element::X).empty()); // an empty value unbinds
+    CHECK(profile.keys.size() == 4);
+
+    CHECK(keyCodeFromName("F5").sdl2Scancode == 62);
+    CHECK(keyCodeFromName("kp_enter").sdl1Sym == 271);
+    CHECK(keyCodeFromName("Escape").sdl1Sym == 27);
+    CHECK_FALSE(keyCodeFromName("f13").valid());
+    CHECK_FALSE(keyCodeFromName("").valid());
+}
+
+TEST_CASE("keyboard mode: a profile file that is missing changes nothing") {
+    Profile profile;
+    CHECK_FALSE(profile.loadFile("/nonexistent-dir/pad.ini"));
+    CHECK(profile.mode == PadMode::Joystick);
+    CHECK(profile.keys.empty());
+}

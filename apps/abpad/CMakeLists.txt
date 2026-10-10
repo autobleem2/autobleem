@@ -8,6 +8,8 @@
 add_library(abpad_core STATIC
         src/core/kernel_pad.cpp
         src/core/kernel_pad.h
+        src/core/keyboard_mode.cpp
+        src/core/keyboard_mode.h
         src/core/key_names.cpp
         src/core/key_names.h
         src/core/mapping.cpp
