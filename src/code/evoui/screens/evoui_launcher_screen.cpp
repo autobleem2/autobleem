@@ -1234,10 +1234,18 @@ void GuiLauncher::loadAssets() {
                     // the core says it can save, RetroArch tried on the way out and failed (its own log says so)
                     notificationLines[1].setText(_("This core cannot save its state"), DefaultShowingTimeout);
                 }
-            } else {
-                // one of our PS1 games played in RetroArch's PS1 core: no slots of ours
-                notificationLines[1].setText(_("AutoBleem resume points not available in RetroArch."),
-                                             DefaultShowingTimeout);
+            } else if (!game->foreign) {
+                // one of our PS1 games played in RetroArch: its state goes to the game's own slots, marked RA - the
+                // same slot picker as after PCSX (the owner, 2026-10-11)
+                if (GameSettingsService::resumeModeOf(*game) == ResumePointService::Never) {
+                    app.resumePoints().discardRun(*game);
+                } else if (app.resumePoints().raStateWritten(*game)) {
+                    sselector->loadSaveStateImages(game, true);
+                    sselector->visible = true;
+                    state = LauncherScreenState::Resume;
+                } else if (app.resumePoints().raAutoSaveFailed(*game)) {
+                    notificationLines[1].setText(_("This core cannot save its state"), DefaultShowingTimeout);
+                }
             }
         }
         // EmuMode::Launcher (an App): returning to the launcher isn't a "resume points" situation - nothing to say

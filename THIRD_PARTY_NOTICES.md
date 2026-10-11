@@ -1052,6 +1052,14 @@ Copyright 2016 The Saira Project Authors (omnibus.type@gmail.com), with Reserved
 Game metadata (.rdb) and box art come from https://github.com/libretro/libretro-database and https://github.com/libretro/libretro-thumbnails under their own terms.
 ```
 
+## RetroArch logo (retroarch-assets)
+
+*src/resources/evoimg/emu_ra.png, emu_ra@2x.png - a resume slot's "resumes in RetroArch" badge, drawn by tools/make_emu_badges.py from tools/art/retroarch-monochrome.svg* - **CC-BY-4.0**
+
+```
+The RetroArch logo, src/xmb/monochrome/retroarch.svg of https://github.com/libretro/retroarch-assets by the libretro team, licensed under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/). Changed: only the invader is kept (white, its rounded square dropped), on a dark square tile, scaled to 32 and 64 pixels. RetroArch is a trademark of its owners.
+```
+
 ## gl4es
 
 *payload/Autobleem/rc/pe/lib/libGL.so.1, libGLU.so.1 - the OpenGL-on-GLES library the PE apps load* - **MIT**

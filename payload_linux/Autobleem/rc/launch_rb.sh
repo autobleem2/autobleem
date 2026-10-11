@@ -5,9 +5,10 @@
 #
 # LaunchService::launchRetroArch passes:
 #   $1 the file to run
-#   $2 the core. For AutoBleem's own PS1 games that is "NEON" or "PEOPS" (the two pcsx GPU plugins, both of
-#      which are pcsx_rearmed here); for a game that came out of a RetroArch playlist it is the core path the
-#      playlist named - RetroArchService resolves it to RetroArch/cores/<name>.so from the core info files.
+#   $2 the core. For AutoBleem's own PS1 games that is the platform's PS1 core (SwanStation on a PC stick,
+#      pcsx_rearmed on a Pi) or "PEOPS" / "NEON" (both pcsx_rearmed here); for a game that came out of a
+#      RetroArch playlist it is the core path the playlist named - RetroArchService resolves it to
+#      RetroArch/cores/<name>.so from the core info files.
 set -uo pipefail
 
 # glibc 2.41 will not dlopen a core marked as needing an executable stack (libretro's buildbot cores are)
@@ -47,7 +48,9 @@ core_path() {
     case "$name" in
         NEON|PEOPS|"") name=pcsx_rearmed ;;     # both pcsx GPU plugins are the one libretro core here
     esac
-    name="${name%_libretro.so}"
+    # a path that is not there (the platform's PS1 core in RetroArch/cores, which the distribution's
+    # RetroArch keeps elsewhere): the same core by its name
+    name="$(basename "${name%_libretro.so}")"
 
     # the cores the installer downloaded from libretro's buildbot first, then the distribution's under its
     # multiarch dir (whichever architecture this is)
