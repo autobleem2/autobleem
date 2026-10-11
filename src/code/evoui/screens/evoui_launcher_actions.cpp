@@ -194,6 +194,19 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
 
     app.session().emuMode = EmuMode::Pcsx;
 
+    // the game editor's Resume row "Last slot" (EMU-26): Play continues from the newest slot, in the emulator that
+    // wrote it, whatever the game's RetroArch setting says (a slot RetroArch wrote, without RetroArch: from the start)
+    if (selectedIsPs1() && !app.session().runningGame->foreign) {
+        const PsGame &game = *app.session().runningGame;
+        const int slot = app.resumePoints().slotForPlay(game, GameSettingsService::resumeModeOf(game));
+        const bool raSlot = slot >= 0 && app.resumePoints().slotIsRetroArch(game, slot);
+        if (slot >= 0 && (!raSlot || Env::retroArchInstalled())) {
+            app.session().resumePoint = slot;
+            app.session().emuMode = raSlot ? EmuMode::RetroArch : EmuMode::Pcsx;
+            return;
+        }
+    }
+
     // if it's a PS1 game see if the user wants to play it in RetroArch instead
     // (without the RetroArch program none of this applies: the game starts in PCSX, the flags stay saved - ra_gates.h)
     if (selectedIsPs1()) {
@@ -546,16 +559,21 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
                 app.session().resumePoint = slot;
                 rememberSelection();
                 sselector->cleanSaveStateImages();
-                // a RetroArch game resumes in RetroArch (the launch puts the slot where RetroArch loads it)
-                app.session().emuMode = game->foreign ? EmuMode::RetroArch : EmuMode::Pcsx;
+                // a slot resumes in the emulator that wrote it: a RetroArch game's, and one of our PS1 games' kept
+                // from a run in RetroArch, in RetroArch (the launch puts the slot where RetroArch loads it)
+                app.session().emuMode =
+                    app.resumePoints().slotIsRetroArch(*game, slot) ? EmuMode::RetroArch : EmuMode::Pcsx;
                 menuVisible = false;
             } else {
                 app.audio().cancel.play();
             }
         } else {
             // app.audio().cursor.play();
-            app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot);
-            app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
+            // the run that just ended: PCSX's, or RetroArch's (one of our PS1 games played in it)
+            const bool retroArch = app.session().emuMode == EmuMode::RetroArch;
+            app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot, retroArch);
+            if (!retroArch)
+                app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
             sselector->visible = false;
             arrow->visible =
                 sselector->operation == OP_LOAD; // only back in the menu (Set) - not in Games after the emulator
