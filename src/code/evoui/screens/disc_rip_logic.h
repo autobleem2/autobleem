@@ -27,9 +27,21 @@ const double CdSpeedBytesPerSecond = 153600.0;
 // a set has no more discs than this on the .m3u
 const int MaxDiscs = 16;
 
-// Square offers the copy only on a PS1 data disc the databases know: its title names the folder and the file
-inline bool offered(discview::Drive drive, bool discViewOpen, bool inDatabase) {
-    return drive == discview::Drive::ReadyGame && discViewOpen && inDatabase;
+// Square offers the copy on every PS1 data disc in the disc view (the owner, 2026-10-12: not only the ones the
+// databases know)
+inline bool offered(discview::Drive drive, bool discViewOpen) {
+    return drive == discview::Drive::ReadyGame && discViewOpen;
+}
+
+// The name the copy goes by: the databases' title; for a disc they do not know, its serial ("SLES-01234"), else
+// what the disc calls itself (the volume label), else "PlayStation disc". Such a disc has no "(Disc N)" record
+// name, so it is copied as a single disc - no .m3u - and the scan finds no cover for it.
+inline std::string copyTitle(bool inDatabase, const std::string &title, const std::string &serial) {
+    if (inDatabase && !title.empty())
+        return title;
+    if (!serial.empty())
+        return serial;
+    return title.empty() ? std::string("PlayStation disc") : title;
 }
 
 //*******************************

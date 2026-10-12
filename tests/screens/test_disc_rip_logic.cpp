@@ -14,15 +14,22 @@
 using namespace discrip;
 using discview::Drive;
 
-TEST_CASE("the copy is offered on a ready PS1 disc the databases know, in the disc view only") {
-    CHECK(offered(Drive::ReadyGame, true, true));
-    CHECK_FALSE(offered(Drive::ReadyGame, true, false)); // the volume label is no title
-    CHECK_FALSE(offered(Drive::ReadyGame, false, true)); // the carousel shows the library, not the disc
-    CHECK_FALSE(offered(Drive::ReadyAudio, true, true));
-    CHECK_FALSE(offered(Drive::NotPs1, true, true));
-    CHECK_FALSE(offered(Drive::Reading, true, true));
-    CHECK_FALSE(offered(Drive::Empty, true, true));
-    CHECK_FALSE(offered(Drive::NoDrive, true, true));
+TEST_CASE("the copy is offered on every ready PS1 disc, in the disc view only") {
+    CHECK(offered(Drive::ReadyGame, true));
+    CHECK_FALSE(offered(Drive::ReadyGame, false)); // the carousel shows the library, not the disc
+    CHECK_FALSE(offered(Drive::ReadyAudio, true));
+    CHECK_FALSE(offered(Drive::NotPs1, true));
+    CHECK_FALSE(offered(Drive::Reading, true));
+    CHECK_FALSE(offered(Drive::Empty, true));
+    CHECK_FALSE(offered(Drive::NoDrive, true));
+}
+
+TEST_CASE("a disc the databases do not know is copied under its serial, else its volume label") {
+    CHECK(copyTitle(true, "Tomb Raider II - Starring Lara Croft", "SLUS-00437") ==
+          "Tomb Raider II - Starring Lara Croft");
+    CHECK(copyTitle(false, "TOMB_RAIDER_2", "SLUS-00437") == "SLUS-00437");
+    CHECK(copyTitle(false, "MY_DISC", "") == "MY_DISC");
+    CHECK(copyTitle(false, "", "") == "PlayStation disc");
 }
 
 TEST_CASE("the disc number is the record name's (Disc N), disc 1 when it has none") {

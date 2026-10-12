@@ -402,13 +402,13 @@ void GuiLauncher::openCdPlayer() {
 // GuiLauncher::copyDiscOffered
 //*******************************
 bool GuiLauncher::copyDiscOffered() const {
-    return discGame != nullptr && discrip::offered(discDriveNow(), discViewOpen, discGame->inDatabase);
+    return discGame != nullptr && discrip::offered(discDriveNow(), discViewOpen);
 }
 
 //*******************************
 // GuiLauncher::copyDiscToGames
 //*******************************
-// Square on a PS1 disc the databases know. The question (what, where, the room it takes), then the rip under a popup
+// Square on a PS1 disc (named by the databases' title, or by its serial when they do not know it). The question (what, where, the room it takes), then the rip under a popup
 // that blocks the launcher with Abort as its one action, then the rescan and the new game selected. The drive is the
 // watcher's no longer while this runs (it is handed back after, as the CD player does).
 void GuiLauncher::copyDiscToGames() {
@@ -425,7 +425,7 @@ void GuiLauncher::copyDiscToGames() {
         box.show();
     };
 
-    const string title = discPsGame->title;
+    const string title = discrip::copyTitle(discGame->inDatabase, discPsGame->title, discPsGame->serial);
     const int disc = discrip::discNumberOf(discPsGame->recordName);
     const string gamesDir = Env::getPathToGamesDir();
     const string target = discrip::chdPath(gamesDir, title, disc);
