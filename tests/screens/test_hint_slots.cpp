@@ -171,17 +171,17 @@ TEST_CASE("the dim is 35 % of 255") {
     CHECK(DimAlpha == 89);
 }
 
-TEST_CASE("Games with a disc ready: R1 Disc takes the Play in RetroArch slot") {
+TEST_CASE("Games with a disc ready: Circle Disc takes the Play in RetroArch slot") {
     State s = games(false, true);
     s.discReady = true;
     checkLine1(gridFor(s), Item::Play, Item::Disc, Item::GameMenu, Item::QuickMenu);
     s.retroArch = false;
     checkLine1(gridFor(s), Item::Play, Item::Disc, Item::GameMenu, Item::QuickMenu);
-    CHECK(std::string(markersOf(Item::Disc)) == "|@R1|");
+    CHECK(std::string(markersOf(Item::Disc)) == "|@O|");
     CHECK(columnOf(Item::Disc) == 1);
 }
 
-TEST_CASE("an empty roster with a disc ready: R1 Disc in Games and in the game menu state") {
+TEST_CASE("an empty roster with a disc ready: Circle Disc in Games and in the game menu state") {
     State s;
     s.emptyRoster = true;
     s.discReady = true;

@@ -90,7 +90,7 @@ inline int chipAlpha(ChipLook look, long ms) {
 
 // Does the disc view open now? When a disc becomes ready (the watcher's change counter moved since the view last
 // looked, and the disc is ready) and the view is not already open. After Circle the disc stays and the view stays
-// closed until R1: the counter has not moved.
+// closed until Circle: the counter has not moved.
 inline bool opensByItself(Drive drive, unsigned changes, unsigned seenChanges, bool viewOpen) {
     return isReady(drive) && changes != seenChanges && !viewOpen;
 }
@@ -100,8 +100,8 @@ inline bool closesByItself(Drive drive, bool viewOpen) {
     return viewOpen && !isReady(drive);
 }
 
-// R1 on the carousel brings the disc view back, and is in the footer only while a disc is ready
-inline bool r1ShowsDisc(Drive drive, bool viewOpen) {
+// Circle on the carousel brings the disc view back, and "Disc" is in the footer only while a disc is ready
+inline bool circleShowsDisc(Drive drive, bool viewOpen) {
     return isReady(drive) && !viewOpen;
 }
 

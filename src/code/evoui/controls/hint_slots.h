@@ -30,7 +30,7 @@ enum class Item {
     PlayInRetroArch, // Square
     DeleteSlot,      // Triangle
     Random,          // Start
-    Disc,            // R1 - the disc in the drive (only while one is ready; takes Play in RetroArch's slot)
+    Disc,            // Circle - the disc in the drive (only while one is ready; takes Play in RetroArch's slot)
     // column 3 - move
     GameMenu, // Down
     Choose,   // Left/Right
@@ -73,8 +73,6 @@ constexpr const char *markersOf(Item item) {
         return "|@T|";
     case Item::Random:
         return "|@Start|";
-    case Item::Disc:
-        return "|@R1|";
     case Item::GameMenu:
         return "|@Down|";
     case Item::Choose:
@@ -83,6 +81,7 @@ constexpr const char *markersOf(Item item) {
     case Item::QuickMenu:
     case Item::BackToGames:
         return "|@Up|";
+    case Item::Disc:
     case Item::Back:
     case Item::DontSave:
         return "|@O|";
@@ -116,7 +115,7 @@ struct State {
     bool app = false;         // Games: the selected game is an App (X Start)
     bool retroArch = false;   // Games: Square plays in RetroArch (a PS1 game, RetroArch installed)
     bool slotUsed = false;    // ResumeLoad: the highlighted slot holds a save (Triangle deletes it)
-    bool discReady = false;   // Games: a disc is ready and the carousel shows - R1 "Disc" (the disc view is not up)
+    bool discReady = false;   // Games: a disc is ready and the carousel shows - Circle "Disc" (the disc view is not up)
     bool noMenu = false;      // Games: the disc view of an audio CD - no game menu below it (Down does nothing)
 };
 
