@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 565
+# Untranslated: 0 / Total: 567
 
 %1 needs game data it can run: %2.=%1 needs game data it can run: %2.
 (changed)=(changed)
@@ -142,6 +142,8 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Emulator config menu
 Emulator screen scaling:=Emulator screen scaling:
+no card yet=no card yet
+Not saved: this game has no pcsx.cfg=Not saved: this game has no pcsx.cfg
 Screen halo:=Screen halo:
 Emulators=Emulators
 Enable=Enable
