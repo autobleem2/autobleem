@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <fstream>
 #include <typeinfo>
 
 using namespace std;
@@ -597,8 +598,14 @@ void GuiCdPlayer::loop() {
 //*******************************
 void runCdPlayerDevEntry(ableem::GuiBase &gui) {
     static bool done = false;
-    const char *cue = getenv("AB_CD_PLAYER_IMAGE");
-    if (done || cue == nullptr || *cue == '\0')
+    const char *env = getenv("AB_CD_PLAYER_IMAGE");
+    string cue = env != nullptr ? env : "";
+    if (cue.empty()) { // the VM cannot set the environment: an image laid in as the extension "cdplayer-test" does it
+        const string laid = Env::getPathToUSBRoot() + sep + "Extensions" + sep + "cdplayer-test" + sep + "testcd.cue";
+        if (ifstream(laid).good())
+            cue = laid;
+    }
+    if (done || cue.empty())
         return;
     done = true;
     PLOG_INFO << "CD player: dev entry on " << cue;
