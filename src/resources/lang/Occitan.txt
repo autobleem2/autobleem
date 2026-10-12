@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 567
+# Untranslated: 1 / Total: 568
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 (changed)=(modificat)
@@ -143,6 +143,7 @@ Emulator=Emulator
 Emulator config menu=Menú config de l'emulator
 Emulator screen scaling:=Escalatge de l'ecran de l'emulador :
 no card yet=pas encara de carta
+Not available for a disc in the drive=Pas disponible per un disc dins lo lector
 Not saved: this game has no pcsx.cfg=Pas enregistrat : aqueste jòc a pas de pcsx.cfg
 Screen halo:=Halo d'ecran :
 Emulators=Emuladors

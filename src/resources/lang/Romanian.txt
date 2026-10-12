@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 (changed)=(modificat)
@@ -143,6 +143,7 @@ Emulator=Emulator
 Emulator config menu=Meniu de configurare al emulatorului
 Emulator screen scaling:=Scalarea ecranului emulatorului:
 no card yet=niciun card încă
+Not available for a disc in the drive=Indisponibil pentru un disc din unitate
 Not saved: this game has no pcsx.cfg=Nesalvat: acest joc nu are pcsx.cfg
 Screen halo:=Halou ecran:
 Emulators=Emulatoare

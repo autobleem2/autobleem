@@ -138,3 +138,7 @@ target_include_directories(test_launch_picture PRIVATE ${CMAKE_SOURCE_DIR}/src/c
 # in its binary against the running libc
 ab_add_test(test_ra_glibc_check screens/test_ra_glibc_check.cpp)
 target_include_directories(test_ra_glibc_check PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
+
+# AUTOBLEEM-22: the game editor's rows greyed for a disc in the drive (gui/menus/game_editor_options.h, pure)
+ab_add_test(test_game_editor_options screens/test_game_editor_options.cpp)
+target_include_directories(test_game_editor_options PRIVATE ${CMAKE_SOURCE_DIR}/src/code/gui/menus)

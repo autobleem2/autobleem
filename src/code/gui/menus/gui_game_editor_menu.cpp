@@ -3,6 +3,7 @@
 //
 
 #include "gui_game_editor_menu.h"
+#include "game_editor_options.h"
 #include "gui/gui.h"
 #include "gui/screens/gui_confirm.h"
 #include "gui/screens/gui_keyboard.h"
@@ -15,28 +16,6 @@
 #include <typeinfo>
 
 using namespace std;
-
-#define OPT_FIRST 0
-#define OPT_FAVORITE 0
-#define OPT_LIGHTGUN 1
-#define OPT_PLAY_USING_RA 2
-#define OPT_LOCK 3
-#define OPT_HIGHRES 4 // Resolution: the built-in NEON GPU only
-#define OPT_SPEEDHACK 5
-#define OPT_SCANLINES 6
-#define OPT_SCANLINELV 7
-#define OPT_CLOCK_PSX 8
-#define OPT_FRAMESKIP 9
-#define OPT_PLUGIN 10
-#define OPT_INTERPOLATION 11
-#define OPT_BOOTLOGO 12
-#define OPT_SMOOTHING 13
-#define OPT_SONYHACKS 14 // pcsx-abnxt only
-#define OPT_FILTER 15
-#define OPT_UNLOCK 16  // only while the game has its own config
-#define OPT_NOSEAMS 17 // Remove seams: with Resolution
-#define OPT_DITHERING 18
-#define OPT_RESUME 19 // Resume: ask / last slot / never (EMU-26)
 
 namespace {
 
@@ -131,17 +110,20 @@ void GuiEditor::buildRows() {
         rows.push_back({Row::Kind::Value, label, value, false, opt, greyed});
     };
 
+    // a disc in the drive: its flags are not changeable (greyedForDisc), the status bar says why
+    const bool disc = gameData->physicalDisc;
     heading(_("Game"));
-    boolRow(_("Favorite:"), gameData->internal ? gameData->favorite : gameIni.values["favorite"] == "1", OPT_FAVORITE);
+    boolRow(_("Favorite:"), gameData->internal ? gameData->favorite : gameIni.values["favorite"] == "1", OPT_FAVORITE,
+            greyedForDisc(disc, OPT_FAVORITE));
     // both are RetroArch-only (a flagged light-gun game always launches through RetroArch): left out without it
     if (Env::retroArchInstalled()) {
-        boolRow(_("Lightgun game:"), gameData->lightgun, OPT_LIGHTGUN);
+        boolRow(_("Lightgun game:"), gameData->lightgun, OPT_LIGHTGUN, greyedForDisc(disc, OPT_LIGHTGUN));
         boolRow(_("Play using RA:"),
                 (gameData->internal || gameData->lightgun) ? gameData->play_using_ra
                                                            : gameIni.values["play_using_ra"] == "true",
-                OPT_PLAY_USING_RA);
+                OPT_PLAY_USING_RA, greyedForDisc(disc, OPT_PLAY_USING_RA));
     }
-    boolRow(_("Lock data:"), gameIni.values["automation"] == "0", OPT_LOCK);
+    boolRow(_("Lock data:"), gameIni.values["automation"] == "0", OPT_LOCK, greyedForDisc(disc, OPT_LOCK));
     // the same row as a RetroArch game's (EMU-25): what Play does with the game's resume slots
     valueRow(_("Resume:"),
              settings.resume == ResumePointService::Last    ? _("Last slot")
@@ -500,6 +482,8 @@ void GuiEditor::draw() {
     // the last change found no pcsx.cfg to write to: say so instead of showing a value that will not be used
     if (settings.cfgMissing)
         guiMenu = _("Not saved: this game has no pcsx.cfg");
+    else if (greyedForDisc(gameData->physicalDisc, selOption))
+        guiMenu = _("Not available for a disc in the drive");
     gui->renderStatus(guiMenu);
 }
 

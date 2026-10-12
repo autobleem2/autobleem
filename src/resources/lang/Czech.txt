@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 potřebuje herní data, která umí spustit: %2.
 (changed)=(změněno)
@@ -143,6 +143,7 @@ Emulator=Emulátor
 Emulator config menu=Konfigurace emulátoru MENU
 Emulator screen scaling:=Škálování obrazu emulátoru:
 no card yet=zatím žádná karta
+Not available for a disc in the drive=Není k dispozici pro disk v mechanice
 Not saved: this game has no pcsx.cfg=Neuloženo: hra nemá pcsx.cfg
 Screen halo:=Halo obrazovky:
 Emulators=Emulátory

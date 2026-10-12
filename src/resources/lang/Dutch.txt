@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 heeft speldata nodig die het kan uitvoeren: %2.
 (changed)=(gewijzigd)
@@ -143,6 +143,7 @@ Emulator=Emulator
 Emulator config menu=Emulator configuratiemenu
 Emulator screen scaling:=Schermschaling van de emulator:
 no card yet=nog geen kaart
+Not available for a disc in the drive=Niet beschikbaar voor een schijf in het station
 Not saved: this game has no pcsx.cfg=Niet opgeslagen: dit spel heeft geen pcsx.cfg
 Screen halo:=Schermhalo:
 Emulators=Emulators
