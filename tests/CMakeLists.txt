@@ -75,6 +75,10 @@ target_include_directories(test_set_picker_tabs PRIVATE ${CMAKE_SOURCE_DIR}/src/
 ab_add_test(test_cd_player_logic screens/test_cd_player_logic.cpp)
 target_include_directories(test_cd_player_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
 
+# The disc view's pure rules (evoui/screens/disc_view_logic.h): the drive chip, R1 footer rule, crossfade
+ab_add_test(test_disc_view_logic screens/test_disc_view_logic.cpp)
+target_include_directories(test_disc_view_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
 # The RetroArch-installed gates (evoui/screens/ra_gates.h, pure): a PS1 game's emulator, the Lightgun set
 ab_add_test(test_ra_gates screens/test_ra_gates.cpp)
 target_include_directories(test_ra_gates PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
