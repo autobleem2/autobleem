@@ -89,6 +89,9 @@ target_include_directories(test_set_picker_tabs PRIVATE ${CMAKE_SOURCE_DIR}/src/
 # The CD player screen's pure rules (evoui/screens/cd_player_logic.h): times, grid cursor, bar segments, repeat cycle
 ab_add_test(test_cd_player_logic screens/test_cd_player_logic.cpp)
 target_include_directories(test_cd_player_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+# The Repeat and Shuffle glyphs' per-row geometry (evoui/screens/cd_glyphs.h)
+ab_add_test(test_cd_glyphs screens/test_cd_glyphs.cpp)
+target_include_directories(test_cd_glyphs PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
 
 # The disc view's pure rules (evoui/screens/disc_view_logic.h): the drive chip, R1 footer rule, crossfade
 ab_add_test(test_disc_view_logic screens/test_disc_view_logic.cpp)
