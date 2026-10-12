@@ -24,10 +24,10 @@ class Tree(unittest.TestCase):
         self.dir = Path(self.tmp.name)
         self.en = ['Apple=Apple', 'Banana=Banana', 'banana=banana', 'Cherry=Cherry']
         self.de = ['Apple=Apfel', 'Banana=', 'banana=Banane', 'Cherry=Kirsche']
-        (self.dir / 'English.txt').write_text(lang_file('English', self.en), encoding='utf-8')
-        (self.dir / 'Deutsch.txt').write_text(lang_file('Deutsch', self.de, 1), encoding='utf-8')
+        (self.dir / 'English.txt').write_text(lang_file('English', self.en), encoding='utf-8', newline='\n')
+        (self.dir / 'Deutsch.txt').write_text(lang_file('Deutsch', self.de, 1), encoding='utf-8', newline='\n')
         (self.dir / 'Polski.txt').write_text(lang_file('Polski', ['Apple=', 'Banana=', 'banana=', 'Cherry=Wisnia'], 3),
-                                             encoding='utf-8')
+                                             encoding='utf-8', newline='\n')
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -93,7 +93,7 @@ class Add(Tree):
 
     def test_values_with_equals_and_from_file(self):
         tsv = self.dir / 'new.tsv'
-        tsv.write_text('# new strings\nFig\tDeutsch=Feige = gut\tPolski=Figa\nGrape\n', encoding='utf-8')
+        tsv.write_text('# new strings\nFig\tDeutsch=Feige = gut\tPolski=Figa\nGrape\n', encoding='utf-8', newline='\n')
         code, out = self.add(from_file=str(tsv))
         self.assertEqual(code, 0)
         self.assertIn('\nFig=Feige = gut\n', self.read('Deutsch'))
@@ -122,7 +122,7 @@ class Guard(Tree):
 
     def drift(self, n):
         keys = [f'K{i:03}' for i in range(n)]
-        (self.dir / 'English.txt').write_text(lang_file('English', [f'{k}={k}' for k in keys]), encoding='utf-8')
+        (self.dir / 'English.txt').write_text(lang_file('English', [f'{k}={k}' for k in keys]), encoding='utf-8', newline='\n')
 
     def test_small_change_is_written(self):
         code, _ = self.run_update()
@@ -154,7 +154,7 @@ class Guard(Tree):
     def test_extract_guard(self):
         src = self.dir / 'src'
         src.mkdir()
-        (src / 'a.cpp').write_text(''.join(f'x(_("S{i}"));\n' for i in range(40)), encoding='utf-8')
+        (src / 'a.cpp').write_text(''.join(f'x(_("S{i}"));\n' for i in range(40)), encoding='utf-8', newline='\n')
         ns = argparse.Namespace(lang_dir=str(self.dir), src_dir=[str(src)], force=False, dry_run=False)
         before = self.read('English')
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
