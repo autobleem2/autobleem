@@ -3,8 +3,9 @@
 include(${CMAKE_SOURCE_DIR}/autobleem-core/tests/harness.cmake)
 
 # every language file through the Rust text engine: no empty boxes, the lines that got wider listed
-# (autobleem-core lib_ableem/rust/ab_text; on a build without cargo the suite says so and passes)
-if (ABLEEM_TEXT_RUST)
+# (autobleem-core lib_ableem/rust/ab_text). Native and pcusb run it; the MinGW build (its SDL through pkg-config,
+# its tests never run) leaves it out
+if (ABLEEM_TEXT_RUST AND NOT WIN32)
     ab_add_test(test_text_languages screens/test_text_languages.cpp LIBS ableem ab_text SDL2_ttf SDL2)
     target_compile_definitions(test_text_languages PRIVATE AB_LAUNCHER_RESOURCES="${CMAKE_SOURCE_DIR}/src/resources")
 endif()
