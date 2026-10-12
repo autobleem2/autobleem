@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 544
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 needs game data it can run: %2.
 (changed)=(changed)
@@ -560,3 +560,24 @@ from the controller database=from the controller database
 guessed by the daemon=guessed by the daemon
 unknown driver=unknown driver
 Pads=Pads
+CD PLAYER=CD PLAYER
+Audio CD=Audio CD
+track=track
+tracks=tracks
+Track=Track
+TRACK=TRACK
+DISC=DISC
+Disc=Disc
+off=off
+on=on
+Repeat:=Repeat:
+Shuffle:=Shuffle:
+Selected:=Selected:
+This disc cannot be played=This disc cannot be played
+Play track=Play track
+Stop=Stop
+Previous/next=Previous/next
+Seek=Seek
+Repeat=Repeat
+Shuffle=Shuffle
+Pause=Pause

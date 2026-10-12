@@ -6,6 +6,7 @@
 #include "gui/gui.h"
 #include "gui/screens/gui_confirm.h"
 #include "evoui_btn_guide.h"
+#include "evoui_cd_player.h"
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
 
@@ -27,6 +28,7 @@ using namespace std;
 //*******************************
 void GuiLauncher::loop() {
     PLOG_DEBUG << "Main Loop";
+    runCdPlayerDevEntry(*gui); // AB_CD_PLAYER_IMAGE: the CD player on an image, once, for the dev and the VM
     powerOffShift = false; // L2 shift used for power off and selecting game sub dir or RA playlist
 
     menuVisible = true;

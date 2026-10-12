@@ -71,6 +71,10 @@ target_include_directories(test_memcard_counter PRIVATE ${CMAKE_SOURCE_DIR}/src/
 ab_add_test(test_set_picker_tabs screens/test_set_picker_tabs.cpp)
 target_include_directories(test_set_picker_tabs PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
 
+# The CD player screen's pure rules (evoui/screens/cd_player_logic.h): times, grid cursor, bar segments, repeat cycle
+ab_add_test(test_cd_player_logic screens/test_cd_player_logic.cpp)
+target_include_directories(test_cd_player_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
 # The RetroArch-installed gates (evoui/screens/ra_gates.h, pure): a PS1 game's emulator, the Lightgun set
 ab_add_test(test_ra_gates screens/test_ra_gates.cpp)
 target_include_directories(test_ra_gates PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
