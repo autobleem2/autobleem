@@ -581,3 +581,7 @@ Seek=Ara
 Repeat=Tekrar
 Shuffle=Karışık
 Pause=Duraklat
+Reading the disc...=Disk okunuyor...
+This is not a PlayStation disc=Bu bir PlayStation diski değil
+TRACKS=PARÇALAR
+TOTAL TIME=TOPLAM SÜRE

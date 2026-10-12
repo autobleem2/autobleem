@@ -581,3 +581,7 @@ Seek=Søg
 Repeat=Gentag
 Shuffle=Bland
 Pause=Pause
+Reading the disc...=Læser disken...
+This is not a PlayStation disc=Dette er ikke en PlayStation-disk
+TRACKS=SPOR
+TOTAL TIME=SAMLET TID

@@ -581,3 +581,7 @@ Seek=Hledat
 Repeat=Opakovat
 Shuffle=Náhodně
 Pause=Pauza
+Reading the disc...=Čtu disk...
+This is not a PlayStation disc=Toto není disk PlayStation
+TRACKS=STOPY
+TOTAL TIME=CELKOVÁ DÉLKA

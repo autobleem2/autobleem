@@ -179,6 +179,12 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
         return;
     }
 
+    // an audio CD in the disc view: the CD player on the drive; nothing starts
+    if (discViewOpen && discAudio) {
+        openCdPlayer();
+        return;
+    }
+
     app.session().startingGame = true;
     if (carousel.selectedIsValid()) {
         app.session().runningGame = carousel.games[carousel.selected];
@@ -186,6 +192,17 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     app.session().resumePoint = -1;
     rememberSelection();
     menuVisible = false;
+
+    // the PS1 disc in the disc view: pcsx-abnxt on the drive (AutoBleem::launchGame sees App::pendingDisc), with the
+    // shared folder's resume point like any game. LaunchService::launchDisc counts the play as the library game's.
+    if (discViewOpen) {
+        app.session().emuMode = EmuMode::Pcsx;
+        const PsGame &game = *app.session().runningGame;
+        const int slot = app.resumePoints().slotForPlay(game, GameSettingsService::resumeModeOf(game));
+        app.session().resumePoint = slot >= 0 && !app.resumePoints().slotIsRetroArch(game, slot) ? slot : -1;
+        forgetSetCounts(); // Game History changes
+        return;
+    }
 
     if (selectedIsPs1()) {
         app.gameCatalog().recordGamePlayed(app.session().runningGame);
@@ -552,7 +569,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             if (refuseLicenceProtected()) {
                 return;
             }
-            if (app.resumePoints().slotIsActive(*game, slot)) {
+            // a disc plays in pcsx-abnxt alone: a slot RetroArch wrote cannot be resumed from the drive
+            if (discViewOpen && app.resumePoints().slotIsRetroArch(*game, slot)) {
+                app.audio().cancel.play();
+            } else if (app.resumePoints().slotIsActive(*game, slot)) {
                 app.audio().cursor.play();
                 app.session().startingGame = true;
                 app.session().runningGame = carousel.games[carousel.selected];

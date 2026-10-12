@@ -581,3 +581,7 @@ Seek=Sök
 Repeat=Upprepa
 Shuffle=Blanda
 Pause=Paus
+Reading the disc...=Läser skivan...
+This is not a PlayStation disc=Det här är inte en PlayStation-skiva
+TRACKS=SPÅR
+TOTAL TIME=TOTAL TID

@@ -289,6 +289,8 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_processors.cpp
         src/code/evoui/screens/evoui_processors.h
         src/code/evoui/screens/evoui_cd_player.cpp
+        src/code/evoui/screens/evoui_disc_view.cpp
+        src/code/evoui/screens/disc_view_logic.h
         src/code/evoui/screens/evoui_cd_player.h
         src/code/evoui/screens/cd_player_logic.h
         src/code/evoui/screens/evoui_set_picker.cpp

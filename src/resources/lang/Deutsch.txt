@@ -581,3 +581,7 @@ Seek=Suchen
 Repeat=Wiederh.
 Shuffle=Zufall
 Pause=Pause
+Reading the disc...=Disc wird gelesen...
+This is not a PlayStation disc=Das ist keine PlayStation-Disc
+TRACKS=TITEL
+TOTAL TIME=GESAMTZEIT

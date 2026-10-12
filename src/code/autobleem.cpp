@@ -358,8 +358,10 @@ void AutoBleem::launchGame() {
         waitingPictureName(running && running->foreign, running && running->app, session_.emuMode != EmuMode::Pcsx);
     // the emulator owns the CD drive while it runs (launchDisc pauses the watcher itself; any other game here)
     DriveWatcher *watcher = driveWatcher();
-    std::shared_ptr<DiscGame> disc = std::move(pendingDisc);
-    pendingDisc.reset();
+    // the disc view's disc, when that is what was chosen (the shared library folder's game is another object)
+    std::shared_ptr<DiscGame> disc;
+    if (pendingDisc && session_.runningGame == pendingDisc->game)
+        disc = pendingDisc;
     runOutside(retroArch, picture, [this, watcher, &disc]() {
         if (disc) {
             if (!launcher_.launchDisc(*disc, session_.resumePoint, watcher))
@@ -385,6 +387,9 @@ void AutoBleem::launchGame() {
 
     takeAppMessage();
 
+    if (disc)
+        discSeenChanges = ~0u; // the launcher is back with the disc still in: its view opens again
+    pendingDisc.reset();
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
     session_.package.reset();
     session_.startingGame = false;

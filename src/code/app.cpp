@@ -73,6 +73,20 @@ void App::startDriveWatcher() {
 #ifndef _WIN32
     if (driveWatcher_)
         return;
+    // dev only, for the VM that cannot set the environment: a disc image laid in as an extension folder
+    // (Extensions/disc-fake*/fake.cue) stands for the drive's disc, as AB_FAKE_DRIVE does
+    if (DriveWatcher::fakeCue().empty()) {
+        const string extensions = Env::getPathToUSBRoot() + sep + "Extensions";
+        for (const char *name : {"disc-fake", "disc-fake-ps1", "disc-fake-audio"}) {
+            const string cue = extensions + sep + name + sep + "fake.cue";
+            if (std::ifstream(cue).good()) {
+                setenv("AB_FAKE_DRIVE", cue.c_str(), 1);
+                const string eject = extensions + sep + name + sep + "eject";
+                setenv("AB_FAKE_DRIVE_EJECT", eject.c_str(), 1);
+                break;
+            }
+        }
+    }
     driveWatcher_ = std::make_unique<DriveWatcher>(DriveWatcher::defaultBackend());
     driveWatcher_->start();
 #endif

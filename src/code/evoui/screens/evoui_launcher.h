@@ -33,6 +33,9 @@
 #include <map>
 #include <set>
 #include "gui/gui.h"
+#include "disc_view_logic.h"
+#include "core/services/disc_game.h"
+#include "core/services/drive_watcher.h"
 
 enum class SystemMenuAction; // evoui_system_menu.h
 
@@ -307,6 +310,7 @@ public:
         std::string imagePath;
     };
     GameKey selectedGameKey() const;
+    void reloadGames(const GameKey &keep); // ... with the game to select given (the disc view's way back)
     // the set picker's (Select) row counts, kept between openings so Select opens at once (its tab icons are the
     // Context's); forgetSetCounts() whenever the library may have changed - a scan, an edit, a game played, a menu
     // action (Game Manager, the Store, an extension), the screen reloaded
@@ -496,4 +500,35 @@ public:
     void pollSettleLoads();
     // the snap and the resume picture belong to the game the row rests on: gone while it moves
     void hideSettlePictures();
+
+    // ---- the disc drive and the disc in it (docs/disc-drive-plan.md, pieces 5 and 8; evoui_disc_view.cpp) ----
+    // the watcher's answer, taken once a frame by pollDisc(); the chip at the top shows it
+    DriveWatcher::Status discStatus;
+    discview::Drive discDriveNow() const;
+    // a PS1 disc (discGame) or an audio CD (discPsGame alone) made ready for the view: the game it plays as, its cover
+    // bytes, the title the chip says; built when the watcher's identity changed (discBuiltFor)
+    std::shared_ptr<DiscGame> discGame;
+    PsGamePtr discPsGame;
+    std::vector<char> discArt;
+    std::string discTitle;
+    unsigned discBuiltFor = 0;
+    bool discBuilt = false;
+    // the disc view is up: the carousel holds the disc alone. discSavedKey is the game the carousel was on
+    bool discViewOpen = false;
+    bool discAudio = false; // ... and the disc is an audio CD
+    GameKey discSavedKey;
+    // the crossfade between the carousel and the disc's cover (discview::fadeAlpha): the picture under the background
+    // swaps at the middle
+    bool discFading = false, discFadeEntering = false, discFadeSwapped = false;
+    long discFadeStart = 0;
+    void pollDisc();                    // once a frame: the watcher, the view opening/closing by itself, the fade's clock
+    void buildDisc();                   // makes discGame/discPsGame/discArt/discTitle from discStatus
+    void startDiscFade(bool entering);  // enterDiscView / leaveDiscView through the crossfade
+    void swapDiscView(bool entering);   // the carousel <-> the disc, at the fade's middle
+    bool enterDiscView();               // R1 / a disc becoming ready: false when it cannot be shown now
+    bool leaveDiscView();               // Circle / the disc taken out
+    void renderDiscChip();              // the drive chip, centred at the top
+    void renderDiscFade();              // over the carousel, under the details
+    void openCdPlayer();                // Cross on an audio CD
+    void applyDiscMeta();               // the meta section's disc mode, after its texts were set
 };

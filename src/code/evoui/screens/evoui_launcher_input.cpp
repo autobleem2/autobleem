@@ -61,6 +61,7 @@ void GuiLauncher::loop() {
             finishSettleLoads();
         pollSettleLoads();
         applyScanUpdate(app.scans().poll());
+        pollDisc();
         app.extensions().poll();
         applyExtensionRequests();
         pollPadBattery();
@@ -275,7 +276,8 @@ bool GuiLauncher::benchSkips(const string &part) {
 //*******************************
 bool GuiLauncher::somethingMoves() const {
     return carousel.animating() || settleLoadsPending || motionStart != 0 || queuedScroll != 0 ||
-           L1_isPressedForFastForward || R1_isPressedForFastForward || fadeAlpha > 0 ||
+           L1_isPressedForFastForward || R1_isPressedForFastForward || fadeAlpha > 0 || discFading ||
+           discStatus.state == DriveWatcher::State::Reading ||
            gui->uiContext().stack().tweens().busy() || notificationLines.animating() || scanBubble.animating() ||
            extensionBubble.animating();
 }
@@ -384,7 +386,7 @@ void GuiLauncher::loop_joyMoveUp() {
 // GuiLauncher::loop_joyMoveDown
 //*******************************
 void GuiLauncher::loop_joyMoveDown() {
-    if (carousel.scrolling) {
+    if (carousel.scrolling || (discViewOpen && discAudio)) { // an audio CD has no game menu
         return;
     }
     if (state == LauncherScreenState::Games) {
@@ -508,6 +510,9 @@ void GuiLauncher::loop_joyButton_Pressed() {
         return;
     }
 
+    if (discFading)
+        return; // the crossfade runs: no button until it ends
+
     if (e.button == Button::Select) {
         loop_selectButton_Pressed();
     };
@@ -520,10 +525,18 @@ void GuiLauncher::loop_joyButton_Pressed() {
         return; // none of the following buttons should work if L2 is pressed
 
     if (e.button == Button::L1) {
+        if (discViewOpen)
+            return; // one cover alone: nothing to jump to
         L1_isPressedForFastForward = true;
         loop_prevGameFirstLetter();
 
     } else if (e.button == Button::R1) {
+        if (discViewOpen)
+            return;
+        // R1 "Disc" while a disc is ready: its view comes back (the footer says so); else the first-letter jump
+        if (state == LauncherScreenState::Games && discview::r1ShowsDisc(discDriveNow(), discViewOpen) &&
+            enterDiscView())
+            return;
         R1_isPressedForFastForward = true;
         loop_nextGameFirstLetter();
 
@@ -629,6 +642,8 @@ void GuiLauncher::loop_nextGameFirstLetter() {
 // GuiLauncher::loop_selectButtonPressed
 //*******************************
 void GuiLauncher::loop_selectButton_Pressed() {
+    if (discViewOpen)
+        return; // the set picker is for the carousel
     // with the game menu's icon row open, Select (and L2+Select) still change the set: the row closes
     // first, the way Up closes it, and the switch goes on from the Games state
     if (state == LauncherScreenState::Set) {
@@ -649,6 +664,8 @@ void GuiLauncher::loop_selectButton_Pressed() {
 // pick a random game
 //*******************************
 void GuiLauncher::loop_startButton_Pressed() {
+    if (discViewOpen)
+        return; // one cover: nothing to pick at random
     app.audio().cursor.play();
 
     if (state == LauncherScreenState::Games) {
@@ -680,6 +697,8 @@ void GuiLauncher::loop_circleButton_Pressed() {
             switchState(LauncherScreenState::Games, time);
             motionStart = 0;
         }
+    } else if (state == LauncherScreenState::Games && discViewOpen) {
+        leaveDiscView(); // back to the carousel; the disc stays, the chip lit, R1 brings the view back
     } else if (state == LauncherScreenState::Games) {
         // there is no classic menu to fall back to any more (the background-scan work's step 3) - Circle here
         // used to close the launcher; R2 (the system menu) is where Power Off and everything else now lives
@@ -748,6 +767,8 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 // GuiLauncher::loop_squareButtonPressed
 //*******************************
 void GuiLauncher::loop_squareButton_Pressed() {
+    if (discViewOpen)
+        return; // a physical disc plays in pcsx-abnxt alone
 
     if (Env::retroArchInstalled()) {
 
