@@ -123,7 +123,13 @@ void App::fetchSbiFor(const string &serial, const string &saveFolder) {
     }
     try {
         const SbiService::Result result = sbi_->fetchFor(serial, saveFolder);
-        PLOG_INFO << "SBI for " << serial << ": " << SbiService::describe(result);
+        string held; // what the save folder holds now, for the one log line
+        for (const DirEntry &file : DirEntry::diru_FilesOnly(saveFolder))
+            if (file.name.size() > 4 && file.name.compare(file.name.size() - 4, 4, ".sbi") == 0)
+                held += " " + file.name;
+        PLOG_INFO << "SBI for " << serial << ": " << SbiService::describe(result) << " (" << saveFolder
+                  << (held.empty() ? ": no .sbi" : ":" + held) << "; last curl exit " << sbiDownloader_->lastStatus()
+                  << ")";
     } catch (const std::exception &e) {
         PLOG_WARNING << "SBI for " << serial << " failed: " << e.what();
     }
