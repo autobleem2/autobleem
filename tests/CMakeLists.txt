@@ -79,10 +79,12 @@ target_include_directories(test_cd_player_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/
 ab_add_test(test_disc_view_logic screens/test_disc_view_logic.cpp)
 target_include_directories(test_disc_view_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
 
-# The RetroArch-installed gates (evoui/screens/ra_gates.h, pure): a PS1 game's emulator, the Lightgun set
+# The RetroArch install / remove job (evoui/ra_job.h, pure, and ra_job_service.cpp with the fake runner in tools/)
 ab_add_test(test_ra_job screens/test_ra_job.cpp ${CMAKE_SOURCE_DIR}/src/code/evoui/ra_job_service.cpp)
 target_include_directories(test_ra_job PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
 target_compile_definitions(test_ra_job PRIVATE AB_TOOLS_DIR="${CMAKE_SOURCE_DIR}/tools")
+
+# The RetroArch-installed gates (evoui/screens/ra_gates.h, pure): a PS1 game's emulator, the Lightgun set
 ab_add_test(test_ra_gates screens/test_ra_gates.cpp)
 target_include_directories(test_ra_gates PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
 

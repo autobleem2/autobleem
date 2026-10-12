@@ -89,6 +89,29 @@ TEST_CASE("status: idle until begun, a phase line moves the progress") {
     CHECK(job.state == State::Running);
 }
 
+TEST_CASE("status: a run that skips keys (the appliance never emits download-apps / download-assets)") {
+    JobState job;
+    job.begin();
+    // n is fixed per run: 7 phases, the counter walks 1..7 although two keys of phaseKeys() never come
+    const char *lines[] = {"phase 1/7|check-space|0|0",         "phase 2/7|download-retroarch|5|10",
+                           "phase 3/7|download-cores|5|10",     "phase 4/7|download-libs|5|10",
+                           "phase 5/7|unpack|0|0",              "phase 6/7|merge-config|0|0",
+                           "phase 7/7|install-binary|0|0"};
+    int expected = 1;
+    for (const char *text : lines) {
+        job.apply(text);
+        CHECK(job.progress.phase == expected);
+        CHECK(job.progress.phases == 7);
+        CHECK(phaseCounter(job.progress) == std::to_string(expected) + "/7");
+        expected++;
+    }
+    CHECK(job.progress.key == "install-binary");
+    CHECK(job.state == State::Running);
+    job.apply("end|ok");
+    job.childExited(0);
+    CHECK(job.state == State::Ok);
+}
+
 TEST_CASE("status: end|ok, end|stopped and end|error|<code> are decided when the child has gone") {
     JobState ok;
     ok.begin();
