@@ -14,7 +14,9 @@
 #include <thread>
 
 #ifndef _WIN32
+#include <poll.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 using namespace rajob;
@@ -369,6 +371,23 @@ TEST_CASE("RaJobService: a runner that dies without an end line, and one that is
     RaJobService none;
     CHECK_FALSE(none.startCommand({}, file));
     CHECK(none.status().state == State::Error);
+}
+
+TEST_CASE("RaJobService: the runner does not inherit the launcher's open fds") {
+    TempDir tmp("rajob_fds");
+    const std::string file = tmp.at("p");
+    const std::string runner = script(tmp, "sleep 2\nexit 0\n");
+    int fds[2];
+    REQUIRE(pipe(fds) == 0); // no CLOEXEC: only the child's close keeps the write end alive
+    RaJobService job;
+    REQUIRE(job.startCommand({runner, "x"}, file));
+    close(fds[1]);
+    struct pollfd pfd = {fds[0], POLLIN, 0};
+    CHECK(poll(&pfd, 1, 1000) == 1); // EOF at once; a leaked write end would hold the pipe open while the runner sleeps
+    CHECK((pfd.revents & POLLHUP) != 0);
+    close(fds[0]);
+    job.stop();
+    finish(job);
 }
 
 TEST_CASE("RaJobService: an old run's last line does not leak into the next") {

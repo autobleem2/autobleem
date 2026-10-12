@@ -16,6 +16,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
@@ -66,6 +67,19 @@ uint64_t treeSize(const string &path, int depth = 0) {
     }
     closedir(dir);
     return total;
+}
+
+// in the forked child: nothing above stderr may leak into the runner (sockets, the SDL/evdev devices, the log)
+void closeInheritedFds() {
+#if defined(SYS_close_range)
+    if (syscall(SYS_close_range, 3U, ~0U, 0U) == 0)
+        return;
+#endif
+    long maxFd = sysconf(_SC_OPEN_MAX);
+    if (maxFd < 0 || maxFd > 65536)
+        maxFd = 65536;
+    for (int fd = 3; fd < maxFd; fd++)
+        close(fd);
 }
 #endif
 } // namespace
@@ -148,6 +162,7 @@ bool RaJobService::startCommand(const vector<string> &argv, const string &progre
             dup2(devnull, 1);
             dup2(devnull, 2);
         }
+        closeInheritedFds();
         execvp(args[0], args.data());
         _exit(127);
     }
