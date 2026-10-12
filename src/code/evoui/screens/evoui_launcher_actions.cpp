@@ -561,8 +561,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
 // GuiLauncher::loop_crossButtonPressed_STATE_RESUME
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
-    // after a run (Save) the screen is about the game that ran - the disc, with the carousel holding it alone; never the
-    // carousel's old selection (discview::resumeGameFor). Load from the menu is about the selected game as ever.
+    // after a run (Save) the screen is about the game that ran - the disc, with the carousel holding it alone; never
+    // the carousel's old selection (discview::resumeGameFor). Load from the menu is about the selected game as ever.
     const PsGamePtr carouselGame = carousel.selectedIsValid() ? carousel.games[carousel.selected] : PsGamePtr();
     PsGamePtr game = sselector->operation == OP_SAVE ? discview::resumeGameFor(resumeGame, carouselGame) : carouselGame;
     if (game) {

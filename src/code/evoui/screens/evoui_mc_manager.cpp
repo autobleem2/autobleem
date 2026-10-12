@@ -191,8 +191,8 @@ void GuiMcManager::renderMetaInfo() {
         const ableem::Rect grid = gridRect(c);
         // a card file the game has not written yet (a first run of a disc, a fresh game): the grid is empty
         const string &path = c == 1 ? card1path : card2path;
-        const string name = (c == 1 ? leftCardName : rightCardName) +
-                            (DirEntry::exists(path) ? "" : " (" + _("no card yet") + ")");
+        const string name =
+            (c == 1 ? leftCardName : rightCardName) + (DirEntry::exists(path) ? "" : " (" + _("no card yet") + ")");
         const bool active = pencilMemcard == c;
         centred(fonts[FONT_20_BOLD], gui->text().elide(fonts[FONT_20_BOLD], name, grid.w), grid.x + grid.w / 2,
                 grid.y - 34, active ? style.text : style.secondary);
