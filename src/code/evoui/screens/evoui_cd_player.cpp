@@ -227,6 +227,34 @@ void GuiCdPlayer::toggleShuffle() {
         player->setShuffle(!player->shuffle());
 }
 
+// Cross on a transport key: previous, play/pause, stop, next, repeat, shuffle
+void GuiCdPlayer::pressTransportKey(int key) {
+    if (!ready)
+        return;
+    switch (key) {
+    case 0:
+        goTo(false);
+        break;
+    case 1:
+        togglePause();
+        break;
+    case 2:
+        player->stop();
+        break;
+    case 3:
+        goTo(true);
+        break;
+    case 4:
+        cycleRepeat();
+        break;
+    case 5:
+        toggleShuffle();
+        break;
+    default:
+        break;
+    }
+}
+
 void GuiCdPlayer::seekBy(int direction) {
     if (ready && player->state() != CddaPlayer::State::Stopped)
         player->seek(cdplayer::seekTarget(player->position(), direction));
@@ -248,9 +276,10 @@ void GuiCdPlayer::publishItems() const {
 //*******************************
 // GuiCdPlayer::drawTransportKey
 //*******************************
-void GuiCdPlayer::drawTransportKey(int kind, const ableem::Rect &box, bool lit, const ableem::Color &color) {
-    style.key(gui->uiContext(), box, lit ? abgui::KeyState::Lit : abgui::KeyState::Normal);
-    drawGlyph(renderer, static_cast<Glyph>(kind), box, lit ? color : style.rowSelected);
+void GuiCdPlayer::drawTransportKey(int kind, const ableem::Rect &box, bool lit, bool focused,
+                                  const ableem::Color &color) {
+    style.key(gui->uiContext(), box, focused ? abgui::KeyState::Selected : (lit ? abgui::KeyState::Lit : abgui::KeyState::Normal));
+    drawGlyph(renderer, static_cast<Glyph>(kind), box, lit && !focused ? color : style.rowSelected);
 }
 
 //*******************************
@@ -393,7 +422,7 @@ void GuiCdPlayer::draw() {
                 {GlyphShuffle, shuffle}};
     for (int i = 0; i < 6; i++) {
         const ableem::Rect box = R(290 + i * (KeySize + KeyGap), 418, KeySize, KeySize);
-        drawTransportKey(keys[i].glyph, box, keys[i].lit, accent);
+        drawTransportKey(keys[i].glyph, box, keys[i].lit, i == transportFocus, accent);
     }
     if (repeat != CddaPlayer::Repeat::Off) {
         const string tag = repeat == CddaPlayer::Repeat::Track ? _("TRACK") : _("DISC");
@@ -425,7 +454,7 @@ void GuiCdPlayer::draw() {
                 break;
             const int number = numbers[static_cast<size_t>(i)];
             const ableem::Rect box = R(60 + col * (keyW + GridGap), 486 + row * (GridKeyH + 6), keyW, GridKeyH);
-            const bool focused = i == focus;
+            const bool focused = i == focus && transportFocus < 0;
             const bool isPlaying = i == playing;
             style.key(gui->uiContext(), box,
                       focused ? abgui::KeyState::Selected : (isPlaying ? abgui::KeyState::Lit : abgui::KeyState::Normal));
@@ -484,14 +513,28 @@ void GuiCdPlayer::loop() {
                 else if (gui->input().dpadUp())
                     dy = -1;
                 const int before = focus;
-                focus = cdplayer::moveFocus(focus, dx, dy, static_cast<int>(numbers.size()));
-                if (focus != before)
+                const int keyBefore = transportFocus;
+                if (transportFocus >= 0) { // the transport row: left/right between the keys, down into the grid
+                    if (dy > 0)
+                        transportFocus = -1;
+                    else
+                        transportFocus = max(0, min(TransportKeys - 1, transportFocus + dx));
+                } else if (dy < 0 && focus < cdplayer::GridColumns) {
+                    transportFocus = min(focus * TransportKeys / cdplayer::GridColumns, TransportKeys - 1);
+                } else {
+                    focus = cdplayer::moveFocus(focus, dx, dy, static_cast<int>(numbers.size()));
+                }
+                if (focus != before || transportFocus != keyBefore)
                     app.audio().cursor.play();
                 publishItems();
             } else if (e.type == Event::Type::ButtonDown) {
                 switch (e.button) {
                 case Button::Cross:
                     app.audio().cursor.play();
+                    if (transportFocus >= 0) {
+                        pressTransportKey(transportFocus);
+                        break;
+                    }
                     if (ready && playingIndex() == focus && player->state() == CddaPlayer::State::Paused)
                         player->resume();
                     else

@@ -65,6 +65,8 @@ private:
     std::vector<int> numbers; // the audio tracks' numbers, in disc order
     int focus = 0;            // index into numbers
     int firstRow = 0;
+    static const int TransportKeys = 6;
+    int transportFocus = -1; // the transport key holding the focus, -1 when the grid has it
 
     void openDrive();
     void loadCase();
@@ -77,7 +79,8 @@ private:
     void toggleShuffle();
     void seekBy(int direction);
     void publishItems() const;
-    void drawTransportKey(int kind, const ableem::Rect &box, bool lit, const ableem::Color &color);
+    void pressTransportKey(int key);
+    void drawTransportKey(int kind, const ableem::Rect &box, bool lit, bool focused, const ableem::Color &color);
     int gridRows() const;
 };
 
