@@ -162,7 +162,7 @@ class OpenTree(unittest.TestCase):
             self.assertEqual(runs, [])
             abvm.sb_open_tree('sb1', acl=True)
         self.assertEqual(runs[0][:4], ['setfacl', '-R', '-d', '-m'])
-        self.assertEqual(runs[0][-1], '/nonexistent-host/sb1')
+        self.assertEqual(runs[0][-1], os.path.join('/nonexistent-host', 'sb1'))
         with mock.patch.object(abvm, 'SB_HOST', '/nonexistent-host'), \
                 mock.patch.object(abvm, 'sb_open_modes', lambda p: None), \
                 mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: ''), \
