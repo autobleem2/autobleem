@@ -585,3 +585,4 @@ Reading the disc...=Čtu disk...
 This is not a PlayStation disc=Toto není disk PlayStation
 TRACKS=STOPY
 TOTAL TIME=CELKOVÁ DÉLKA
+Clean game names:=Čisté názvy her:

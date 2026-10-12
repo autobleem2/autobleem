@@ -84,10 +84,10 @@ void PsMeta::updateTexts(PsGamePtr &psGame, ableem::Color _textColor) {
             psGame->region = "";
 
             // the core is the CORE row's; the PUBLISHER row only shows what the database gave the game
-            updateTexts(psGame->title, psGame->publisher, to_string(psGame->year), psGame->serial, psGame->region,
-                        to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd, psGame->locked,
-                        psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign, psGame->app,
-                        App::get().clock().displayTime(psGame->last_played), _textColor);
+            updateTexts(psGame->shownTitle(), psGame->publisher, to_string(psGame->year), psGame->serial,
+                        psGame->region, to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd,
+                        psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign,
+                        psGame->app, App::get().clock().displayTime(psGame->last_played), _textColor);
             coreName = psGame->core_name;
             trim(coreName);
             if (coreName == "DETECT")

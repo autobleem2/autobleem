@@ -565,15 +565,15 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
             return;
         }
 
-        if (carousel.games[carousel.selected]->title == "") {
+        if (carousel.games[carousel.selected]->shownTitle() == "") {
             return;
         }
 
         // find the index of all the first letters
         map<char, int> firstLetterToIndex;
         for (int index = 0; index < carousel.games.size(); ++index) {
-            if (carousel.games[index]->title != "") {
-                char firstLetter = toupper(carousel.games[index]->title[0]);
+            if (carousel.games[index]->shownTitle() != "") {
+                char firstLetter = toupper(carousel.games[index]->shownTitle()[0]);
                 if (firstLetterToIndex.find(firstLetter) == firstLetterToIndex.end()) // if letter not in map
                     firstLetterToIndex[firstLetter] = index;                          // add the first letter to the map
             }
@@ -583,7 +583,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
             return; // nothing with a title
 
         if (carousel.selectedIsValid()) {
-            char currentLetter = toupper(carousel.games[carousel.selected]->title[0]);
+            char currentLetter = toupper(carousel.games[carousel.selected]->shownTitle()[0]);
             int nextGame = carousel.selected;
             if (firstLetterToIndex.size() == 1) {
                 nextGame = firstLetterToIndex[currentLetter]; // there is only one first letter in the games
@@ -607,7 +607,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
                 // we have prev/next game first letter;
                 carousel.selected = nextGame;
                 app.audio().cursor.play();
-                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0, 1)),
+                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->shownTitle().substr(0, 1)),
                                              DefaultShowingTimeout);
                 carousel.setInitialPositions(carousel.selected);
                 updateMeta();
@@ -615,7 +615,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
             } else {
                 // no change
                 app.audio().cancel.play();
-                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0, 1)),
+                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->shownTitle().substr(0, 1)),
                                              DefaultShowingTimeout);
             }
         }

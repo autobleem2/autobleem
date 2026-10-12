@@ -585,3 +585,4 @@ Reading the disc...=Leyendo el disco...
 This is not a PlayStation disc=Este no es un disco de PlayStation
 TRACKS=PISTAS
 TOTAL TIME=TIEMPO TOTAL
+Clean game names:=Nombres de juegos limpios:

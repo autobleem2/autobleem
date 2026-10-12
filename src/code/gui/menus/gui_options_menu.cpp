@@ -217,6 +217,7 @@ void GuiOptions::fill() {
     }
 
     heading(_("Library"));
+    lines.emplace_back(CFG_CLEAN_NAMES, _("Clean game names:"), "cleannames", true, vector<string>({"false", "true"}));
 #ifdef AB_HAS_INTERNAL_GAMES
     // an appliance or a Windows PC has no built-in games to show (GameQueryService::showInternalGames is hard
     // false there)

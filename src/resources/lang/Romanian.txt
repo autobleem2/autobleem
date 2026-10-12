@@ -585,3 +585,4 @@ Reading the disc...=Se citește discul...
 This is not a PlayStation disc=Acesta nu este un disc PlayStation
 TRACKS=PISTE
 TOTAL TIME=TIMP TOTAL
+Clean game names:=Nume de jocuri curate:

@@ -585,3 +585,4 @@ Reading the disc...=Læser disken...
 This is not a PlayStation disc=Dette er ikke en PlayStation-disk
 TRACKS=SPOR
 TOTAL TIME=SAMLET TID
+Clean game names:=Rene spilnavne:

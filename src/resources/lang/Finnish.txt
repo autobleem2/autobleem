@@ -585,3 +585,4 @@ Reading the disc...=Luetaan levyä...
 This is not a PlayStation disc=Tämä ei ole PlayStation-levy
 TRACKS=RAIDAT
 TOTAL TIME=KESTO YHTEENSÄ
+Clean game names:=Siistit pelinimet:

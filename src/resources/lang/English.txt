@@ -585,3 +585,4 @@ Reading the disc...=Reading the disc...
 This is not a PlayStation disc=This is not a PlayStation disc
 TRACKS=TRACKS
 TOTAL TIME=TOTAL TIME
+Clean game names:=Clean game names:

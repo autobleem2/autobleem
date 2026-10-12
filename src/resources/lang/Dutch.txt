@@ -585,3 +585,4 @@ Reading the disc...=Schijf wordt gelezen...
 This is not a PlayStation disc=Dit is geen PlayStation-schijf
 TRACKS=TRACKS
 TOTAL TIME=TOTALE TIJD
+Clean game names:=Spelnamen opschonen:
