@@ -137,5 +137,64 @@ class Lay(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.sb, 'Apps', 'MoviePlayer', 'bin', 'pcusb', 'MoviePlayer')))
 
 
+class OpenTree(unittest.TestCase):
+    def test_pass_runs_in_the_guest_as_root_over_the_whole_sandbox(self):
+        guest = []
+        with mock.patch.object(abvm, 'SB_HOST', '/nonexistent-host'), \
+                mock.patch.object(abvm, 'sb_open_modes', lambda p: None), \
+                mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: guest.append((cmd, check))):
+            abvm.sb_open_tree('sb1')
+        self.assertEqual(len(guest), 1)
+        cmd, check = guest[0]
+        self.assertFalse(check)  # a failed pass must not fail the run
+        self.assertIn('sudo find ' + abvm.SB_GUEST + '/sb1 ', cmd)
+        self.assertIn('chmod a+rwX', cmd)
+        self.assertIn('-type d', cmd)
+        self.assertIn('-type f', cmd)
+
+    def test_default_acl_only_when_asked_and_a_missing_setfacl_is_no_error(self):
+        runs = []
+        with mock.patch.object(abvm, 'SB_HOST', '/nonexistent-host'), \
+                mock.patch.object(abvm, 'sb_open_modes', lambda p: None), \
+                mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: ''), \
+                mock.patch.object(abvm.subprocess, 'run', side_effect=lambda cmd, **kw: runs.append(cmd)):
+            abvm.sb_open_tree('sb1')
+            self.assertEqual(runs, [])
+            abvm.sb_open_tree('sb1', acl=True)
+        self.assertEqual(runs[0][:4], ['setfacl', '-R', '-d', '-m'])
+        self.assertEqual(runs[0][-1], '/nonexistent-host/sb1')
+        with mock.patch.object(abvm, 'SB_HOST', '/nonexistent-host'), \
+                mock.patch.object(abvm, 'sb_open_modes', lambda p: None), \
+                mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: ''), \
+                mock.patch.object(abvm.subprocess, 'run', side_effect=FileNotFoundError):
+            abvm.sb_open_tree('sb1', acl=True)
+
+    def test_sandbox_drive_opens_the_tree_before_every_step(self):
+        with tempfile.TemporaryDirectory() as host:
+            os.makedirs(os.path.join(host, 'sb1'))
+            opened = []
+
+            class FakeDriver:
+                def __init__(self, before_step):
+                    self.before_step = before_step
+
+                def run(self, script):
+                    for _ in script.split(';'):
+                        self.before_step()
+                    return []
+
+                def close(self):
+                    pass
+
+            def fake_driver(name, **kw):
+                return FakeDriver(kw['before_step'])
+
+            with mock.patch.object(abvm, 'SB_HOST', host), mock.patch.object(abvm, 'sb_driver', fake_driver), \
+                    mock.patch.object(abvm, 'sb_open_tree', lambda n, acl=False: opened.append(n)), \
+                    mock.patch.object(abvm, 'sb_open_modes', lambda p: None):
+                abvm.sb_drive('sb1', '@1 tap a; wait_idle 5; shot a.png', host)
+            self.assertEqual(opened, ['sb1'] * 3)
+
+
 if __name__ == '__main__':
     unittest.main()
