@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 (changed)=(modificat)
@@ -88,6 +88,7 @@ Cover style:=Stil pentru cover:
 Crash logs:=Jurnale eroare:
 Create, rename or manage memory card sets=Creeaza, redenumeste sau gestioneaza seturi de carduri de memorie
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Margine CRT:
 CRT-Pi=CRT-Pi

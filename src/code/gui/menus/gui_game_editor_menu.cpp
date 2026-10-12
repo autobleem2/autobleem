@@ -58,6 +58,8 @@ string filterName(int filter) {
         return _("CRT (fast)");
     case 6:
         return _("CRT-Pi");
+    case 7:
+        return _("CRT (raster)");
     default:
         return to_string(filter);
     }
@@ -82,7 +84,7 @@ string smoothingName(int mode) {
 
 // pcsx-abnxt's CRT filters draw their own scanlines (ab_filter_is_crt)
 bool crtFilter(int filter) {
-    return filter == 5 || filter == 6;
+    return filter == 5 || filter == 6 || filter == 7;
 }
 
 } // namespace

@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 har brug for spildata, den kan køre: %2.
 (changed)=(ændret)
@@ -88,6 +88,7 @@ Cover style:=Cover-stil:
 Crash logs:=Nedbrudslog:
 Create, rename or manage memory card sets=Opret, omdøb eller administrer memory card-sæt
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-margen:
 CRT-Pi=CRT-Pi

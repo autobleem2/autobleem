@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 (changed)=(değiştirildi)
@@ -88,6 +88,7 @@ Cover style:=Kapak stili:
 Crash logs:=Çökme günlükleri:
 Create, rename or manage memory card sets=Hafıza kartı setleri oluştur, yeniden adlandır veya yönet
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT kenar boşluğu:
 CRT-Pi=CRT-Pi

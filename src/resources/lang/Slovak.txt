@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 potrebuje herné dáta, ktoré vie spustiť: %2.
 (changed)=(zmenené)
@@ -88,6 +88,7 @@ Cover style:=Štýl obalu:
 Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvoriť, premenovať alebo spravovať sady pamäťových kariet
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Okraj CRT:
 CRT-Pi=CRT-Pi

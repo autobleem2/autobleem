@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 567
+# Untranslated: 1 / Total: 568
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 (changed)=(modificat)
@@ -88,6 +88,7 @@ Cover style:=Estil cobèrtura :
 Crash logs:=Jornals del plantatge :
 Create, rename or manage memory card sets=Crear, renomenar o gerir de jòcs de cartas memòria
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Marge CRT :
 CRT-Pi=CRT-Pi
