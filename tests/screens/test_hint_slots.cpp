@@ -198,3 +198,13 @@ TEST_CASE("Games, the audio CD's disc view: no game menu") {
     s.noMenu = true;
     checkLine1(gridFor(s), Item::Play, Item::None, Item::None, Item::QuickMenu);
 }
+
+TEST_CASE("Games, the disc view of a PS1 disc the databases know: Square copies it to Games") {
+    State s = games();
+    s.copyDisc = true;
+    checkLine1(gridFor(s), Item::Play, Item::CopyDisc, Item::GameMenu, Item::QuickMenu);
+    CHECK(std::string(markersOf(Item::CopyDisc)) == "|@S|");
+    CHECK(columnOf(Item::CopyDisc) == 1);
+    s.copyDisc = false;
+    checkLine1(gridFor(s), Item::Play, Item::None, Item::GameMenu, Item::QuickMenu);
+}
