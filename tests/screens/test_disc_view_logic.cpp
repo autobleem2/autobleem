@@ -6,6 +6,9 @@
 
 #include "disc_view_logic.h"
 
+#include <memory>
+#include <string>
+
 using namespace discview;
 
 TEST_CASE("the chip: nothing without a drive, dim when empty, blinking while reading") {
@@ -79,4 +82,14 @@ TEST_CASE("the total time of an audio CD") {
     CHECK(totalTimeText(75 * 61) == "1:01");
     CHECK(totalTimeText(75 * (47 * 60 + 12) + 74) == "47:12");
     CHECK(totalTimeText(75 * 3600) == "60:00");
+}
+
+TEST_CASE("the resume screen after a run is about the disc that played, else the carousel's game") {
+    auto disc = std::make_shared<std::string>("disc");
+    auto carousel = std::make_shared<std::string>("carousel");
+    const std::shared_ptr<std::string> none;
+    CHECK(resumeGameFor(disc, carousel) == disc);
+    CHECK(resumeGameFor(none, carousel) == carousel);
+    CHECK(resumeGameFor(disc, none) == disc);
+    CHECK(resumeGameFor(none, none) == nullptr);
 }

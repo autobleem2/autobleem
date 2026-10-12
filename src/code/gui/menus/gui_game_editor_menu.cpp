@@ -92,6 +92,8 @@ bool crtFilter(int filter) {
 //*******************************
 bool GuiEditor::nxtEmulator() const {
     auto &values = app.config().inifile.values;
+    if (gameData && gameData->physicalDisc)
+        return true; // a disc in the drive always plays in pcsx-abnxt, whatever config.ini's emulator says
     auto it = values.find("emulator");
     return it != values.end() && it->second == "pcsx-abnxt";
 }
@@ -274,6 +276,7 @@ void GuiEditor::processOptionChange(bool direction, bool repeat) {
     const PcsxSettings &pcsx = settings.pcsx;
     const string platform = Env::platformName();
     int step = direction ? 1 : -1;
+    settings.cfgMissing = false; // set again by the setter below when it finds no pcsx.cfg
     int sel = selectedRow();
     if (sel >= 0 && rows[sel].locked)
         return; // the game's own config speaks for it, or the row is greyed (buildRows)
@@ -494,6 +497,9 @@ void GuiEditor::draw() {
         }
     }
     guiMenu += " |@O| " + _("Back") + "|";
+    // the last change found no pcsx.cfg to write to: say so instead of showing a value that will not be used
+    if (settings.cfgMissing)
+        guiMenu = _("Not saved: this game has no pcsx.cfg");
     gui->renderStatus(guiMenu);
 }
 

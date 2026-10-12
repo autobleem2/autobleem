@@ -1219,9 +1219,20 @@ void GuiLauncher::loadAssets() {
 
     if (app.session().resumingGui) {
         PLOG_INFO << "Restoring GUI state";
-        PsGamePtr &game = carousel.games[carousel.selected];
+        // a disc game that just played: the launcher goes straight back into the disc view (the carousel holds the disc
+        // alone, App::pendingDisc is the disc again) so nothing below can reach the carousel's old selection
+        resumeGame.reset();
+        if (app.lastDisc && app.lastDisc->game) {
+            reenterDiscViewAfterRun(app.lastDisc);
+            app.lastDisc.reset();
+        }
+        const PsGamePtr carouselGame = carousel.selectedIsValid() ? carousel.games[carousel.selected] : PsGamePtr();
+        PsGamePtr game = discview::resumeGameFor(discViewOpen ? discPsGame : PsGamePtr(), carouselGame);
+        resumeGame = discViewOpen ? game : PsGamePtr();
 
-        if (app.session().emuMode == EmuMode::Pcsx) {
+        if (!game) {
+            // nothing to be about
+        } else if (app.session().emuMode == EmuMode::Pcsx) {
             if (app.resumePoints().exitedCleanly(*game)) {
                 if (GameSettingsService::resumeModeOf(*game) == ResumePointService::Never) {
                     // the game editor's Resume row "Never" (EMU-26): the state the emulator wrote is not offered

@@ -389,8 +389,12 @@ void AutoBleem::launchGame() {
 
     takeAppMessage();
 
-    if (disc)
+    if (disc) {
         discSeenChanges = ~0u; // the launcher is back with the disc still in: its view opens again
+        lastDisc = disc;       // the resume screen is the disc's, whatever the carousel had selected
+    } else {
+        lastDisc.reset();
+    }
     pendingDisc.reset();
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
     session_.package.reset();

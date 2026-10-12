@@ -75,6 +75,10 @@ public:
     // the disc the launcher is about to play (GuiLauncher sets it with Session::runningGame = its game):
     // AutoBleem::launchGame runs it through LaunchService::launchDisc
     std::shared_ptr<DiscGame> pendingDisc;
+    // the disc that just played: AutoBleem::launchGame keeps it when the run ends, for the launcher built anew after
+    // it - the resume screen is about this game (and its save folder), not the carousel's selected one. The launcher
+    // takes it (resets it) when it shows that screen.
+    std::shared_ptr<DiscGame> lastDisc;
     // a LibCrypt disc's .sbi files from the site into the folder the disc plays from (docs/disc-drive-plan.md,
     // piece 10); one SbiService per run. Never fails the launch: offline or any error is one log line. A no-op on
     // Windows.

@@ -205,6 +205,27 @@ void GuiLauncher::swapDiscView(bool entering) {
 }
 
 //*******************************
+// GuiLauncher::reenterDiscViewAfterRun
+//*******************************
+// discBuilt stays false: the view is rebuilt from the watcher when the drive reads the disc again (buildDisc), and it
+// stays up while the resume screen is, because the disc view only closes by itself from the Games state.
+void GuiLauncher::reenterDiscViewAfterRun(const shared_ptr<DiscGame> &disc) {
+    discSavedKey = selectedGameKey();
+    discGame = disc;
+    discPsGame = disc->game;
+    discAudio = false;
+    discArt = disc->cover;
+    if (discArt.empty())
+        discArt = bytesOf(Env::getWorkingPath() + sep + "default.png");
+    discTitle = discPsGame->title;
+    discViewOpen = true;
+    app.pendingDisc = disc;
+    carousel.setSolo(discPsGame, discArt);
+    carousel.snapMainCover(false);
+    lastHintSignature.clear();
+}
+
+//*******************************
 // GuiLauncher::applyDiscMeta
 //*******************************
 // the details section's disc mode: the source tag "DISC", or an audio CD's tracks and total time
