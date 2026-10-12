@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 584
+# Untranslated: 0 / Total: 585
 
 %1 needs game data it can run: %2.=%1 potřebuje herní data, která umí spustit: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorů nešlo přečíst a byly zapsány jako nuly.
@@ -153,6 +153,7 @@ Emulator=Emulátor
 Emulator config menu=Konfigurační nabídka emulátoru
 Emulator screen scaling:=Škálování obrazu emulátoru:
 no card yet=zatím žádná karta
+Not available for a disc in the drive=Není k dispozici pro disk v mechanice
 Not enough room in Games: the copy needs %1, %2 is free.=V Games není dost místa: kopie potřebuje %1, volných je %2.
 Not saved: this game has no pcsx.cfg=Neuloženo: hra nemá pcsx.cfg
 Screen halo:=Halo obrazovky:

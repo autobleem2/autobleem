@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 584
+# Untranslated: 0 / Total: 585
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunde inte läsas och skrevs som nollor.
@@ -153,6 +153,7 @@ Emulator=Emulator
 Emulator config menu=Emulator-inställningsmeny
 Emulator screen scaling:=Emulatorns skärmskalning:
 no card yet=inget kort än
+Not available for a disc in the drive=Inte tillgängligt för en skiva i enheten
 Not enough room in Games: the copy needs %1, %2 is free.=Inte tillräckligt med utrymme i Games: kopian behöver %1, %2 är ledigt.
 Not saved: this game has no pcsx.cfg=Inte sparat: spelet saknar pcsx.cfg
 Screen halo:=Skärmgloria:

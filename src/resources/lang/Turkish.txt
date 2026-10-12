@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 584
+# Untranslated: 0 / Total: 585
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektör okunamadı ve sıfır olarak yazıldı.
@@ -153,6 +153,7 @@ Emulator=Emülatör
 Emulator config menu=Emülatör yapılandırma menüsü
 Emulator screen scaling:=Emülatör ekran ölçekleme:
 no card yet=henüz kart yok
+Not available for a disc in the drive=Sürücüdeki disk için kullanılamaz
 Not enough room in Games: the copy needs %1, %2 is free.=Games içinde yeterli yer yok: kopya %1 gerektiriyor, %2 boş.
 Not saved: this game has no pcsx.cfg=Kaydedilmedi: bu oyunun pcsx.cfg dosyası yok
 Screen halo:=Ekran halesi:

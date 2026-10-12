@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 584
+# Untranslated: 1 / Total: 585
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors an pas pogut èsser legits e son estats escrits coma zèros.
@@ -153,6 +153,7 @@ Emulator=Emulador
 Emulator config menu=Menú config de l'emulador
 Emulator screen scaling:=Escalatge de l'ecran de l'emulador :
 no card yet=pas encara de carta
+Not available for a disc in the drive=Pas disponible per un disc dins lo lector
 Not enough room in Games: the copy needs %1, %2 is free.=Pas pro de plaça dins Games : la còpia ten besonh de %1, %2 son liures.
 Not saved: this game has no pcsx.cfg=Pas enregistrat : aqueste jòc a pas de pcsx.cfg
 Screen halo:=Halo d'ecran :
