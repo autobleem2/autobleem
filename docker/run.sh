@@ -61,6 +61,11 @@ if [ -z "${AB_NO_SCCACHE:-}" ]; then
     mkdir -p "$cache"
     OPTS+=(-v "$cache:/tmp/sccache" -e SCCACHE_DIR=/tmp/sccache -e SCCACHE_CACHE_SIZE="${AB_SCCACHE_SIZE:-10G}")
 fi
+# the crates cache (lib_ableem's text engine is Rust; cargo runs --locked against autobleem-core's Cargo.lock): a
+# directory of the host's, so crates are downloaded once per host, not once per container - AB_CARGO_HOME names it
+cargo_home="${AB_CARGO_HOME:-$HOME/.cache/autobleem-cargo}"
+mkdir -p "$cargo_home"
+OPTS+=(-v "$cargo_home:/tmp/cargo-home" -e CARGO_HOME=/tmp/cargo-home)
 # --userns: the calling uid has no account in the image, and unshare/newuidmap want one with a subordinate
 # id range (/etc/subuid, /etc/subgid) to map a user namespace - so the four files are made here and bind-
 # mounted over the image's for this run
