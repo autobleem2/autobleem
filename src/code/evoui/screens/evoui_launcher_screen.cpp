@@ -1446,6 +1446,8 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
     if (state == LauncherScreenState::Set) {
         slots.screen = HintSlots::Screen::GameMenu;
         slots.emptyRoster = carousel.games.empty();
+        // an empty roster rests here, and R1 brings the disc view back from it
+        slots.discReady = discViewCanOpenIn() && discview::r1ShowsDisc(discDriveNow(), discViewOpen);
     } else if (state == LauncherScreenState::Resume && sselector != nullptr) {
         slots.screen = sselector->operation == OP_LOAD ? HintSlots::Screen::ResumeLoad : HintSlots::Screen::ResumeSave;
         slots.slotUsed = sselector->slotActive[sselector->selSlot];

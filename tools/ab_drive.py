@@ -125,11 +125,14 @@ def clip_to_mp4(frames_dir, out=None):
 
 
 class Driver:
-    def __init__(self, port=DEFAULT_PORT, host=DEFAULT_HOST, token=None, out_prefix=None, path_map=None):
+    def __init__(self, port=DEFAULT_PORT, host=DEFAULT_HOST, token=None, out_prefix=None, path_map=None,
+                 before_step=None):
         """out_prefix: the driver writes `shot`/`clip` somewhere this machine cannot name (a sandbox in the test VM,
         its AB_DEBUG_OUT): a shot's or clip's name is sent as out_prefix + its file name, relative, instead of made
         absolute here. path_map: turns a path the driver replies with into this machine's name for it (None when
-        it has none), so a clip's frames can be made into an MP4 here."""
+        it has none), so a clip's frames can be made into an MP4 here. before_step: called with no arguments before
+        each step of run() (abvm opens the sandbox's new folders to the guest's user there)."""
+        self.before_step = before_step
         self.sock = socket.create_connection((host, port), timeout=10)
         self.sock.settimeout(180)  # a reply can take a while: hold 60000, wait_idle, a clip's last frames
         self.buf = b''
@@ -442,6 +445,8 @@ class Driver:
                 continue
             n += 1
             try:
+                if self.before_step:
+                    self.before_step()
                 self.step(part, out)
             except (RuntimeError, OSError, ValueError, IndexError) as e:
                 raise RunFailed(n, part, e, out) from None

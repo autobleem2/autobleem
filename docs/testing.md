@@ -236,6 +236,17 @@ gives the lease back - a forgotten launcher takes a whole CPU and a place under 
 refused because someone else holds the sandbox touches nothing. When the cap is full, `sandbox start` first stops
 the launchers whose lease is gone (expired - their holder died - or released without a stop) and only then refuses.
 
+Writable folders: a folder the guest makes on the 9p share is owned, on the test machine, by QEMU's user
+(`libvirt-qemu`, mode 775 - QEMU's umask, not the launcher's), and the guest checks permissions against that owner,
+so the launcher's user `autobleem` could not write in it (System/Updates -> the update download's curl exit 23;
+Games/!SaveStates -> a save folder that cannot be made). The test machine's user cannot chmod what QEMU owns, so
+`sandbox start` and every step of `sandbox drive` run `sb_open_tree`: in the guest, as root, `chmod a+rwX` on the
+folders and files of the WHOLE sandbox that are not yet open (a `find` for the closed ones only, so a pass over a
+tree that is open is cheap). A pass before each step, not once, because the folders made by a run (a save folder on
+the first game launch) must be writable for the next step. At start a default ACL (`setfacl -d`, best effort) is
+also put on the host's folders so new ones are born 777 whatever QEMU's umask; the passes are what is relied on.
+To check: `abvm.py guest "touch /mnt/abvm/<sb>/System/Updates/w && echo WRITE_OK; true"` prints WRITE_OK.
+
 A sandbox runs with `AB_INPUT_ISOLATED=1` (the VM's own pads and keyboard never reach it), `AB_WINDOW_SIZE`
 (1280x720, `--size WxH` or `ABVM_SANDBOX_SIZE` for another), `AB_MAX_FPS=30 AB_AMBIENT_FPS=5` (the VM draws in software, every frame costs CPU: an idle launcher's
 ambient frames - the Play pulse, the arrow - drop from 30 to 5 a second, about 160% CPU -> 30%, while input and
