@@ -275,9 +275,10 @@ bool GuiLauncher::benchSkips(const string &part) {
 // GuiLauncher::somethingMoves
 //*******************************
 bool GuiLauncher::somethingMoves() const {
+    if (discFading || discStatus.state == DriveWatcher::State::Reading)
+        return true;
     return carousel.animating() || settleLoadsPending || motionStart != 0 || queuedScroll != 0 ||
-           L1_isPressedForFastForward || R1_isPressedForFastForward || fadeAlpha > 0 || discFading ||
-           discStatus.state == DriveWatcher::State::Reading ||
+           L1_isPressedForFastForward || R1_isPressedForFastForward || fadeAlpha > 0 ||
            gui->uiContext().stack().tweens().busy() || notificationLines.animating() || scanBubble.animating() ||
            extensionBubble.animating();
 }

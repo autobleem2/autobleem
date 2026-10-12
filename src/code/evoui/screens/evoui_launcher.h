@@ -521,14 +521,24 @@ public:
     // swaps at the middle
     bool discFading = false, discFadeEntering = false, discFadeSwapped = false;
     long discFadeStart = 0;
-    void pollDisc();                    // once a frame: the watcher, the view opening/closing by itself, the fade's clock
-    void buildDisc();                   // makes discGame/discPsGame/discArt/discTitle from discStatus
-    void startDiscFade(bool entering);  // enterDiscView / leaveDiscView through the crossfade
-    void swapDiscView(bool entering);   // the carousel <-> the disc, at the fade's middle
-    bool enterDiscView();               // R1 / a disc becoming ready: false when it cannot be shown now
-    bool leaveDiscView();               // Circle / the disc taken out
-    void renderDiscChip();              // the drive chip, centred at the top
-    void renderDiscFade();              // over the carousel, under the details
-    void openCdPlayer();                // Cross on an audio CD
-    void applyDiscMeta();               // the meta section's disc mode, after its texts were set
+    // once a frame: the watcher, the view opening/closing by itself, the fade's clock
+    void pollDisc();
+    // makes discGame/discPsGame/discArt/discTitle from discStatus
+    void buildDisc();
+    // enterDiscView / leaveDiscView through the crossfade
+    void startDiscFade(bool entering);
+    // the carousel <-> the disc, at the fade's middle
+    void swapDiscView(bool entering);
+    // R1 / a disc becoming ready: false when it cannot be shown now
+    bool enterDiscView();
+    // Circle / the disc taken out
+    bool leaveDiscView();
+    // the drive chip, centred at the top
+    void renderDiscChip();
+    // over the carousel, under the details
+    void renderDiscFade();
+    // Cross on an audio CD
+    void openCdPlayer();
+    // the meta section's disc mode, after its texts were set
+    void applyDiscMeta();
 };

@@ -74,8 +74,9 @@ public:
     // the disc the launcher is about to play (GuiLauncher sets it with Session::runningGame = its game):
     // AutoBleem::launchGame runs it through LaunchService::launchDisc
     std::shared_ptr<DiscGame> pendingDisc;
-    // the watcher's change counter when the launcher's disc view last opened (kept here: the launcher is built anew after
-    // a game); the view opens by itself when the disc's counter is another one. ~0u: open again (a disc was just played)
+    // the watcher's change counter when the launcher's disc view last opened (kept here: the launcher is built anew
+    // after a game); the view opens by itself when the disc's counter is another one. ~0u: open again (a disc was
+    // just played)
     unsigned discSeenChanges = 0;
 
     // what "power off" means for the launcher: on the console the screens unwind (Input::requestQuit) and

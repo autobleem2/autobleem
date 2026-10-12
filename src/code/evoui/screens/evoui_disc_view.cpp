@@ -304,8 +304,8 @@ void GuiLauncher::renderDiscFade() {
 //*******************************
 // GuiLauncher::openCdPlayer
 //*******************************
-// Cross on an audio CD: the player on the drive. The emulator-style hand-over - the watcher lets go of the drive while the
-// player has it, and reads the disc again after.
+// Cross on an audio CD: the player on the drive. The emulator-style hand-over - the watcher lets go of the drive
+// while the player has it, and reads the disc again after.
 void GuiLauncher::openCdPlayer() {
     DriveWatcher *watcher = app.driveWatcher();
     if (watcher == nullptr)
