@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 21 / Total: 565
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 需要它能运行的游戏数据：%2。
 (changed)=(已更改)
@@ -560,24 +560,24 @@ from the controller database=from the controller database
 guessed by the daemon=guessed by the daemon
 unknown driver=unknown driver
 Pads=Pads
-CD PLAYER=
-Audio CD=
-track=
-tracks=
-Track=
-TRACK=
-DISC=
-Disc=
-off=
-on=
-Repeat:=
-Shuffle:=
-Selected:=
-This disc cannot be played=
-Play track=
-Stop=
-Previous/next=
-Seek=
-Repeat=
-Shuffle=
-Pause=
+CD PLAYER=CD 播放器
+Audio CD=音频 CD
+track=首
+tracks=首
+Track=单曲
+TRACK=单曲
+DISC=光盘
+Disc=光盘
+off=关闭
+on=开启
+Repeat:=循环：
+Shuffle:=随机：
+Selected:=已选：
+This disc cannot be played=无法播放此光盘
+Play track=播放曲目
+Stop=停止
+Previous/next=上一首/下一首
+Seek=跳转
+Repeat=循环
+Shuffle=随机
+Pause=暂停

@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 21 / Total: 565
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 richiede dati di gioco che sa eseguire: %2.
 (changed)=(modificato)
@@ -560,24 +560,24 @@ from the controller database=dal database dei controller
 guessed by the daemon=indovinato dal demone
 unknown driver=driver sconosciuto
 Pads=Gamepad
-CD PLAYER=
-Audio CD=
-track=
-tracks=
-Track=
-TRACK=
-DISC=
-Disc=
-off=
-on=
-Repeat:=
-Shuffle:=
-Selected:=
-This disc cannot be played=
-Play track=
-Stop=
-Previous/next=
-Seek=
-Repeat=
-Shuffle=
-Pause=
+CD PLAYER=LETTORE CD
+Audio CD=CD audio
+track=traccia
+tracks=tracce
+Track=Traccia
+TRACK=TRACCIA
+DISC=DISCO
+Disc=Disco
+off=disattivato
+on=attivato
+Repeat:=Ripeti:
+Shuffle:=Casuale:
+Selected:=Selezionata:
+This disc cannot be played=Questo disco non può essere riprodotto
+Play track=Riproduci
+Stop=Stop
+Previous/next=Precedente/successivo
+Seek=Cerca
+Repeat=Ripeti
+Shuffle=Casuale
+Pause=Pausa
