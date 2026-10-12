@@ -116,19 +116,28 @@ boot_once() {
     done
     bt "kernel modules done"
 
-    # a USB CD/DVD drive (the disc drive: a PS1 disc played from it) - the AutoBleem kernel's cdrom, sr_mod and sg
-    # (psc-kernel-payload builds them for that kernel; Autobleem/lib/modules/cd/, cdrom first: sr_mod needs it),
-    # only into the AutoBleem kernel, whose rootfs carries the /autobleem marker - never into Sony's own. udev must
-    # not read the disc's filesystem: blkid's 2048-byte reads of a PS1 disc (Mode 2) time out after 30 s each and
-    # the emulator's raw reads wait behind them (minutes on the Pi). udev 229 has no flag for that, so its
-    # 60-persistent-storage.rules goes to /run (tmpfs, the same name overrides /lib's) without the two sr blocks.
-    if [ -e /autobleem ] && [ -d /media/Autobleem/lib/modules/cd ]; then
+    # a USB CD/DVD drive (the disc drive: a PS1 disc played from it) - the AutoBleem kernel's cdrom, sr_mod and sg:
+    # its own (psc-kernel-payload builds them into the payload's /lib/modules since 2026-10-13: modprobe), else
+    # the stick's Autobleem/lib/modules/cd/*.ko for a kernel flashed before that (insmod, cdrom first: sr_mod
+    # needs it). Only into the AutoBleem kernel, whose rootfs carries the /autobleem marker - never into Sony's
+    # own. udev must not read the disc's filesystem: blkid's 2048-byte reads of a PS1 disc (Mode 2) time out after
+    # 30 s each and the emulator's raw reads wait behind them (minutes on the Pi). udev 229 has no flag for that,
+    # so its 60-persistent-storage.rules goes to /run (tmpfs, the same name overrides /lib's) without the two sr
+    # blocks - harmless with no drive.
+    if [ -e /autobleem ]; then
         for name in cdrom sr_mod sg; do
-            kmod=/media/Autobleem/lib/modules/cd/$name.ko
-            [ -f "$kmod" ] || continue
             grep -qs "^$name " /proc/modules && continue
-            grep -qs "/$name.ko" "$KMODDIR/modules.dep" "$KMODDIR/modules.builtin" && { modprobe "$name"; continue; }
-            insmod "$kmod" || echo "boot: $name.ko refused"
+            grep -qs "/$name.ko" "$KMODDIR/modules.builtin" && continue
+            if grep -qs "/$name.ko" "$KMODDIR/modules.dep"; then
+                modprobe "$name" && continue
+                echo "boot: modprobe $name failed"
+            fi
+            kmod=/media/Autobleem/lib/modules/cd/$name.ko
+            if [ -f "$kmod" ]; then
+                insmod "$kmod" || echo "boot: $name.ko refused"
+            else
+                echo "boot: no $name for this kernel"
+            fi
         done
         if [ ! -f /run/udev/rules.d/60-persistent-storage.rules ] && [ -f /lib/udev/rules.d/60-persistent-storage.rules ]; then
             mkdir -p /run/udev/rules.d
