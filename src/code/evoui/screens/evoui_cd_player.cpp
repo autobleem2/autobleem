@@ -4,6 +4,7 @@
 #include "evoui_cd_player.h"
 #include "core/services/environment.h"
 #include "gui/gui.h"
+#include "cd_glyphs.h"
 
 #include <ab_gui/panel.h>
 
@@ -29,7 +30,7 @@ const int GridVisibleRows = 2;
 const int SegmentCount = 16;
 const unsigned FramesPerPoll = 33; // the bars are worked out about 30 times a second
 
-enum Glyph { GlyphPrev, GlyphPlay, GlyphPause, GlyphStop, GlyphNext, GlyphRepeat, GlyphShuffle };
+enum Glyph { GlyphPrev, GlyphPlay, GlyphPause, GlyphStop, GlyphNext, GlyphRepeat, GlyphRepeatOne, GlyphShuffle };
 
 // a right-pointing triangle filling `box`, row by row
 void fillTriangle(ableem::Renderer &r, const ableem::Rect &box, bool pointsRight) {
@@ -66,28 +67,49 @@ void drawGlyph(ableem::Renderer &r, Glyph g, const ableem::Rect &key, const able
         r.fillRect(ableem::Rect(cx + s / 2 - bar, cy - s / 2, bar, s));
         fillTriangle(r, ableem::Rect(cx - s / 2, cy - s / 2, s - bar, s), true);
         break;
-    case GlyphRepeat: { // a loop: a ring with an arrow head at its top right
-        const int t = max(2, s / 6);
-        r.fillRect(ableem::Rect(cx - s / 2, cy - s / 3, s, t));
-        r.fillRect(ableem::Rect(cx - s / 2, cy + s / 3 - t, s, t));
-        r.fillRect(ableem::Rect(cx - s / 2, cy - s / 3, t, s * 2 / 3));
-        r.fillRect(ableem::Rect(cx + s / 2 - t, cy - s / 3, t, s * 2 / 3));
-        fillTriangle(r, ableem::Rect(cx + s / 2 - t, cy - s / 2 - t, s / 3, s / 3), true);
+    default: // Repeat and Shuffle are drawn supersampled, see GuiCdPlayer::drawSmoothGlyph
         break;
     }
-    case GlyphShuffle: { // two lines crossing, an arrow head at each right end
-        const int t = max(2, s / 6);
-        for (int i = 0; i < s; i++) {
-            const int y1 = cy - s / 3 + (s * 2 / 3) * i / s;
-            const int y2 = cy + s / 3 - (s * 2 / 3) * i / s;
-            r.fillRect(ableem::Rect(cx - s / 2 + i, y1, t, t));
-            r.fillRect(ableem::Rect(cx - s / 2 + i, y2, t, t));
+}
+
+// a white-on-transparent s x s picture of Repeat, Repeat Track (GlyphRepeatOne) or Shuffle: drawn 4x as large from the
+// per-row runs of cdplayer::repeatRuns/shuffleRuns, then halved twice by linear copies (each exactly averages 2x2
+// pixels), which is the anti-aliasing the renderer lacks
+ableem::Texture makeSmoothGlyph(ableem::Renderer &r, Glyph g, int s) {
+    const int big = 4 * s;
+    ableem::Texture hi = ableem::Texture::createTarget(r, big, big);
+    ableem::Texture mid = ableem::Texture::createTarget(r, 2 * s, 2 * s);
+    ableem::Texture out = ableem::Texture::createTarget(r, s, s);
+    if (!hi.valid() || !mid.valid() || !out.valid())
+        return ableem::Texture();
+    // transparent white, so the averaged edge pixels do not darken
+    r.pushTarget(&hi);
+    r.setBlendMode(ableem::BlendMode::None);
+    r.setDrawColor(ableem::Color(255, 255, 255, 0));
+    r.fillRect();
+    r.setDrawColor(ableem::Color(255, 255, 255, 255));
+    for (int row = 0; row < big; row++) {
+        cdplayer::Spans runs;
+        if (g == GlyphShuffle)
+            runs = cdplayer::shuffleRuns(row, big);
+        else
+            runs = cdplayer::repeatRuns(row, big, g == GlyphRepeatOne);
+        for (const cdplayer::Span &run : runs) {
+            const int x0 = max(0, run.x0), x1 = min(big, run.x1);
+            if (x1 > x0)
+                r.fillRect(ableem::Rect(x0, row, x1 - x0, 1));
         }
-        fillTriangle(r, ableem::Rect(cx + s / 2 - t, cy - s / 3 - t, s / 3, s / 3), true);
-        fillTriangle(r, ableem::Rect(cx + s / 2 - t, cy + s / 3 - s / 3 + t, s / 3, s / 3), true);
-        break;
     }
+    r.popTarget();
+    ableem::Texture *steps[] = {&hi, &mid, &out};
+    for (int i = 1; i < 3; i++) {
+        steps[i - 1]->setBlendMode(ableem::BlendMode::None);
+        r.pushTarget(steps[i]);
+        r.copy(*steps[i - 1]);
+        r.popTarget();
     }
+    out.setBlendMode(ableem::BlendMode::Blend);
+    return out;
 }
 } // namespace
 
@@ -288,7 +310,31 @@ void GuiCdPlayer::drawTransportKey(int kind, const ableem::Rect &box, bool lit, 
                                    const ableem::Color &color) {
     style.key(gui->uiContext(), box,
               focused ? abgui::KeyState::Selected : (lit ? abgui::KeyState::Lit : abgui::KeyState::Normal));
-    drawGlyph(renderer, static_cast<Glyph>(kind), box, lit && !focused ? color : style.rowSelected);
+    const Glyph glyph = static_cast<Glyph>(kind);
+    const ableem::Color glyphColor = lit && !focused ? color : style.rowSelected;
+    if (glyph != GlyphRepeat && glyph != GlyphRepeatOne && glyph != GlyphShuffle) {
+        drawGlyph(renderer, glyph, box, glyphColor);
+        return;
+    }
+    // the supersampled glyphs: rebuilt when the key size changes or the render targets were lost; they live as long
+    // as the screen does and are dropped with it (no texture outlives a game launch)
+    const int s = box.w * 5 / 14;
+    if (s < 4)
+        return;
+    if (smoothGlyphSize != s || smoothGlyphsAt != renderer.targetsLost()) {
+        smoothGlyphs[0] = makeSmoothGlyph(renderer, GlyphRepeat, s);
+        smoothGlyphs[1] = makeSmoothGlyph(renderer, GlyphRepeatOne, s);
+        smoothGlyphs[2] = makeSmoothGlyph(renderer, GlyphShuffle, s);
+        smoothGlyphSize = s;
+        smoothGlyphsAt = renderer.targetsLost();
+    }
+    ableem::Texture &tex = smoothGlyphs[glyph == GlyphRepeat ? 0 : (glyph == GlyphRepeatOne ? 1 : 2)];
+    if (!tex.valid())
+        return;
+    tex.setColorMod(glyphColor);
+    const ableem::Rect dst(box.x + box.w / 2 - s / 2, box.y + box.h / 2 - s / 2, s, s);
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+    renderer.copy(tex, nullptr, &dst);
 }
 
 //*******************************
@@ -417,25 +463,19 @@ void GuiCdPlayer::draw() {
     style.progress(gui->uiContext(), R(290, 392, 930, 12), position, max<uint32_t>(length, 1), abgui::Tone::Secondary,
                    abgui::Style::StyleAlpha, abgui::Tone::SelectionBand, 255);
 
-    // the transport keys: previous, play/pause, stop, next, repeat (with its tag), shuffle
+    // the transport keys: previous, play/pause, stop, next, repeat (a "1" in its loop for Track), shuffle
     const bool playingNow = state == CddaPlayer::State::Playing;
     const CddaPlayer::Repeat repeat = player->repeat();
     const bool shuffle = player->shuffle();
+    const Glyph repeatGlyph = repeat == CddaPlayer::Repeat::Track ? GlyphRepeatOne : GlyphRepeat;
     struct Key {
         Glyph glyph;
         bool lit;
     } keys[] = {{GlyphPrev, false}, {playingNow ? GlyphPause : GlyphPlay, playingNow}, {GlyphStop, false},
-                {GlyphNext, false}, {GlyphRepeat, repeat != CddaPlayer::Repeat::Off},  {GlyphShuffle, shuffle}};
+                {GlyphNext, false}, {repeatGlyph, repeat != CddaPlayer::Repeat::Off},  {GlyphShuffle, shuffle}};
     for (int i = 0; i < 6; i++) {
         const ableem::Rect box = R(290 + i * (KeySize + KeyGap), 418, KeySize, KeySize);
         drawTransportKey(keys[i].glyph, box, keys[i].lit, i == transportFocus, accent);
-    }
-    if (repeat != CddaPlayer::Repeat::Off) {
-        const string tag = repeat == CddaPlayer::Repeat::Track ? _("TRACK") : _("DISC");
-        const ableem::Rect box = R(290 + 4 * (KeySize + KeyGap), 418, KeySize, KeySize);
-        const int w = text.textWidth(fonts[FONT_15_BOLD], tag);
-        text.renderText_WithColor(fonts[FONT_15_BOLD], tag, box.x + (box.w - w) / 2, box.y + box.h + L(1), accent,
-                                  XALIGN_LEFT);
     }
     const string repeatName = repeat == CddaPlayer::Repeat::Track  ? _("Track")
                               : repeat == CddaPlayer::Repeat::Disc ? _("Disc")
