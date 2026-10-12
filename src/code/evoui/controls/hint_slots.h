@@ -136,6 +136,8 @@ inline Grid gridFor(const State &state) {
     case Screen::Games:
         if (state.emptyRoster) { // an empty set: only the way into the Quick menu
             put(Item::QuickMenu);
+            if (state.discReady)
+                put(Item::Disc);
             dim(Item::Random);
             dim(Item::Guide);
             break;
@@ -153,6 +155,8 @@ inline Grid gridFor(const State &state) {
         put(Item::Open);
         if (state.emptyRoster) { // Up opens the Quick menu: there is no Games state to go back to
             put(Item::QuickMenu);
+            if (state.discReady)
+                put(Item::Disc);
             dim(Item::Random);
             dim(Item::Guide);
         } else {

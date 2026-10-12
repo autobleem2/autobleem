@@ -181,6 +181,18 @@ TEST_CASE("Games with a disc ready: R1 Disc takes the Play in RetroArch slot") {
     CHECK(columnOf(Item::Disc) == 1);
 }
 
+TEST_CASE("an empty roster with a disc ready: R1 Disc in Games and in the game menu state") {
+    State s;
+    s.emptyRoster = true;
+    s.discReady = true;
+    s.screen = Screen::Games;
+    checkLine1(gridFor(s), Item::None, Item::Disc, Item::None, Item::QuickMenu);
+    s.screen = Screen::GameMenu;
+    checkLine1(gridFor(s), Item::Open, Item::Disc, Item::None, Item::QuickMenu);
+    s.discReady = false;
+    checkLine1(gridFor(s), Item::Open, Item::None, Item::None, Item::QuickMenu);
+}
+
 TEST_CASE("Games, the audio CD's disc view: no game menu") {
     State s = games();
     s.noMenu = true;
