@@ -40,6 +40,14 @@ public:
     int nextPos = 0;
     int prevPos = 0;
 
+    // the disc view (docs/disc-drive-plan.md): the disc in the drive instead of a game of the set. Game keeps the
+    // PS1 rows but shows "DISC" as the source tag in place of the usb/hd/lock badges; Audio shows the tracks and the
+    // total time (audioTracks, audioTime) and no players or disc count. Reset by updateTexts.
+    enum class DiscMode { None, Game, Audio };
+    DiscMode discMode = DiscMode::None;
+    int audioTracks = 0;
+    std::string audioTime;
+
     bool internal = false;
     bool hd = false;
     bool locked = false;

@@ -70,6 +70,9 @@ struct PsCarouselGame : public PsGamePtr {
     // covers no longer shown up to a limit, and lets the longest unused go first
     unsigned long lastWanted = 0;
     bool artFailed = false; // its image could not be read: not asked for again
+    // a cover given as encoded image bytes (the disc view: a disc's cover from the metadata, the audio CD's case)
+    // instead of a file: artPath() is then empty and loadTex decodes these
+    std::vector<char> memoryArt;
 
     // the image file the cover is made from (see the .cpp), worked out on first use
     const std::string &artPath();
