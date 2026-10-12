@@ -6,6 +6,10 @@
 //
 #include "evoui_launcher.h"
 #include "evoui_cd_player.h"
+#include "evoui_disc_rip.h"
+#include "disc_rip_logic.h"
+#include "gui/screens/gui_confirm.h"
+#include "core/services/image_cd_drive.h"
 #include "core/services/environment.h"
 #ifndef _WIN32
 #include "core/services/linux_cd_drive.h" // not built on Windows (core's CMakeLists): the fake drive only there
@@ -392,4 +396,165 @@ void GuiLauncher::openCdPlayer() {
     }
     watcher->resume();
     forgetHeldModifiers();
+}
+
+//*******************************
+// GuiLauncher::copyDiscOffered
+//*******************************
+bool GuiLauncher::copyDiscOffered() const {
+    return discGame != nullptr && discrip::offered(discDriveNow(), discViewOpen, discGame->inDatabase);
+}
+
+//*******************************
+// GuiLauncher::copyDiscToGames
+//*******************************
+// Square on a PS1 disc the databases know. The question (what, where, the room it takes), then the rip under a popup
+// that blocks the launcher with Abort as its one action, then the rescan and the new game selected. The drive is the
+// watcher's no longer while this runs (it is handed back after, as the CD player does).
+void GuiLauncher::copyDiscToGames() {
+    DriveWatcher *watcher = app.driveWatcher();
+    if (watcher == nullptr || !copyDiscOffered())
+        return;
+    auto message = [this](const string &text) {
+        GuiConfirm box(*gui);
+        box.title = _("Copy disc");
+        box.label = text;
+        box.confirmLabel = _("OK");
+        box.cancelLabel = _("Back");
+        BackdropScope backdrop(*this);
+        box.show();
+    };
+
+    const string title = discPsGame->title;
+    const int disc = discrip::discNumberOf(discPsGame->recordName);
+    const string gamesDir = Env::getPathToGamesDir();
+    const string target = discrip::chdPath(gamesDir, title, disc);
+    const string folder = discrip::folderOf(gamesDir, title);
+    if (ableem::DirEntry::exists(target)) {
+        message(discrip::fill(_("Already in Games: %1"), {discrip::chdName(title, disc)}));
+        return;
+    }
+
+    watcher->pause();
+    unique_ptr<CdDrive> drive;
+    CdToc toc;
+    string error;
+    const string fake = DriveWatcher::fakeCue();
+    if (!fake.empty()) {
+        auto image = make_unique<ImageCdDrive>();
+        if (image->open(fake, error) && image->readToc(toc, error))
+            drive = move(image);
+    } else {
+#ifndef _WIN32
+        auto linuxDrive = make_unique<LinuxCdDrive>();
+        if (linuxDrive->open(discStatus.sgIndex, error) && linuxDrive->readToc(toc, error))
+            drive = move(linuxDrive);
+#else
+        error = "no real drive on Windows";
+#endif
+    }
+    if (!drive) {
+        PLOG_ERROR << "Disc copy: the drive: " << error;
+        watcher->resume();
+        message(_("The disc cannot be read now"));
+        return;
+    }
+
+    // the room: the folder does not exist yet, so the Games directory's filesystem is asked
+    const uint64_t needed = RipJob::neededBytes(toc);
+    uint64_t freeBytes = 0;
+    if (discrip::preflight(target, gamesDir, needed, &freeBytes) == discrip::Check::NoRoom) {
+        watcher->resume();
+        message(discrip::fill(_("Not enough room in Games: the copy needs %1, %2 is free."),
+                              {discrip::bytesText(needed), discrip::bytesText(freeBytes)}));
+        return;
+    }
+
+    {
+        GuiConfirm ask(*gui);
+        ask.title = _("Copy the disc to Games");
+        ask.label = discrip::fill(_("Copy \"%1\" to %2? It takes %3 of the %4 free."),
+                                  {title, "Games/" + GameInstaller::folderNameFor(title) + "/" +
+                                              discrip::chdName(title, disc),
+                                   discrip::bytesText(needed), freeBytes > 0 ? discrip::bytesText(freeBytes) : "-"});
+        ask.confirmLabel = _("Copy");
+        ask.cancelLabel = _("Back");
+        BackdropScope backdrop(*this);
+        ask.show();
+        if (!ask.result) {
+            watcher->resume();
+            return;
+        }
+    }
+
+    // LibCrypt: the .sbi the launcher fetched for the serial is copied beside the CHD; without one the marks are read
+    // from the drive after the rip
+    const string sbi = discrip::chooseSbi({discGame->game->ssFolder, DiscGameService::folderForKey(discGame->keySerial)},
+                                          discStatus.disc.serial, ableem::DirEntry::exists);
+    ableem::DirEntry::createDirs(folder);
+    RipJob::Result result;
+    {
+        GuiDiscRip rip(*gui);
+        rip.drive = drive.get();
+        rip.target = target;
+        rip.writeSbi = sbi.empty();
+        BackdropScope backdrop(*this);
+        rip.show();
+        result = rip.result;
+    }
+    drive.reset();
+    watcher->resume();
+    forgetHeldModifiers();
+
+    if (result.cancelled) {
+        message(_("Cancelled"));
+        return;
+    }
+    if (!result.ok) {
+        message(discrip::fill(_("The copy failed: %1"), {result.error}));
+        return;
+    }
+    if (!sbi.empty())
+        ableem::DirEntry::copyFile(sbi, discrip::sbiPathFor(result.file));
+    if (discrip::inSet(discPsGame->recordName))
+        discrip::updateM3u(gamesDir, title);
+
+    ripSelectFolder = folder;
+    ripScanFinished = false;
+    app.scans().requestScan();
+
+    string done = _("The disc is copied to Games.");
+    if (result.badSectors > 0)
+        done += " " + discrip::fill(_("%1 sectors could not be read and were written as zeros."),
+                                    {to_string(result.badSectors)});
+    if (!result.sbiNote.empty())
+        done += " " + result.sbiNote;
+    message(done);
+}
+
+//*******************************
+// GuiLauncher::selectRippedGame
+//*******************************
+// Once the rescan has found the copied disc: the disc view gives way to the library, and the new game is selected
+void GuiLauncher::selectRippedGame() {
+    if (ripSelectFolder.empty() || !ripScanFinished || discFading || carousel.scrolling)
+        return;
+    if (discViewOpen) {
+        leaveDiscView();
+        return;
+    }
+    if (state != LauncherScreenState::Games)
+        return;
+    for (int i = 0; i < static_cast<int>(carousel.games.size()); i++) {
+        const string &folder = carousel.games[i]->folder;
+        if (folder == ripSelectFolder || folder == ripSelectFolder + "/") {
+            carousel.selected = i;
+            carousel.setInitialPositions(i);
+            updateMeta();
+            menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[i]));
+            break;
+        }
+    }
+    ripSelectFolder.clear();
+    ripScanFinished = false;
 }

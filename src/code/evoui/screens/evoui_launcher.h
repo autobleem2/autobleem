@@ -551,4 +551,11 @@ public:
     void openCdPlayer();
     // the meta section's disc mode, after its texts were set
     void applyDiscMeta();
+    // Square in the disc view of a PS1 disc the databases know: copy the disc to Games as a CHD (evoui_disc_view.cpp)
+    bool copyDiscOffered() const;
+    void copyDiscToGames();
+    // the folder of the game just copied: once the rescan is done the game is selected (selectRippedGame, each frame)
+    std::string ripSelectFolder;
+    bool ripScanFinished = false;
+    void selectRippedGame();
 };

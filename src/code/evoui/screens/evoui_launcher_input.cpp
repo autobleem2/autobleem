@@ -62,6 +62,7 @@ void GuiLauncher::loop() {
         pollSettleLoads();
         applyScanUpdate(app.scans().poll());
         pollDisc();
+        selectRippedGame();
         app.extensions().poll();
         applyExtensionRequests();
         pollPadBattery();
@@ -768,8 +769,11 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 // GuiLauncher::loop_squareButtonPressed
 //*******************************
 void GuiLauncher::loop_squareButton_Pressed() {
-    if (discViewOpen)
-        return; // a physical disc plays in pcsx-abnxt alone
+    if (discViewOpen) { // a physical disc plays in pcsx-abnxt alone; Square copies a known PS1 disc to Games
+        if (copyDiscOffered())
+            copyDiscToGames();
+        return;
+    }
 
     if (Env::retroArchInstalled()) {
 

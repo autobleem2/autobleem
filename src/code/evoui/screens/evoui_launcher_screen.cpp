@@ -762,6 +762,8 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
         scanRosterChangedSinceReload = true;
 
     if (update.finished) {
+        if (!ripSelectFolder.empty())
+            ripScanFinished = true; // the copied disc is in the scan: selectRippedGame() can pick it
         string text = pluralGames(static_cast<size_t>(update.finishedGameCount));
         if (update.finishedFailedCount > 0)
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
@@ -1389,6 +1391,8 @@ string GuiLauncher::hintSignature() const {
             sig += discAudio ? "|dvA" : "|dvG";
         else if (discview::circleShowsDisc(discDriveNow(), discViewOpen))
             sig += "|disc";
+        if (copyDiscOffered())
+            sig += "|cp";
     }
     return sig;
 }
@@ -1421,6 +1425,8 @@ static string hintLabel(HintSlots::Item item) {
         return _("Random");
     case Item::Disc:
         return _("Disc");
+    case Item::CopyDisc:
+        return _("Copy disc");
     case Item::GameMenu:
         return _("Game menu");
     case Item::Choose:
@@ -1468,6 +1474,7 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
         slots.app = game != nullptr && game->app;
         slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached() && !discViewOpen;
         slots.discReady = discview::circleShowsDisc(discDriveNow(), discViewOpen);
+        slots.copyDisc = copyDiscOffered();
         slots.noMenu = discViewOpen && discAudio;
     }
     const HintSlots::Grid grid = HintSlots::gridFor(slots);
