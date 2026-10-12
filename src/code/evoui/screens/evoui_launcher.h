@@ -217,6 +217,7 @@ public:
     // MENU_OPTION_UPDATE on a Pi
     void pollUpdates();
     void loop_softwareUpdate();
+    void loop_raManager(); // System menu "RetroArch...": install / update / remove (PLATFORM-24)
     void offerUpdate(bool fromMenu);
 #endif
 

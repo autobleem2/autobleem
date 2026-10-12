@@ -36,6 +36,7 @@ enum class SystemMenuAction {
     SystemMenu,      // the Quick menu's last row: the System menu itself
     RestartLauncher, // the Quick menu's, console / Pi / PC stick only: the launcher process starts over
     RetroArchCores,  // the Quick menu's, with RetroArch installed: the core that plays each system
+    RetroArchSetup,  // "RetroArch..." (System) / "Install RetroArch..." (Quick, while absent): GuiRaManager
 };
 
 //******************
@@ -61,7 +62,8 @@ public:
     Kind kind = Kind::System;
     std::string retroArchLabel = "RetroArch"; // "RetroArch" or "EmulationStation", per retroboot.cfg
     bool retroArchInstalled = true;           // false: the RetroArch item is left out (no RetroArch program)
-    bool updateAvailable = false;             // shown as a note on the Software Update row
+    bool raManager = false;                   // this host has a RetroArch runner (RaJobService::available): the setup row
+    bool updateAvailable = false;            // shown as a note on the Software Update row
     bool scanInProgress = false;              // shown as a note on the Re-Scan row, not a disabled state
     bool networkProvided = false;             // an extension provides "network": the Network & Controllers row
     // with networkProvided: why the extension providing it cannot run ("PSC-Bios is switched off - ..."); set,
