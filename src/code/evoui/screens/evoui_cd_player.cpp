@@ -99,7 +99,7 @@ void GuiCdPlayer::init() {
     openDrive();
     if (drive == nullptr)
         return;
-    player.reset(new CddaPlayer(*drive, toc));
+    player = make_unique<CddaPlayer>(*drive, toc);
     numbers.clear();
     for (const CdTrack &t : toc.tracks)
         if (t.audio)
@@ -117,7 +117,7 @@ void GuiCdPlayer::init() {
 
 void GuiCdPlayer::openDrive() {
     if (drive == nullptr && !cuePath.empty()) {
-        image.reset(new ImageCdDrive());
+        image = make_unique<ImageCdDrive>();
         string error;
         if (!image->open(cuePath, error)) {
             PLOG_ERROR << "CD player: " << cuePath << ": " << error;
@@ -138,7 +138,8 @@ void GuiCdPlayer::loadCase() {
         caseImage = ThemeAssets::loadImage(renderer, background.substr(0, slash + 1) + "audio_cd_case.png");
     }
     if (!caseImage.valid())
-        caseImage = ThemeAssets::loadImage(renderer, Env::getWorkingPath() + sep + "evoimg" + sep + "audio_cd_case.png");
+        caseImage =
+            ThemeAssets::loadImage(renderer, Env::getWorkingPath() + sep + "evoimg" + sep + "audio_cd_case.png");
 }
 
 string GuiCdPlayer::titleOf(int number) const {
@@ -277,8 +278,9 @@ void GuiCdPlayer::publishItems() const {
 // GuiCdPlayer::drawTransportKey
 //*******************************
 void GuiCdPlayer::drawTransportKey(int kind, const ableem::Rect &box, bool lit, bool focused,
-                                  const ableem::Color &color) {
-    style.key(gui->uiContext(), box, focused ? abgui::KeyState::Selected : (lit ? abgui::KeyState::Lit : abgui::KeyState::Normal));
+                                   const ableem::Color &color) {
+    style.key(gui->uiContext(), box,
+              focused ? abgui::KeyState::Selected : (lit ? abgui::KeyState::Lit : abgui::KeyState::Normal));
     drawGlyph(renderer, static_cast<Glyph>(kind), box, lit && !focused ? color : style.rowSelected);
 }
 
@@ -286,9 +288,8 @@ void GuiCdPlayer::drawTransportKey(int kind, const ableem::Rect &box, bool lit, 
 // GuiCdPlayer::draw
 //*******************************
 static vector<abgui::HintItem> footerHints() {
-    return {{{"X"}, _("Play track")}, {{"S"}, _("Stop")},       {{"L1/R1"}, _("Previous/next")},
-            {{"O"}, _("Back")},       {{"L2/R2"}, _("Seek")},   {{"T"}, _("Repeat")},
-            {{"Select"}, _("Shuffle")}, {{"Start"}, _("Pause")}};
+    return {{{"X"}, _("Play track")}, {{"S"}, _("Stop")},   {{"L1/R1"}, _("Previous/next")}, {{"O"}, _("Back")},
+            {{"L2/R2"}, _("Seek")},   {{"T"}, _("Repeat")}, {{"Select"}, _("Shuffle")},      {{"Start"}, _("Pause")}};
 }
 
 void GuiCdPlayer::draw() {
@@ -315,7 +316,7 @@ void GuiCdPlayer::draw() {
 
     const LauncherTheme &theme = app.theme().launcher();
     const ableem::Color accent = theme.colors.selection.set ? TextRenderer::toColor(theme.colors.selection, 255)
-                                                           : ableem::Color(style.rowSelected);
+                                                            : ableem::Color(style.rowSelected);
 
     text.renderText_WithColor(fonts[FONT_28_BOLD], _("CD PLAYER"), X(60), Y(38), style.rowSelected, XALIGN_LEFT);
     style.rule(gui->uiContext(), panel, Y(86));
@@ -337,7 +338,8 @@ void GuiCdPlayer::draw() {
     const ableem::Rect caseBox = R(60, 110, 200, 200);
     if (caseImage.valid()) {
         const ableem::Size s = caseImage.size();
-        const double f = min(caseBox.w / static_cast<double>(max(1, s.w)), caseBox.h / static_cast<double>(max(1, s.h)));
+        const double f =
+            min(caseBox.w / static_cast<double>(max(1, s.w)), caseBox.h / static_cast<double>(max(1, s.h)));
         const int w = static_cast<int>(s.w * f), h = static_cast<int>(s.h * f);
         ableem::Rect dst(caseBox.x + (caseBox.w - w) / 2, caseBox.y + (caseBox.h - h) / 2, w, h);
         renderer.setBlendMode(ableem::BlendMode::Blend);
@@ -347,8 +349,8 @@ void GuiCdPlayer::draw() {
     }
     const int count = static_cast<int>(numbers.size());
     text.renderText_WithColor(fonts[FONT_22_MED], _("Audio CD"), X(60), Y(322), style.rowSelected, XALIGN_LEFT);
-    const string facts = to_string(count) + " " + (count == 1 ? _("track") : _("tracks")) + " · " +
-                         cdplayer::clockText(player->total());
+    const string facts =
+        to_string(count) + " " + (count == 1 ? _("track") : _("tracks")) + " · " + cdplayer::clockText(player->total());
     text.renderText_WithColor(fonts[FONT_15_BOLD], facts, X(60), Y(354), style.description, XALIGN_LEFT);
     if (!album.empty())
         text.renderText_WithColor(fonts[FONT_15_BOLD], text.elide(fonts[FONT_15_BOLD], album, L(200)), X(60), Y(380),
@@ -365,7 +367,8 @@ void GuiCdPlayer::draw() {
             player->lastFrames(frames.data(), SpectrumFrames);
         spectrum.analyse(frames.data(), SpectrumFrames);
         for (int i = 0; i < Bars; i++)
-            caps[static_cast<size_t>(i)] = max(spectrum.bars()[static_cast<size_t>(i)], caps[static_cast<size_t>(i)] - 0.02f);
+            caps[static_cast<size_t>(i)] =
+                max(spectrum.bars()[static_cast<size_t>(i)], caps[static_cast<size_t>(i)] - 0.02f);
     }
     {
         const int pad = L(16);
@@ -401,9 +404,9 @@ void GuiCdPlayer::draw() {
     const string times = cdplayer::clockText(position) + " / " + cdplayer::clockText(length);
     const int timesW = text.textWidth(fonts[FONT_22_MED], times);
     text.renderText_WithColor(fonts[FONT_22_MED], times, rightEdge - timesW, Y(346), style.rowSelected, XALIGN_LEFT);
-    text.renderText_WithColor(fonts[FONT_28_BOLD],
-                              text.elide(fonts[FONT_28_BOLD], titleOf(shownNumber), rightEdge - timesW - L(30) - X(290)),
-                              X(290), Y(344), style.rowSelected, XALIGN_LEFT);
+    text.renderText_WithColor(
+        fonts[FONT_28_BOLD], text.elide(fonts[FONT_28_BOLD], titleOf(shownNumber), rightEdge - timesW - L(30) - X(290)),
+        X(290), Y(344), style.rowSelected, XALIGN_LEFT);
     style.progress(gui->uiContext(), R(290, 392, 930, 12), position, max<uint32_t>(length, 1), abgui::Tone::Secondary,
                    abgui::Style::StyleAlpha, abgui::Tone::SelectionBand, 255);
 
@@ -414,12 +417,8 @@ void GuiCdPlayer::draw() {
     struct Key {
         Glyph glyph;
         bool lit;
-    } keys[] = {{GlyphPrev, false},
-                {playingNow ? GlyphPause : GlyphPlay, playingNow},
-                {GlyphStop, false},
-                {GlyphNext, false},
-                {GlyphRepeat, repeat != CddaPlayer::Repeat::Off},
-                {GlyphShuffle, shuffle}};
+    } keys[] = {{GlyphPrev, false}, {playingNow ? GlyphPause : GlyphPlay, playingNow}, {GlyphStop, false},
+                {GlyphNext, false}, {GlyphRepeat, repeat != CddaPlayer::Repeat::Off},  {GlyphShuffle, shuffle}};
     for (int i = 0; i < 6; i++) {
         const ableem::Rect box = R(290 + i * (KeySize + KeyGap), 418, KeySize, KeySize);
         drawTransportKey(keys[i].glyph, box, keys[i].lit, i == transportFocus, accent);
@@ -433,12 +432,12 @@ void GuiCdPlayer::draw() {
     }
     const string repeatName = repeat == CddaPlayer::Repeat::Track  ? _("Track")
                               : repeat == CddaPlayer::Repeat::Disc ? _("Disc")
-                                                                    : _("off");
-    text.renderText_WithColor(fonts[FONT_22_MED],
-                              _("Repeat:") + " " + repeatName + " · " + _("Shuffle:") + " " +
-                                  (shuffle ? _("on") : _("off")),
-                              X(290 + 6 * (KeySize + KeyGap) + 16), Y(418) + (L(KeySize) - fonts[FONT_22_MED].lineHeight()) / 2,
-                              style.description, XALIGN_LEFT);
+                                                                   : _("off");
+    text.renderText_WithColor(
+        fonts[FONT_22_MED],
+        _("Repeat:") + " " + repeatName + " · " + _("Shuffle:") + " " + (shuffle ? _("on") : _("off")),
+        X(290 + 6 * (KeySize + KeyGap) + 16), Y(418) + (L(KeySize) - fonts[FONT_22_MED].lineHeight()) / 2,
+        style.description, XALIGN_LEFT);
 
     // the track grid: a key per track, the playing one lit, the focused one selected
     const int cols = cdplayer::GridColumns;
@@ -457,24 +456,27 @@ void GuiCdPlayer::draw() {
             const bool focused = i == focus && transportFocus < 0;
             const bool isPlaying = i == playing;
             style.key(gui->uiContext(), box,
-                      focused ? abgui::KeyState::Selected : (isPlaying ? abgui::KeyState::Lit : abgui::KeyState::Normal));
+                      focused ? abgui::KeyState::Selected
+                              : (isPlaying ? abgui::KeyState::Lit : abgui::KeyState::Normal));
             const ableem::Color nameColor = isPlaying ? accent : style.rowColor(focused);
             const string name = cdplayer::twoDigits(number);
             const string len = cdplayer::clockText(player->trackLength(number));
-            text.renderText_WithColor(fonts[FONT_20_BOLD], name, box.x + (box.w - text.textWidth(fonts[FONT_20_BOLD], name)) / 2,
-                                      box.y + L(4), nameColor, XALIGN_LEFT);
-            text.renderText_WithColor(fonts[FONT_15_BOLD], len, box.x + (box.w - text.textWidth(fonts[FONT_15_BOLD], len)) / 2,
-                                      box.y + L(4) + fonts[FONT_20_BOLD].lineHeight(), style.valueColor(focused), XALIGN_LEFT);
+            text.renderText_WithColor(fonts[FONT_20_BOLD], name,
+                                      box.x + (box.w - text.textWidth(fonts[FONT_20_BOLD], name)) / 2, box.y + L(4),
+                                      nameColor, XALIGN_LEFT);
+            text.renderText_WithColor(
+                fonts[FONT_15_BOLD], len, box.x + (box.w - text.textWidth(fonts[FONT_15_BOLD], len)) / 2,
+                box.y + L(4) + fonts[FONT_20_BOLD].lineHeight(), style.valueColor(focused), XALIGN_LEFT);
         }
     }
     const int focusedNumber = numbers[static_cast<size_t>(focus)];
-    text.renderText_WithColor(
-        fonts[FONT_15_BOLD],
-        text.elide(fonts[FONT_15_BOLD],
-                   _("Selected:") + " " + cdplayer::twoDigits(focusedNumber) + " " + titleOf(focusedNumber) + " · " +
-                       cdplayer::clockText(player->trackLength(focusedNumber)),
-                   X(1220) - X(60)),
-        X(60), Y(604), style.description, XALIGN_LEFT);
+    text.renderText_WithColor(fonts[FONT_15_BOLD],
+                              text.elide(fonts[FONT_15_BOLD],
+                                         _("Selected:") + " " + cdplayer::twoDigits(focusedNumber) + " " +
+                                             titleOf(focusedNumber) + " · " +
+                                             cdplayer::clockText(player->trackLength(focusedNumber)),
+                                         X(1220) - X(60)),
+                              X(60), Y(604), style.description, XALIGN_LEFT);
 
     style.footer(*gui, R(30, 642, 1220, 54), footerHints());
     text.setShadow(classicShadow);

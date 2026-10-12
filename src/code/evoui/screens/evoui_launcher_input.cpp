@@ -29,7 +29,7 @@ using namespace std;
 void GuiLauncher::loop() {
     PLOG_DEBUG << "Main Loop";
     runCdPlayerDevEntry(*gui); // AB_CD_PLAYER_IMAGE: the CD player on an image, once, for the dev and the VM
-    powerOffShift = false; // L2 shift used for power off and selecting game sub dir or RA playlist
+    powerOffShift = false;     // L2 shift used for power off and selecting game sub dir or RA playlist
 
     menuVisible = true;
     motionStart = 0;

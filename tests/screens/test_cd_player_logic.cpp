@@ -21,11 +21,11 @@ TEST_CASE("moveFocus: left/right wrap, up/down stop at the rows") {
     CHECK(moveFocus(0, -1, 0, 14) == 13);
     CHECK(moveFocus(13, 1, 0, 14) == 0);
     CHECK(moveFocus(3, 1, 0, 14) == 4);
-    CHECK(moveFocus(3, 0, 1, 14) == 13);   // the short second row: its end
+    CHECK(moveFocus(3, 0, 1, 14) == 13); // the short second row: its end
     CHECK(moveFocus(2, 0, 1, 14) == 12);
-    CHECK(moveFocus(12, 0, 1, 14) == 12);  // already on the last row
+    CHECK(moveFocus(12, 0, 1, 14) == 12); // already on the last row
     CHECK(moveFocus(12, 0, -1, 14) == 2);
-    CHECK(moveFocus(2, 0, -1, 14) == 2);   // the first row
+    CHECK(moveFocus(2, 0, -1, 14) == 2); // the first row
     CHECK(moveFocus(0, 1, 0, 1) == 0);
     CHECK(moveFocus(0, 0, 1, 0) == 0);
 }
