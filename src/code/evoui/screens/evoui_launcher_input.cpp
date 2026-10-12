@@ -535,8 +535,7 @@ void GuiLauncher::loop_joyButton_Pressed() {
         if (discViewOpen)
             return;
         // R1 "Disc" while a disc is ready: its view comes back (the footer says so); else the first-letter jump
-        if (discViewCanOpenIn() && discview::r1ShowsDisc(discDriveNow(), discViewOpen) &&
-            enterDiscView())
+        if (discViewCanOpenIn() && discview::r1ShowsDisc(discDriveNow(), discViewOpen) && enterDiscView())
             return;
         R1_isPressedForFastForward = true;
         loop_nextGameFirstLetter();

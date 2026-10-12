@@ -111,8 +111,8 @@ void App::fetchSbiFor(const string &serial, const string &saveFolder) {
             return;
         }
         sbiDownloader_ = std::make_unique<Downloader>(command);
-        sbi_ = std::make_unique<SbiService>(*sbiDownloader_, Env::repoUrl(),
-                                            Env::getPathToSystemDir() + sep + "Updates");
+        const string scratch = Env::getPathToSystemDir() + sep + "Updates";
+        sbi_ = std::make_unique<SbiService>(*sbiDownloader_, Env::repoUrl(), scratch);
     }
     try {
         const SbiService::Result result = sbi_->fetchFor(serial, saveFolder);
