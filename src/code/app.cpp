@@ -5,6 +5,7 @@
 #include "core/services/system.h"
 #include "core/version.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -74,10 +75,15 @@ void App::startDriveWatcher() {
     if (driveWatcher_)
         return;
     // dev only, for the VM that cannot set the environment: a disc image laid in as an extension folder
-    // (Extensions/disc-fake*/fake.cue) stands for the drive's disc, as AB_FAKE_DRIVE does
+    // (Extensions/disc-fake*/fake.cue, any folder name starting so) stands for the drive's disc, as AB_FAKE_DRIVE does
     if (DriveWatcher::fakeCue().empty()) {
         const string extensions = Env::getPathToUSBRoot() + sep + "Extensions";
-        for (const char *name : {"disc-fake", "disc-fake-ps1", "disc-fake-audio"}) {
+        DirEntries folders = DirEntry::diru_DirsOnly(extensions);
+        sort(folders.begin(), folders.end(), DirEntry::sortDirEntryByName);
+        for (const DirEntry &folder : folders) {
+            if (folder.name.compare(0, 9, "disc-fake") != 0)
+                continue;
+            const string &name = folder.name;
             const string cue = extensions + sep + name + sep + "fake.cue";
             if (std::ifstream(cue).good()) {
                 setenv("AB_FAKE_DRIVE", cue.c_str(), 1);
@@ -111,12 +117,19 @@ void App::fetchSbiFor(const string &serial, const string &saveFolder) {
             return;
         }
         sbiDownloader_ = std::make_unique<Downloader>(command);
-        const string scratch = Env::getPathToSystemDir() + sep + "Updates";
+        // scratch in RAM: the launcher's runtime dir (AB_RUNTIME_DIR), not the stick
+        const string scratch = Env::getPathToRuntimeDir() + sep + "sbi";
         sbi_ = std::make_unique<SbiService>(*sbiDownloader_, Env::repoUrl(), scratch);
     }
     try {
         const SbiService::Result result = sbi_->fetchFor(serial, saveFolder);
-        PLOG_INFO << "SBI for " << serial << ": " << SbiService::describe(result);
+        string held; // what the save folder holds now, for the one log line
+        for (const DirEntry &file : DirEntry::diru_FilesOnly(saveFolder))
+            if (file.name.size() > 4 && file.name.compare(file.name.size() - 4, 4, ".sbi") == 0)
+                held += " " + file.name;
+        PLOG_INFO << "SBI for " << serial << ": " << SbiService::describe(result) << " (" << saveFolder
+                  << (held.empty() ? ": no .sbi" : ":" + held) << "; last curl exit " << sbiDownloader_->lastStatus()
+                  << ")";
     } catch (const std::exception &e) {
         PLOG_WARNING << "SBI for " << serial << " failed: " << e.what();
     }
