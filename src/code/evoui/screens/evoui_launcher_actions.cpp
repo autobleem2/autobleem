@@ -296,6 +296,7 @@ void GuiLauncher::loop_openOptions() {
     int lastUSBGameDirIndex = selection.usbGameDirIndex;
     int lastRAPlaylistIndex = selection.raPlaylistIndex;
     const GameKey lastGame = selectedGameKey(); // by id: setGames puts the row back on its first game
+    const bool wasDiscView = discViewOpen;      // put back after the reload (BUG-7): the reload is the library's
     GuiOptions option(*gui);
     BackdropScope backdrop(*this); // Options and what it opens draw over the launcher's snapshot
     // a language or font change: the snapshot is of the old language and font - taken again (the scope still owns it)
@@ -364,6 +365,8 @@ void GuiLauncher::loop_openOptions() {
             meta->gameName = "";
             menu->setResumePic("");
         }
+
+        restoreDiscView(wasDiscView);
 
         // the state is loadAssets()'s: Games, or Set with the row open when the set is empty
         gui->endBusy();
@@ -561,8 +564,11 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
 // GuiLauncher::loop_crossButtonPressed_STATE_RESUME
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
-    if (carousel.selectedIsValid()) {
-        auto game = carousel.games[carousel.selected];
+    // after a run (Save) the screen is about the game that ran - the disc, with the carousel holding it alone; never
+    // the carousel's old selection (discview::resumeGameFor). Load from the menu is about the selected game as ever.
+    const PsGamePtr carouselGame = carousel.selectedIsValid() ? carousel.games[carousel.selected] : PsGamePtr();
+    PsGamePtr game = sselector->operation == OP_SAVE ? discview::resumeGameFor(resumeGame, carouselGame) : carouselGame;
+    if (game) {
         int slot = sselector->selSlot;
 
         if (sselector->operation == OP_LOAD) {
@@ -575,7 +581,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             } else if (app.resumePoints().slotIsActive(*game, slot)) {
                 app.audio().cursor.play();
                 app.session().startingGame = true;
-                app.session().runningGame = carousel.games[carousel.selected];
+                app.session().runningGame = game;
                 app.session().resumePoint = slot;
                 rememberSelection();
                 sselector->cleanSaveStateImages();
@@ -591,17 +597,17 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             // app.audio().cursor.play();
             // the run that just ended: PCSX's, or RetroArch's (one of our PS1 games played in it)
             const bool retroArch = app.session().emuMode == EmuMode::RetroArch;
-            app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot, retroArch);
+            app.resumePoints().saveAfterLaunch(*game, sselector->selSlot, retroArch);
             if (!retroArch)
-                app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
+                app.resumePoints().storePictureForSlot(*game, sselector->selSlot);
             sselector->visible = false;
             arrow->visible =
                 sselector->operation == OP_LOAD; // only back in the menu (Set) - not in Games after the emulator
             app.audio().resume.play();
             showInfo(_("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1));
 
-            menu->setResumePic(
-                app.resumePoints().pictureForSlot(*carousel.games[carousel.selected], sselector->selSlot));
+            menu->setResumePic(app.resumePoints().pictureForSlot(*game, sselector->selSlot));
+            resumeGame.reset();
             showOptions(); // the game has a slot now: the Resume icon is no longer greyed
 
             if (sselector->operation == OP_LOAD) {
@@ -985,10 +991,12 @@ void GuiLauncher::applyExtensionRequests() {
 #ifdef AB_ONLINE_UPDATE
         app.applyUpdateSetting();
 #endif
+        const bool wasDiscView = discViewOpen;
         freeAssets();
         loadAssets();
         switchSet(selection.set, false);
         showSetName();
+        restoreDiscView(wasDiscView);
     } else if (r.reloadApps && selection.set == GameSet::Apps && !carousel.scrolling) {
         reloadGames();
     }

@@ -517,6 +517,9 @@ public:
     bool discViewOpen = false;
     bool discAudio = false; // ... and the disc is an audio CD
     GameKey discSavedKey;
+    // the game the after-run resume screen (Save) is about: the disc that just played, else null = the carousel's
+    // selected game (discview::resumeGameFor). Set in loadAssets, used by loop_crossButtonPressed_STATE_RESUME.
+    PsGamePtr resumeGame;
     // the crossfade between the carousel and the disc's cover (discview::fadeAlpha): the picture under the background
     // swaps at the middle
     bool discFading = false, discFadeEntering = false, discFadeSwapped = false;
@@ -531,6 +534,11 @@ public:
     void startDiscFade(bool entering);
     // the carousel <-> the disc, at the fade's middle
     void swapDiscView(bool entering);
+    // the launcher is built anew after a disc game: the disc view stands again with that disc (no fade), before the
+    // resume screen is made
+    void reenterDiscViewAfterRun(const std::shared_ptr<DiscGame> &disc);
+    // after a reload of the assets (Options, an extension's settings): the disc view that was up stands again
+    void restoreDiscView(bool wasOpen);
     // R1 / a disc becoming ready: false when it cannot be shown now
     bool enterDiscView();
     // Circle / the disc taken out

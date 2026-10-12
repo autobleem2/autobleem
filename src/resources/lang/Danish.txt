@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 565
+# Untranslated: 0 / Total: 567
 
 %1 needs game data it can run: %2.=%1 har brug for spildata, den kan køre: %2.
 (changed)=(ændret)
@@ -142,6 +142,8 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Emulator-konfigurationsmenu
 Emulator screen scaling:=Emulatorens skærmskalering:
+no card yet=intet kort endnu
+Not saved: this game has no pcsx.cfg=Ikke gemt: spillet har ingen pcsx.cfg
 Screen halo:=Skærmglorie:
 Emulators=Emulatorer
 Enable=Aktiver

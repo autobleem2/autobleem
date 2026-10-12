@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 565
+# Untranslated: 0 / Total: 567
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 (changed)=(değiştirildi)
@@ -142,6 +142,8 @@ EmulationStation=EmulationStation
 Emulator=Emülatör
 Emulator config menu=Emülatör yapılandırma MENÜSÜ
 Emulator screen scaling:=Emülatör ekran ölçekleme:
+no card yet=henüz kart yok
+Not saved: this game has no pcsx.cfg=Kaydedilmedi: bu oyunun pcsx.cfg dosyası yok
 Screen halo:=Ekran halesi:
 Emulators=Emülatörler
 Enable=Etkinleştir

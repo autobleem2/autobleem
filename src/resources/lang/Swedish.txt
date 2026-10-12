@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 565
+# Untranslated: 0 / Total: 567
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 (changed)=(ändrad)
@@ -142,6 +142,8 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Emulator-inställningsmeny
 Emulator screen scaling:=Emulatorns skärmskalning:
+no card yet=inget kort än
+Not saved: this game has no pcsx.cfg=Inte sparat: spelet saknar pcsx.cfg
 Screen halo:=Skärmgloria:
 Emulators=Emulatorer
 Enable=Aktivera

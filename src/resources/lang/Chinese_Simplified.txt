@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 565
+# Untranslated: 0 / Total: 567
 
 %1 needs game data it can run: %2.=%1 需要它能运行的游戏数据：%2。
 (changed)=(已更改)
@@ -142,6 +142,8 @@ EmulationStation=EmulationStation
 Emulator=模拟器
 Emulator config menu=模拟器配置菜单
 Emulator screen scaling:=模拟器画面缩放:
+no card yet=尚无存储卡
+Not saved: this game has no pcsx.cfg=未保存：此游戏没有 pcsx.cfg
 Screen halo:=屏幕光晕:
 Emulators=模拟器
 Enable=启用

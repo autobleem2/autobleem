@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 565
+# Untranslated: 0 / Total: 567
 
 %1 needs game data it can run: %2.=%1 potrebuje herné dáta, ktoré vie spustiť: %2.
 (changed)=(zmenené)
@@ -142,6 +142,8 @@ EmulationStation=EmulationStation
 Emulator=Emulátor
 Emulator config menu=Menu emulátora
 Emulator screen scaling:=Škálovanie obrazu emulátora:
+no card yet=zatiaľ žiadna karta
+Not saved: this game has no pcsx.cfg=Neuložené: hra nemá pcsx.cfg
 Screen halo:=Halo obrazovky:
 Emulators=Emulátory
 Enable=Zapnúť

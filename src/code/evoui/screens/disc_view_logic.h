@@ -126,6 +126,13 @@ inline bool fadeDone(long ms, int halfMs = FadeHalfMs) {
     return ms >= 2L * halfMs;
 }
 
+// The game the resume screen after a run is about, and whose save folder the chosen slot is written to: the disc that
+// just played when there is one (the carousel was left on another game while the disc view held the disc alone), else
+// the carousel's selected game. A null pointer type (shared_ptr, raw) means "none".
+template <typename Ptr> Ptr resumeGameFor(const Ptr &lastDisc, const Ptr &carouselSelected) {
+    return lastDisc ? lastDisc : carouselSelected;
+}
+
 // "47:12" - the audio CD's total time from its length in CD frames (1/75 s); minutes may pass 59
 inline std::string totalTimeText(uint32_t frames) {
     const uint32_t seconds = frames / 75;

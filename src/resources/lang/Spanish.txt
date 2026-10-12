@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 565
+# Untranslated: 0 / Total: 567
 
 %1 needs game data it can run: %2.=%1 necesita datos de juego que pueda ejecutar: %2.
 (changed)=(cambiado)
@@ -142,6 +142,8 @@ EmulationStation=EmulationStation
 Emulator=Emulador
 Emulator config menu=MENU de configuracion del emulador
 Emulator screen scaling:=Escalado de pantalla del emulador:
+no card yet=aún no hay tarjeta
+Not saved: this game has no pcsx.cfg=No guardado: este juego no tiene pcsx.cfg
 Screen halo:=Halo de pantalla:
 Emulators=Emuladores
 Enable=Activar

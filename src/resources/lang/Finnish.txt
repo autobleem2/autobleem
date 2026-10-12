@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 565
+# Untranslated: 0 / Total: 567
 
 %1 needs game data it can run: %2.=%1 tarvitsee pelitiedot, joita se osaa ajaa: %2.
 (changed)=(muutettu)
@@ -142,6 +142,8 @@ EmulationStation=EmulationStation
 Emulator=Emulaattori
 Emulator config menu=Emulaattorin konfigurointivalikko
 Emulator screen scaling:=Emulaattorin näytön skaalaus:
+no card yet=ei vielä korttia
+Not saved: this game has no pcsx.cfg=Ei tallennettu: pelillä ei ole pcsx.cfg-tiedostoa
 Screen halo:=Näytön hehku:
 Emulators=Emulaattorit
 Enable=Ota käyttöön
