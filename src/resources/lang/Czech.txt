@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 544
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 potřebuje herní data, která umí spustit: %2.
 (changed)=(změněno)
@@ -560,3 +560,28 @@ from the controller database=from the controller database
 guessed by the daemon=guessed by the daemon
 unknown driver=unknown driver
 Pads=Pads
+CD PLAYER=CD PŘEHRÁVAČ
+Audio CD=Audio CD
+track=skladba
+tracks=skladeb
+Track=Skladba
+TRACK=SKLADBA
+DISC=DISK
+Disc=Disk
+off=vypnuto
+on=zapnuto
+Repeat:=Opakování:
+Shuffle:=Náhodně:
+Selected:=Vybráno:
+This disc cannot be played=Tento disk nelze přehrát
+Play track=Hrát skladbu
+Stop=Stop
+Previous/next=Předchozí/další
+Seek=Hledat
+Repeat=Opakovat
+Shuffle=Náhodně
+Pause=Pauza
+Reading the disc...=Čtu disk...
+This is not a PlayStation disc=Toto není disk PlayStation
+TRACKS=STOPY
+TOTAL TIME=CELKOVÁ DÉLKA

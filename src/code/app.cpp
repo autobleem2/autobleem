@@ -67,6 +67,66 @@ App::App(std::unique_ptr<ProcessRunner> runner)
 }
 
 //*******************************
+// App::startDriveWatcher
+//*******************************
+void App::startDriveWatcher() {
+#ifndef _WIN32
+    if (driveWatcher_)
+        return;
+    // dev only, for the VM that cannot set the environment: a disc image laid in as an extension folder
+    // (Extensions/disc-fake*/fake.cue) stands for the drive's disc, as AB_FAKE_DRIVE does
+    if (DriveWatcher::fakeCue().empty()) {
+        const string extensions = Env::getPathToUSBRoot() + sep + "Extensions";
+        for (const char *name : {"disc-fake", "disc-fake-ps1", "disc-fake-audio"}) {
+            const string cue = extensions + sep + name + sep + "fake.cue";
+            if (std::ifstream(cue).good()) {
+                setenv("AB_FAKE_DRIVE", cue.c_str(), 1);
+                const string eject = extensions + sep + name + sep + "eject";
+                setenv("AB_FAKE_DRIVE_EJECT", eject.c_str(), 1);
+                break;
+            }
+        }
+    }
+    driveWatcher_ = std::make_unique<DriveWatcher>(DriveWatcher::defaultBackend());
+    driveWatcher_->start();
+#endif
+}
+
+//*******************************
+// App::fetchSbiFor
+//*******************************
+void App::fetchSbiFor(const string &serial, const string &saveFolder) {
+#ifndef _WIN32
+    if (serial.empty() || saveFolder.empty())
+        return;
+    if (!sbi_) {
+        // the same command and site as the update check (its own fetch command when the platform has one)
+        string command = Env::downloadCommand();
+        if (command.empty()) {
+            command = Env::updateDownloadCommand();
+            Strings::replaceAll(command, "%r", Env::getWorkingPath());
+        }
+        if (command.empty() || Env::repoUrl().empty()) {
+            PLOG_INFO << "SBI: no download here, " << serial << " plays without";
+            return;
+        }
+        sbiDownloader_ = std::make_unique<Downloader>(command);
+        const string scratch = Env::getPathToSystemDir() + sep + "Updates";
+        sbi_ = std::make_unique<SbiService>(*sbiDownloader_, Env::repoUrl(), scratch);
+    }
+    try {
+        const SbiService::Result result = sbi_->fetchFor(serial, saveFolder);
+        PLOG_INFO << "SBI for " << serial << ": " << SbiService::describe(result);
+    } catch (const std::exception &e) {
+        PLOG_WARNING << "SBI for " << serial << " failed: " << e.what();
+    }
+#else
+    (void)serial;
+    (void)saveFolder;
+#endif
+}
+
+//*******************************
 // App::takeExtensionRequests
 //*******************************
 App::ExtensionRequests App::takeExtensionRequests() {

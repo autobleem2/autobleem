@@ -37,6 +37,9 @@ public:
     // is no game to take it from (an empty set). Frees the old covers, selects the first game (or none:
     // `selected` is -1 for an empty list) and places the covers.
     void setGames(const PsGames &gamesList, BoxKind kind);
+    // the disc view: one cover alone in the row - `game` with `art` (encoded image bytes) as its cover, no empty
+    // boxes either side. A normal setGames brings the row back.
+    void setSolo(const PsGamePtr &game, std::vector<char> art);
     void freeTextures();
     void initPositions() { positions.initCoverPositions(); }
 

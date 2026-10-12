@@ -30,6 +30,7 @@ enum class Item {
     PlayInRetroArch, // Square
     DeleteSlot,      // Triangle
     Random,          // Start
+    Disc,            // R1 - the disc in the drive (only while one is ready; takes Play in RetroArch's slot)
     // column 3 - move
     GameMenu, // Down
     Choose,   // Left/Right
@@ -43,13 +44,13 @@ enum class Item {
     System,      // L2+R2
 };
 
-constexpr int ItemCount = 19; // the Item values, None included
+constexpr int ItemCount = 20; // the Item values, None included
 
 // the column an item lives in (0..3); None has none (-1)
 constexpr int columnOf(Item item) {
     return item == Item::None         ? -1
            : item <= Item::GamesShown ? 0
-           : item <= Item::Random     ? 1
+           : item <= Item::Disc       ? 1
            : item <= Item::Guide      ? 2
                                       : 3;
 }
@@ -72,6 +73,8 @@ constexpr const char *markersOf(Item item) {
         return "|@T|";
     case Item::Random:
         return "|@Start|";
+    case Item::Disc:
+        return "|@R1|";
     case Item::GameMenu:
         return "|@Down|";
     case Item::Choose:
@@ -113,6 +116,8 @@ struct State {
     bool app = false;         // Games: the selected game is an App (X Start)
     bool retroArch = false;   // Games: Square plays in RetroArch (a PS1 game, RetroArch installed)
     bool slotUsed = false;    // ResumeLoad: the highlighted slot holds a save (Triangle deletes it)
+    bool discReady = false;   // Games: a disc is ready and the carousel shows - R1 "Disc" (the disc view is not up)
+    bool noMenu = false;      // Games: the disc view of an audio CD - no game menu below it (Down does nothing)
 };
 
 // the line 2 items, in slot order (always shown)
@@ -136,9 +141,12 @@ inline Grid gridFor(const State &state) {
             break;
         }
         put(state.app ? Item::Start : Item::Play);
-        if (state.retroArch)
+        if (state.discReady)
+            put(Item::Disc);
+        else if (state.retroArch)
             put(Item::PlayInRetroArch);
-        put(Item::GameMenu);
+        if (!state.noMenu)
+            put(Item::GameMenu);
         put(Item::QuickMenu);
         break;
     case Screen::GameMenu:

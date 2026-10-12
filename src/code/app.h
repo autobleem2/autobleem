@@ -10,6 +10,8 @@
 #include "core/services/game_catalog.h"
 #include "core/services/game_query.h"
 #include "core/services/game_settings.h"
+#include "core/services/disc_game.h"
+#include "core/services/drive_watcher.h"
 #include "core/services/launch.h"
 #include "core/services/lightgun.h"
 #include "core/services/package_service.h"
@@ -17,6 +19,7 @@
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
 #include "core/services/scan_service.h"
+#include "core/services/sbi_service.h"
 #ifdef AB_ONLINE_UPDATE
 #include "core/services/update_service.h"
 #endif
@@ -65,6 +68,22 @@ public:
 #endif
     Session &session() { return session_; }
 
+    // the CD drive and the disc in it (docs/disc-drive-plan.md, piece 3): watched from the launcher's start, paused
+    // while a game or the CD player owns the drive. Null on a Windows build and before startDriveWatcher().
+    DriveWatcher *driveWatcher() { return driveWatcher_.get(); }
+    void startDriveWatcher();
+    // the disc the launcher is about to play (GuiLauncher sets it with Session::runningGame = its game):
+    // AutoBleem::launchGame runs it through LaunchService::launchDisc
+    std::shared_ptr<DiscGame> pendingDisc;
+    // a LibCrypt disc's .sbi files from the site into the folder the disc plays from (docs/disc-drive-plan.md,
+    // piece 10); one SbiService per run. Never fails the launch: offline or any error is one log line. A no-op on
+    // Windows.
+    void fetchSbiFor(const std::string &serial, const std::string &saveFolder);
+    // the watcher's change counter when the launcher's disc view last opened (kept here: the launcher is built anew
+    // after a game); the view opens by itself when the disc's counter is another one. ~0u: open again (a disc was
+    // just played)
+    unsigned discSeenChanges = 0;
+
     // what "power off" means for the launcher: on the console the screens unwind (Input::requestQuit) and
     // AutoBleem::run() leaves with MENU_OPTION_POWEROFF for rc/selection.sh's standby; everywhere else it
     // is System::powerOff() as before (a halt on an appliance, exit on a PC). The power button and the
@@ -106,6 +125,11 @@ protected:
     UpdateService updates_;
 #endif
     std::unique_ptr<ProcessRunner> runner_;
+    std::unique_ptr<DriveWatcher> driveWatcher_;
+#ifndef _WIN32
+    std::unique_ptr<Downloader> sbiDownloader_;
+    std::unique_ptr<SbiService> sbi_;
+#endif
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
 
     // last, so the extensions are shut down and destroyed first, while every service they may reach is

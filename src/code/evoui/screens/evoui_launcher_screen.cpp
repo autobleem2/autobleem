@@ -57,8 +57,13 @@ void GuiLauncher::updateMeta(bool withSnap) {
             loadSnap();
         return;
     }
+    if (discViewOpen && discAudio) { // an audio CD: no game behind it - no menu row, no snap
+        applyDiscMeta();
+        return;
+    }
     if (carousel.selectedIsValid())
         meta->updateTexts(carousel.games[carousel.selected], fgColor);
+    applyDiscMeta();
     showOptions(); // a mixed set (Lightgun) changes game type as the carousel moves
     if (withSnap)
         loadSnap();
@@ -226,7 +231,7 @@ bool GuiLauncher::refuseLicenceProtected() {
 // way - worth revisiting as a behaviour question, not as part of a structural move.
 //*******************************
 void GuiLauncher::rememberSelection() {
-    if (carousel.selectedIsValid())
+    if (carousel.selectedIsValid() && !discViewOpen) // the disc view holds the disc alone: the set's place stays
         selection.gameIndex = carousel.selected;
 
     Ps1SelectState rememberedPS1SubSet = app.session().launcher.ps1SelectState;
@@ -355,8 +360,16 @@ int GuiLauncher::findGame(const GameKey &key) const {
 // folder removed while the scanner watched, or merged into another) the first game of the set - or none -
 // is highlighted instead, and a resume-point picker that was showing its slots is closed.
 void GuiLauncher::reloadGames() {
+    if (discViewOpen) { // the carousel holds the disc: the set is read again when the view is left
+        scanRosterChangedSinceReload = false;
+        forgetSetCounts();
+        return;
+    }
+    reloadGames(selectedGameKey());
+}
+
+void GuiLauncher::reloadGames(const GameKey &keep) {
     forgetSetCounts(); // the roster changed: the picker counts again
-    const GameKey keep = selectedGameKey();
 
     switchSet(selection.set, false);
 
@@ -1361,6 +1374,10 @@ string GuiLauncher::hintSignature() const {
             sig += g.app ? "|a1" : "|a0";
         }
         sig += retroArchInstalledCached() ? "|ra" : "";
+        if (discViewOpen)
+            sig += discAudio ? "|dvA" : "|dvG";
+        else if (discview::r1ShowsDisc(discDriveNow(), discViewOpen))
+            sig += "|r1";
     }
     return sig;
 }
@@ -1391,6 +1408,8 @@ static string hintLabel(HintSlots::Item item) {
         return _("Delete slot");
     case Item::Random:
         return _("Random");
+    case Item::Disc:
+        return _("Disc");
     case Item::GameMenu:
         return _("Game menu");
     case Item::Choose:
@@ -1434,7 +1453,9 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
         slots.emptyRoster = carousel.games.empty();
         const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
         slots.app = game != nullptr && game->app;
-        slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached();
+        slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached() && !discViewOpen;
+        slots.discReady = discview::r1ShowsDisc(discDriveNow(), discViewOpen);
+        slots.noMenu = discViewOpen && discAudio;
     }
     const HintSlots::Grid grid = HintSlots::gridFor(slots);
     auto fill = [](const std::array<HintSlots::Cell, HintSlots::Columns> &cells, std::vector<Hint> &line) {
@@ -1766,6 +1787,7 @@ void GuiLauncher::draw() {
             renderWelcomeCard();
     } else if (!benchSkips("carousel"))
         carousel.render();
+    renderDiscFade();
     drawMark("draw-carousel");
     // a theme with the `play` frame (G5j) draws Play as that frame, the icon and the label - not the two images
     // and their outline
@@ -1888,6 +1910,8 @@ void GuiLauncher::draw() {
         drawMark("draw-hints");
         // top-left corner, one icon per known wireless pad (C8); the channel tag (UIREV-40) under its plate
         renderChannelWatermark(renderPadBatteries());
+
+        renderDiscChip();
 
         // the top-right corner: the scan's bubble, the notification lines stacked under it
         if (!benchSkips("bubbles"))

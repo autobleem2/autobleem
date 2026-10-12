@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 544
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 heeft speldata nodig die het kan uitvoeren: %2.
 (changed)=(gewijzigd)
@@ -560,3 +560,28 @@ from the controller database=from the controller database
 guessed by the daemon=guessed by the daemon
 unknown driver=unknown driver
 Pads=Pads
+CD PLAYER=CD-SPELER
+Audio CD=Audio-cd
+track=nummer
+tracks=nummers
+Track=Nummer
+TRACK=NUMMER
+DISC=DISC
+Disc=Disc
+off=uit
+on=aan
+Repeat:=Herhalen:
+Shuffle:=Shuffle:
+Selected:=Geselecteerd:
+This disc cannot be played=Deze disc kan niet worden afgespeeld
+Play track=Nummer spelen
+Stop=Stop
+Previous/next=Vorige/volgende
+Seek=Zoeken
+Repeat=Herhaal
+Shuffle=Shuffle
+Pause=Pauze
+Reading the disc...=Schijf wordt gelezen...
+This is not a PlayStation disc=Dit is geen PlayStation-schijf
+TRACKS=TRACKS
+TOTAL TIME=TOTALE TIJD

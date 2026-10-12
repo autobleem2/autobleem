@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 544
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 tarvitsee pelitiedot, joita se osaa ajaa: %2.
 (changed)=(muutettu)
@@ -560,3 +560,28 @@ from the controller database=from the controller database
 guessed by the daemon=guessed by the daemon
 unknown driver=unknown driver
 Pads=Pads
+CD PLAYER=CD-SOITIN
+Audio CD=Ääni-CD
+track=kappale
+tracks=kappaletta
+Track=Kappale
+TRACK=KAPPALE
+DISC=LEVY
+Disc=Levy
+off=pois
+on=päällä
+Repeat:=Toisto:
+Shuffle:=Sekoitus:
+Selected:=Valittu:
+This disc cannot be played=Tätä levyä ei voi toistaa
+Play track=Soita kappale
+Stop=Stop
+Previous/next=Edellinen/seuraava
+Seek=Haku
+Repeat=Toisto
+Shuffle=Sekoitus
+Pause=Tauko
+Reading the disc...=Luetaan levyä...
+This is not a PlayStation disc=Tämä ei ole PlayStation-levy
+TRACKS=RAIDAT
+TOTAL TIME=KESTO YHTEENSÄ

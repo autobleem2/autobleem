@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 544
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 potrebuje herné dáta, ktoré vie spustiť: %2.
 (changed)=(zmenené)
@@ -560,3 +560,28 @@ from the controller database=from the controller database
 guessed by the daemon=guessed by the daemon
 unknown driver=unknown driver
 Pads=Pads
+CD PLAYER=CD PREHRÁVAČ
+Audio CD=Audio CD
+track=skladba
+tracks=skladieb
+Track=Skladba
+TRACK=SKLADBA
+DISC=DISK
+Disc=Disk
+off=vypnutý
+on=zapnutý
+Repeat:=Opakovanie:
+Shuffle:=Náhodne:
+Selected:=Vybraté:
+This disc cannot be played=Tento disk sa nedá prehrať
+Play track=Hrať skladbu
+Stop=Stop
+Previous/next=Predošlá/ďalšia
+Seek=Hľadať
+Repeat=Opakovať
+Shuffle=Náhodne
+Pause=Pauza
+Reading the disc...=Číta sa disk...
+This is not a PlayStation disc=Toto nie je disk PlayStation
+TRACKS=STOPY
+TOTAL TIME=CELKOVÝ ČAS

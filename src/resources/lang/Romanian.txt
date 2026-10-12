@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 544
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 (changed)=(modificat)
@@ -560,3 +560,28 @@ from the controller database=from the controller database
 guessed by the daemon=guessed by the daemon
 unknown driver=unknown driver
 Pads=Pads
+CD PLAYER=CD PLAYER
+Audio CD=CD audio
+track=piesă
+tracks=piese
+Track=Piesă
+TRACK=PIESĂ
+DISC=DISC
+Disc=Disc
+off=oprit
+on=pornit
+Repeat:=Repetare:
+Shuffle:=Amestecare:
+Selected:=Selectat:
+This disc cannot be played=Acest disc nu poate fi redat
+Play track=Redă piesa
+Stop=Stop
+Previous/next=Anterior/următor
+Seek=Caută
+Repeat=Repetă
+Shuffle=Amestecă
+Pause=Pauză
+Reading the disc...=Se citește discul...
+This is not a PlayStation disc=Acesta nu este un disc PlayStation
+TRACKS=PISTE
+TOTAL TIME=TIMP TOTAL

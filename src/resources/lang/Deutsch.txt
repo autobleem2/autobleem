@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 544
+# Untranslated: 0 / Total: 565
 
 %1 needs game data it can run: %2.=%1 braucht Spieldaten, die es ausführen kann: %2.
 (changed)=(geändert)
@@ -560,3 +560,28 @@ from the controller database=aus der Controller-Datenbank
 guessed by the daemon=vom Dienst geraten
 unknown driver=unbekannter Treiber
 Pads=Gamepads
+CD PLAYER=CD-PLAYER
+Audio CD=Audio-CD
+track=Titel
+tracks=Titel
+Track=Titel
+TRACK=TITEL
+DISC=CD
+Disc=CD
+off=aus
+on=an
+Repeat:=Wiederholen:
+Shuffle:=Zufall:
+Selected:=Gewählt:
+This disc cannot be played=Diese CD kann nicht abgespielt werden
+Play track=Titel spielen
+Stop=Stopp
+Previous/next=Zurück/Weiter
+Seek=Suchen
+Repeat=Wiederh.
+Shuffle=Zufall
+Pause=Pause
+Reading the disc...=Disc wird gelesen...
+This is not a PlayStation disc=Das ist keine PlayStation-Disc
+TRACKS=TITEL
+TOTAL TIME=GESAMTZEIT

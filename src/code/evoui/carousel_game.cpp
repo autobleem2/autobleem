@@ -103,6 +103,8 @@ const string &PsCarouselGame::artPath() {
     if (artResolved)
         return art;
     artResolved = true;
+    if (!memoryArt.empty())
+        return art; // empty: the bytes are the cover
     if (!(*this)->foreign) {
         art = (*this)->folder + sep + (*this)->base + ".png";
         if (!DirEntry::exists(art)) {
@@ -154,7 +156,9 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer, Texture target) {
             artTex = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
     }
 #endif
-    if (!path.empty())
+    if (!memoryArt.empty())
+        artTex = Texture::loadMemory(renderer, memoryArt.data(), memoryArt.size());
+    else if (!path.empty())
         artTex = Texture::loadFile(renderer, path);
     compose(renderer, artTex, target);
 }
