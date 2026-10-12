@@ -534,9 +534,6 @@ void GuiLauncher::loop_joyButton_Pressed() {
     } else if (e.button == Button::R1) {
         if (discViewOpen)
             return;
-        // R1 "Disc" while a disc is ready: its view comes back (the footer says so); else the first-letter jump
-        if (discViewCanOpenIn() && discview::r1ShowsDisc(discDriveNow(), discViewOpen) && enterDiscView())
-            return;
         R1_isPressedForFastForward = true;
         loop_nextGameFirstLetter();
 
@@ -687,6 +684,10 @@ void GuiLauncher::loop_startButton_Pressed() {
 // GuiLauncher::loop_circleButtonPressed
 //*******************************
 void GuiLauncher::loop_circleButton_Pressed() {
+    // Circle "Disc" while a disc is ready and the carousel (or an empty roster) shows: its view comes back (the footer
+    // says so); Circle had nothing to do there
+    if (discViewCanOpenIn() && discview::circleShowsDisc(discDriveNow(), discViewOpen) && enterDiscView())
+        return;
     if (state == LauncherScreenState::Set) {
         if (carousel.games.empty()) {
             app.audio().cancel.play(); // the row stays open on an empty set (settleEmptyRoster)
@@ -698,7 +699,7 @@ void GuiLauncher::loop_circleButton_Pressed() {
             motionStart = 0;
         }
     } else if (state == LauncherScreenState::Games && discViewOpen) {
-        leaveDiscView(); // back to the carousel; the disc stays, the chip lit, R1 brings the view back
+        leaveDiscView(); // back to the carousel; the disc stays, the chip lit, Circle brings the view back
     } else if (state == LauncherScreenState::Games) {
         // there is no classic menu to fall back to any more (the background-scan work's step 3) - Circle here
         // used to close the launcher; R2 (the system menu) is where Power Off and everything else now lives

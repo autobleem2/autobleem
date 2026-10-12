@@ -539,7 +539,7 @@ public:
     void reenterDiscViewAfterRun(const std::shared_ptr<DiscGame> &disc);
     // after a reload of the assets (Options, an extension's settings): the disc view that was up stands again
     void restoreDiscView(bool wasOpen);
-    // R1 / a disc becoming ready: false when it cannot be shown now
+    // Circle / a disc becoming ready: false when it cannot be shown now
     bool enterDiscView();
     // Circle / the disc taken out
     bool leaveDiscView();

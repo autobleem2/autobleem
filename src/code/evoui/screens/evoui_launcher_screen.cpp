@@ -1387,8 +1387,8 @@ string GuiLauncher::hintSignature() const {
         sig += retroArchInstalledCached() ? "|ra" : "";
         if (discViewOpen)
             sig += discAudio ? "|dvA" : "|dvG";
-        else if (discview::r1ShowsDisc(discDriveNow(), discViewOpen))
-            sig += "|r1";
+        else if (discview::circleShowsDisc(discDriveNow(), discViewOpen))
+            sig += "|disc";
     }
     return sig;
 }
@@ -1457,8 +1457,8 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
     if (state == LauncherScreenState::Set) {
         slots.screen = HintSlots::Screen::GameMenu;
         slots.emptyRoster = carousel.games.empty();
-        // an empty roster rests here, and R1 brings the disc view back from it
-        slots.discReady = discViewCanOpenIn() && discview::r1ShowsDisc(discDriveNow(), discViewOpen);
+        // an empty roster rests here, and Circle brings the disc view back from it
+        slots.discReady = discViewCanOpenIn() && discview::circleShowsDisc(discDriveNow(), discViewOpen);
     } else if (state == LauncherScreenState::Resume && sselector != nullptr) {
         slots.screen = sselector->operation == OP_LOAD ? HintSlots::Screen::ResumeLoad : HintSlots::Screen::ResumeSave;
         slots.slotUsed = sselector->slotActive[sselector->selSlot];
@@ -1467,7 +1467,7 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
         const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
         slots.app = game != nullptr && game->app;
         slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached() && !discViewOpen;
-        slots.discReady = discview::r1ShowsDisc(discDriveNow(), discViewOpen);
+        slots.discReady = discview::circleShowsDisc(discDriveNow(), discViewOpen);
         slots.noMenu = discViewOpen && discAudio;
     }
     const HintSlots::Grid grid = HintSlots::gridFor(slots);

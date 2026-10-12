@@ -1,6 +1,6 @@
 //
 // The disc view's pure rules (evoui/screens/disc_view_logic.h): the chip for each drive state, the blink, when the
-// view opens and closes by itself, the R1 footer rule, the crossfade, the audio CD's total time.
+// view opens and closes by itself, the Circle footer rule, the crossfade, the audio CD's total time.
 //
 #include "doctest/doctest.h"
 
@@ -55,13 +55,13 @@ TEST_CASE("the view closes when the disc goes") {
     CHECK_FALSE(closesByItself(Drive::Empty, false));
 }
 
-TEST_CASE("R1 Disc is in the footer only with a ready disc and the carousel shown") {
-    CHECK(r1ShowsDisc(Drive::ReadyGame, false));
-    CHECK(r1ShowsDisc(Drive::ReadyAudio, false));
-    CHECK_FALSE(r1ShowsDisc(Drive::ReadyGame, true));
-    CHECK_FALSE(r1ShowsDisc(Drive::Empty, false));
-    CHECK_FALSE(r1ShowsDisc(Drive::NotPs1, false));
-    CHECK_FALSE(r1ShowsDisc(Drive::Reading, false));
+TEST_CASE("Circle Disc is in the footer only with a ready disc and the carousel shown") {
+    CHECK(circleShowsDisc(Drive::ReadyGame, false));
+    CHECK(circleShowsDisc(Drive::ReadyAudio, false));
+    CHECK_FALSE(circleShowsDisc(Drive::ReadyGame, true));
+    CHECK_FALSE(circleShowsDisc(Drive::Empty, false));
+    CHECK_FALSE(circleShowsDisc(Drive::NotPs1, false));
+    CHECK_FALSE(circleShowsDisc(Drive::Reading, false));
 }
 
 TEST_CASE("the crossfade: covers up to the middle, swaps once, clears at the end") {
