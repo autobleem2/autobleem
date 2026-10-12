@@ -116,6 +116,29 @@ boot_once() {
     done
     bt "kernel modules done"
 
+    # a USB CD/DVD drive (the disc drive: a PS1 disc played from it) - the AutoBleem kernel's cdrom, sr_mod and sg
+    # (psc-kernel-payload builds them for that kernel; Autobleem/lib/modules/cd/, cdrom first: sr_mod needs it),
+    # only into the AutoBleem kernel, whose rootfs carries the /autobleem marker - never into Sony's own. udev must
+    # not read the disc's filesystem: blkid's 2048-byte reads of a PS1 disc (Mode 2) time out after 30 s each and
+    # the emulator's raw reads wait behind them (minutes on the Pi). udev 229 has no flag for that, so its
+    # 60-persistent-storage.rules goes to /run (tmpfs, the same name overrides /lib's) without the two sr blocks.
+    if [ -e /autobleem ] && [ -d /media/Autobleem/lib/modules/cd ]; then
+        for name in cdrom sr_mod sg; do
+            kmod=/media/Autobleem/lib/modules/cd/$name.ko
+            [ -f "$kmod" ] || continue
+            grep -qs "^$name " /proc/modules && continue
+            grep -qs "/$name.ko" "$KMODDIR/modules.dep" "$KMODDIR/modules.builtin" && { modprobe "$name"; continue; }
+            insmod "$kmod" || echo "boot: $name.ko refused"
+        done
+        if [ ! -f /run/udev/rules.d/60-persistent-storage.rules ] && [ -f /lib/udev/rules.d/60-persistent-storage.rules ]; then
+            mkdir -p /run/udev/rules.d
+            sed '/^KERNEL=="sr\*", ENV{DISK_EJECT_REQUEST}!=/,/IMPORT{builtin}="blkid/d' \
+                /lib/udev/rules.d/60-persistent-storage.rules > /run/udev/rules.d/60-persistent-storage.rules
+            udevadm control --reload-rules
+        fi
+        bt "CD drive modules done"
+    fi
+
     # a third time, the udev work and the modules gave Sony's late starters time to come up (no sleep this time)
     $RC/killsony.sh now
     $RC/backup.sh
