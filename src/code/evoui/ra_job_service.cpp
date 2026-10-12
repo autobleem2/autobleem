@@ -37,7 +37,7 @@ rajob::RunnerEnv hostRunnerEnv() {
 #if defined(AB_PLATFORM_PSC)
     env.psc = true;
     env.root = Env::getPathToUSBRoot();
-    env.abupdate = Env::getWorkingPath() + sep + "abupdate"; // beside abfetch (%r), the launcher's own folder
+    env.abupdate = Env::getWorkingPath() + ableem::sep + "abupdate"; // beside abfetch (%r), the launcher's own folder
 #elif defined(AB_APPLIANCE)
     env.appliance = true;
     env.applianceRunner = RaJobService::ApplianceRunner;
@@ -93,7 +93,7 @@ vector<string> RaJobService::raRunnerCommand(rajob::Op op, bool withBios, const 
 
 string RaJobService::progressFile() {
 #if defined(AB_PLATFORM_PSC)
-    return Env::getPathToSystemDir() + sep + "Install" + sep + "ra-job.progress";
+    return Env::getPathToSystemDir() + ableem::sep + "Install" + ableem::sep + "ra-job.progress";
 #else
     return "/tmp/autobleem-ra-job.progress";
 #endif
@@ -125,7 +125,7 @@ bool RaJobService::startCommand(const vector<string> &argv, const string &progre
     }
     const size_t slash = progressFile.rfind('/');
     if (slash != string::npos)
-        DirEntry::createDirs(progressFile.substr(0, slash));
+        ableem::DirEntry::createDirs(progressFile.substr(0, slash));
     // an old run's last line must not read as this run's; the .log stays (it is appended)
     unlink(progressFile.c_str());
     unlink((progressFile + ".tmp").c_str());
@@ -256,7 +256,7 @@ uint64_t RaJobService::sizeOnDisk() {
     const string dir = Env::getPathToRetroarchDir();
     for (const char *name : {"cores", "info", "assets", "database", "cheats", "overlays", "shaders", "downloads",
                              "records", "Retroarch themes"})
-        total += treeSize(dir + sep + name);
+        total += treeSize(dir + ableem::sep + name);
     return total;
 #endif
 }
