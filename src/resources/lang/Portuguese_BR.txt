@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 precisa de dados de jogo que consiga executar: %2.
 (changed)=(alterado)
@@ -88,6 +88,7 @@ Cover style:=Estilo da capa:
 Crash logs:=Logs da falha:
 Create, rename or manage memory card sets=Crie, renomeie ou gerencie conjuntos de cartões de memória
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Margem CRT:
 CRT-Pi=CRT-Pi

@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 tarvitsee pelitiedot, joita se osaa ajaa: %2.
 (changed)=(muutettu)
@@ -88,6 +88,7 @@ Cover style:=Kannen tyyli:
 Crash logs:=Kaatumislokit:
 Create, rename or manage memory card sets=Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-reunus:
 CRT-Pi=CRT-Pi

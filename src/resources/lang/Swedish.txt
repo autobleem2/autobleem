@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 (changed)=(ändrad)
@@ -88,6 +88,7 @@ Cover style:=Omslagsstil:
 Crash logs:=Kraschloggar:
 Create, rename or manage memory card sets=Skapa, byt namn på eller hantera minneskortsuppsättningar
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-marginal:
 CRT-Pi=CRT-Pi

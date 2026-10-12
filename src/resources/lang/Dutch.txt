@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 567
+# Untranslated: 0 / Total: 568
 
 %1 needs game data it can run: %2.=%1 heeft speldata nodig die het kan uitvoeren: %2.
 (changed)=(gewijzigd)
@@ -88,6 +88,7 @@ Cover style:=Cover stijl:
 Crash logs:=Crashlogs:
 Create, rename or manage memory card sets=Memory card-sets aanmaken, hernoemen of beheren
 CRT (fast)=CRT (fast)
+CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-marge:
 CRT-Pi=CRT-Pi
