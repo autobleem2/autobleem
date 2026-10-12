@@ -27,9 +27,15 @@ namespace {
 const string fontsDir = string(AB_LAUNCHER_RESOURCES) + "/fonts/";
 const string langDir = string(AB_LAUNCHER_RESOURCES) + "/lang/";
 
-const vector<string> languages = {"English", "Chinese_Simplified", "Czech", "Danish", "Deutsch", "Dutch",
-                                  "Finnish", "French", "Italiano", "Occitan", "Polski", "Portuguese_BR",
-                                  "Romanian", "Slovak", "Spanish", "Swedish", "Turkish"};
+const vector<string> languages = {"English",  "Chinese_Simplified",
+                                  "Czech",    "Danish",
+                                  "Deutsch",  "Dutch",
+                                  "Finnish",  "French",
+                                  "Italiano", "Occitan",
+                                  "Polski",   "Portuguese_BR",
+                                  "Romanian", "Slovak",
+                                  "Spanish",  "Swedish",
+                                  "Turkish"};
 
 // the translations of a language file ("English text=Translation"; English: the keys themselves)
 vector<string> translations(const string &language) {
@@ -85,15 +91,14 @@ TEST_CASE("no translation draws an empty box, and the lines that got wider are l
     for (const string &language : languages) {
         const bool chinese = language == "Chinese_Simplified";
         // FONT_22_MED and FONT_20_BOLD, the sizes most of the launcher's text is in
-        const vector<pair<string, int>> faces = chinese
-                                                    ? vector<pair<string, int>>{{"NotoSansSC-Regular.otf", 22}}
-                                                    : vector<pair<string, int>>{{"RedHatText-Medium.ttf", 22},
-                                                                                {"RedHatText-SemiBold.ttf", 20}};
+        const vector<pair<string, int>> faces =
+            chinese ? vector<pair<string, int>>{{"NotoSansSC-Regular.otf", 22}}
+                    : vector<pair<string, int>>{{"RedHatText-Medium.ttf", 22}, {"RedHatText-SemiBold.ttf", 20}};
         for (const auto &face : faces) {
             RustFont rust(face.first, static_cast<float>(face.second));
             REQUIRE(rust.font != nullptr);
             unique_ptr<TTF_Font, void (*)(TTF_Font *)> ttf(TTF_OpenFont((fontsDir + face.first).c_str(), face.second),
-                                                          TTF_CloseFont);
+                                                           TTF_CloseFont);
             REQUIRE(ttf != nullptr);
             // the same line height as SDL_FontCache's (TTF_FontHeight), give or take a rounding
             CHECK(abs(abt_font_line_height(rust.font) - TTF_FontHeight(ttf.get())) <= 1);
