@@ -29,7 +29,7 @@ if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
 endif()
 
 # abupdate (src/tools/abupdate.cpp), the built program: the --retroarch mode's arguments and progress file, the old mode
-if (NOT AB_TARGET STREQUAL "win")
+if (NOT AB_TARGET STREQUAL "win" AND NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     ab_add_test(test_abupdate tools/test_abupdate.cpp)
     add_dependencies(test_abupdate abupdate)
     target_compile_definitions(test_abupdate PRIVATE AB_ABUPDATE_PATH="$<TARGET_FILE:abupdate>")
