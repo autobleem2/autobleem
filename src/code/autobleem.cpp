@@ -356,8 +356,21 @@ void AutoBleem::launchGame() {
     const PsGame *running = session_.runningGame.get();
     const char *picture =
         waitingPictureName(running && running->foreign, running && running->app, session_.emuMode != EmuMode::Pcsx);
-    runOutside(retroArch, picture, [this]() {
+    // the emulator owns the CD drive while it runs (launchDisc pauses the watcher itself; any other game here)
+    DriveWatcher *watcher = driveWatcher();
+    std::shared_ptr<DiscGame> disc = std::move(pendingDisc);
+    pendingDisc.reset();
+    runOutside(retroArch, picture, [this, watcher, &disc]() {
+        if (disc) {
+            if (!launcher_.launchDisc(*disc, session_.resumePoint, watcher))
+                PLOG_WARNING << "The disc could not be played";
+            return;
+        }
+        if (watcher)
+            watcher->pause();
         launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint, session_.package.get());
+        if (watcher)
+            watcher->resume();
     });
 
     bool reloadFavHist{false};
@@ -536,6 +549,7 @@ int AutoBleem::run() {
         updates().startCheck(time(nullptr)); // once a day, and at every start - the launcher asks when it lands
 #endif
     scans().start();
+    startDriveWatcher();
     if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
         scans().requestScan();
     }

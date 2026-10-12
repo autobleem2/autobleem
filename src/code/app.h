@@ -10,6 +10,8 @@
 #include "core/services/game_catalog.h"
 #include "core/services/game_query.h"
 #include "core/services/game_settings.h"
+#include "core/services/disc_game.h"
+#include "core/services/drive_watcher.h"
 #include "core/services/launch.h"
 #include "core/services/lightgun.h"
 #include "core/services/package_service.h"
@@ -65,6 +67,14 @@ public:
 #endif
     Session &session() { return session_; }
 
+    // the CD drive and the disc in it (docs/disc-drive-plan.md, piece 3): watched from the launcher's start, paused
+    // while a game or the CD player owns the drive. Null on a Windows build and before startDriveWatcher().
+    DriveWatcher *driveWatcher() { return driveWatcher_.get(); }
+    void startDriveWatcher();
+    // the disc the launcher is about to play (GuiLauncher sets it with Session::runningGame = its game):
+    // AutoBleem::launchGame runs it through LaunchService::launchDisc
+    std::shared_ptr<DiscGame> pendingDisc;
+
     // what "power off" means for the launcher: on the console the screens unwind (Input::requestQuit) and
     // AutoBleem::run() leaves with MENU_OPTION_POWEROFF for rc/selection.sh's standby; everywhere else it
     // is System::powerOff() as before (a halt on an appliance, exit on a PC). The power button and the
@@ -106,6 +116,7 @@ protected:
     UpdateService updates_;
 #endif
     std::unique_ptr<ProcessRunner> runner_;
+    std::unique_ptr<DriveWatcher> driveWatcher_;
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
 
     // last, so the extensions are shut down and destroyed first, while every service they may reach is

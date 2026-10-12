@@ -67,6 +67,18 @@ App::App(std::unique_ptr<ProcessRunner> runner)
 }
 
 //*******************************
+// App::startDriveWatcher
+//*******************************
+void App::startDriveWatcher() {
+#ifndef _WIN32
+    if (driveWatcher_)
+        return;
+    driveWatcher_ = std::make_unique<DriveWatcher>(DriveWatcher::defaultBackend());
+    driveWatcher_->start();
+#endif
+}
+
+//*******************************
 // App::takeExtensionRequests
 //*******************************
 App::ExtensionRequests App::takeExtensionRequests() {
