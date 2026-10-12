@@ -142,6 +142,7 @@ EmulationStation=EmulationStation
 Emulator=Emulátor
 Emulator config menu=Menu emulátora
 Emulator screen scaling:=Škálovanie obrazu emulátora:
+Screen halo:=Halo obrazovky:
 Emulators=Emulátory
 Enable=Zapnúť
 Enter new card name=Zadajte nový názov karty

@@ -142,6 +142,7 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Emulator-inställningsmeny
 Emulator screen scaling:=Emulatorns skärmskalning:
+Screen halo:=Skärmgloria:
 Emulators=Emulatorer
 Enable=Aktivera
 Enter new card name=Ange namn på nytt kort

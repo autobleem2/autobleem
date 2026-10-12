@@ -142,6 +142,7 @@ EmulationStation=EmulationStation
 Emulator=Emulaattori
 Emulator config menu=Emulaattorin konfigurointivalikko
 Emulator screen scaling:=Emulaattorin näytön skaalaus:
+Screen halo:=Näytön hehku:
 Emulators=Emulaattorit
 Enable=Ota käyttöön
 Enter new card name=Kirjoita uudsi kortin nimi

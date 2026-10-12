@@ -142,6 +142,7 @@ EmulationStation=EmulationStation
 Emulator=Emülatör
 Emulator config menu=Emülatör yapılandırma MENÜSÜ
 Emulator screen scaling:=Emülatör ekran ölçekleme:
+Screen halo:=Ekran halesi:
 Emulators=Emülatörler
 Enable=Etkinleştir
 Enter new card name=Yeni kart adı girin
