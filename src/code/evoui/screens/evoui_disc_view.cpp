@@ -7,7 +7,9 @@
 #include "evoui_launcher.h"
 #include "evoui_cd_player.h"
 #include "core/services/environment.h"
-#include "core/services/linux_cd_drive.h"
+#ifndef _WIN32
+#include "core/services/linux_cd_drive.h" // not built on Windows (core's CMakeLists): the fake drive only there
+#endif
 #include "gui/gui.h"
 #include <ableem/engine/log.h>
 #include <cstdlib>
@@ -326,12 +328,15 @@ void GuiLauncher::openCdPlayer() {
     watcher->pause();
     {
         GuiCdPlayer screen(*gui);
+#ifndef _WIN32
         LinuxCdDrive linuxDrive;
+#endif
         const string fake = DriveWatcher::fakeCue();
         bool opened = true;
         if (!fake.empty()) {
             screen.cuePath = fake;
         } else {
+#ifndef _WIN32
             string error;
             if (linuxDrive.open(discStatus.sgIndex, error) && linuxDrive.readToc(screen.toc, error)) {
                 screen.drive = &linuxDrive;
@@ -339,6 +344,10 @@ void GuiLauncher::openCdPlayer() {
                 PLOG_ERROR << "CD player: the drive: " << error;
                 opened = false;
             }
+#else
+            PLOG_ERROR << "CD player: no real drive on Windows";
+            opened = false;
+#endif
         }
         if (opened) {
             BackdropScope backdrop(*this);
