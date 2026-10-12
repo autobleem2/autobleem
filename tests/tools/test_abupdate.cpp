@@ -43,13 +43,16 @@ TEST_CASE("abupdate --retroarch: the arguments") {
     const string progress = "--progress \"" + tmp.at("progress.txt") + "\" ";
 
     CHECK(run(tmp, "") == 2);
-    CHECK(run(tmp, root + "--retroarch") == 2);                         // no verb
-    CHECK(run(tmp, root + "--retroarch frobnicate " + progress) == 2);  // unknown verb
-    CHECK(run(tmp, root + "--retroarch remove") == 2);                  // --progress is required
-    CHECK(run(tmp, root + "--retroarch remove --progress") == 2);       // ... with its file
+    // no verb, an unknown verb
+    CHECK(run(tmp, root + "--retroarch") == 2);
+    CHECK(run(tmp, root + "--retroarch frobnicate " + progress) == 2);
+    // --progress is required, with its file
+    CHECK(run(tmp, root + "--retroarch remove") == 2);
+    CHECK(run(tmp, root + "--retroarch remove --progress") == 2);
+    CHECK(run(tmp, root + "--bios --retroarch remove") == 2);
     CHECK(run(tmp, root + "--retroarch remove --nonsense " + progress) == 2);
-    CHECK(run(tmp, root + "--bios --retroarch remove") == 2);           // still no --progress
-    CHECK(run(tmp, root + "--bios") == 2);                              // --bios is a --retroarch flag only
+    // --bios is a --retroarch flag only
+    CHECK(run(tmp, root + "--bios") == 2);
 }
 
 TEST_CASE("abupdate --retroarch remove on an empty root ends ok, flags in any order") {
@@ -58,15 +61,15 @@ TEST_CASE("abupdate --retroarch remove on an empty root ends ok, flags in any or
     CHECK(run(tmp, common(tmp) + "--retroarch remove") == 0);
     CHECK(lastLine(tmp.readFile("progress.txt")) == "end|ok");
 
-    CHECK(run(tmp, "\"" + tmp.at("root") + "\" --retroarch remove --bios --progress \"" + tmp.at("progress.txt") +
-                       "\" --repo http://localhost:1/") == 0);
+    const string reordered = "\"" + tmp.at("root") + "\" --retroarch remove --bios --repo http://localhost:1/ ";
+    CHECK(run(tmp, reordered + "--progress \"" + tmp.at("progress.txt") + "\"") == 0);
     CHECK(lastLine(tmp.readFile("progress.txt")) == "end|ok");
 }
 
 TEST_CASE("abupdate --retroarch: a missing root is end|error|other") {
     TempDir tmp("abupdate_noroot");
-    const string args = "\"" + tmp.at("no/such/root") + "\" --download true --progress \"" + tmp.at("progress.txt") +
-                        "\" --retroarch ";
+    const string progress = "\" --download true --progress \"" + tmp.at("progress.txt") + "\" --retroarch ";
+    const string args = "\"" + tmp.at("no/such/root") + progress;
     CHECK(run(tmp, args + "remove") == 1);
     CHECK(lastLine(tmp.readFile("progress.txt")) == "end|error|other");
     CHECK(run(tmp, args + "install") == 1);
