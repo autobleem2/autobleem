@@ -558,6 +558,8 @@ standby() {
 # and keeps everything of the user's. It runs from tmpfs because Autobleem/bin/autobleem is what it
 # replaces; the AutoBleem picture is on the screen meanwhile. Either way the launcher comes back: the new
 # one, or - on a failure, which update.log explains - the old one with System/Updates kept.
+# (RetroArch's own install/remove is not here: the launcher runs `abupdate ROOT --retroarch install|remove ...`
+# itself, from its own folder - see src/tools/abupdate.cpp.)
 update() {
     ULOG=/media/System/Logs/update.log
     cp -f /media/Autobleem/bin/autobleem/abupdate /tmp/abupdate 2>/dev/null && chmod +x /tmp/abupdate
