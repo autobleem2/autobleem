@@ -84,7 +84,8 @@ inline std::string sbiPathFor(const std::string &chdFile) {
 //*******************************
 // the .m3u of a set
 //*******************************
-// The set's CHDs that are in the folder (`exists` is asked with a file name), one per line, in disc order. "" when none.
+// The set's CHDs that are in the folder (`exists` is asked with a file name), one per line, in disc order. "" when
+// none.
 inline std::string m3uText(const std::string &title, const std::function<bool(const std::string &)> &exists) {
     std::string text;
     for (int disc = 1; disc <= MaxDiscs; disc++) {
@@ -99,9 +100,8 @@ inline std::string m3uText(const std::string &title, const std::function<bool(co
 // or already right; false: nothing to list or the write failed.
 inline bool updateM3u(const std::string &gamesDir, const std::string &title) {
     const std::string folder = folderOf(gamesDir, title);
-    const std::string text = m3uText(title, [&folder](const std::string &name) {
-        return ableem::DirEntry::exists(folder + "/" + name);
-    });
+    const std::string text =
+        m3uText(title, [&folder](const std::string &name) { return ableem::DirEntry::exists(folder + "/" + name); });
     if (text.empty())
         return false;
     return ableem::DirEntry::writeFileIfChanged(m3uPath(gamesDir, title), text) !=

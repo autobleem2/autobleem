@@ -473,10 +473,10 @@ void GuiLauncher::copyDiscToGames() {
     {
         GuiConfirm ask(*gui);
         ask.title = _("Copy the disc to Games");
-        ask.label = discrip::fill(_("Copy \"%1\" to %2? It takes %3 of the %4 free."),
-                                  {title, "Games/" + GameInstaller::folderNameFor(title) + "/" +
-                                              discrip::chdName(title, disc),
-                                   discrip::bytesText(needed), freeBytes > 0 ? discrip::bytesText(freeBytes) : "-"});
+        ask.label =
+            discrip::fill(_("Copy \"%1\" to %2? It takes %3 of the %4 free."),
+                          {title, "Games/" + GameInstaller::folderNameFor(title) + "/" + discrip::chdName(title, disc),
+                           discrip::bytesText(needed), freeBytes > 0 ? discrip::bytesText(freeBytes) : "-"});
         ask.confirmLabel = _("Copy");
         ask.cancelLabel = _("Back");
         BackdropScope backdrop(*this);
@@ -489,8 +489,9 @@ void GuiLauncher::copyDiscToGames() {
 
     // LibCrypt: the .sbi the launcher fetched for the serial is copied beside the CHD; without one the marks are read
     // from the drive after the rip
-    const string sbi = discrip::chooseSbi({discGame->game->ssFolder, DiscGameService::folderForKey(discGame->keySerial)},
-                                          discStatus.disc.serial, ableem::DirEntry::exists);
+    const string sbi =
+        discrip::chooseSbi({discGame->game->ssFolder, DiscGameService::folderForKey(discGame->keySerial)},
+                           discStatus.disc.serial, ableem::DirEntry::exists);
     ableem::DirEntry::createDirs(folder);
     RipJob::Result result;
     {

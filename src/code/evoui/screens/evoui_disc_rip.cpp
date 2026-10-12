@@ -51,8 +51,7 @@ void GuiDiscRip::draw() {
     gui->renderBackground();
     style.dim(gui->uiContext());
     const int width = min(PanelWidth, renderer.width() - 2 * PanelStyle::Margin);
-    const ableem::Rect panel{(renderer.width() - width) / 2, (renderer.height() - panelHeight) / 2, width,
-                             panelHeight};
+    const ableem::Rect panel{(renderer.width() - width) / 2, (renderer.height() - panelHeight) / 2, width, panelHeight};
     style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
@@ -76,10 +75,9 @@ void GuiDiscRip::draw() {
     }
 
     // the one action; once pressed there is nothing left to press
-    style.footer(*gui,
-                 ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
-                 cancelling ? vector<PanelStyle::HintItem>{} : vector<PanelStyle::HintItem>{{{"O"}, _("Abort")}}, "",
-                 true);
+    style.footer(
+        *gui, ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
+        cancelling ? vector<PanelStyle::HintItem>{} : vector<PanelStyle::HintItem>{{{"O"}, _("Abort")}}, "", true);
 
     gui->text().setShadow(classicShadow);
 }
