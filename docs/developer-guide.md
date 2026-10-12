@@ -109,6 +109,13 @@ launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-mai
   must be rebuilt. The core test `test_sdk_layout` (table: `tests/classic/sdk_layout_table.h`) now fails on any such change.
   **`tools/lang_tools.py extract`** also scans autobleem-core's `ab_gui/` for `translate("...")` (the widgets hand
   their English to `_()` that way), so `update --remove-obsolete` keeps those keys.
+  **Adding strings: `tools/lang_tools.py add "English text" ["Deutsch=Übersetzung" ...]`** (or `add --from FILE`, lines
+  `key<TAB>Language=value`) inserts just that key into all 17 files in the sorted place and moves only the
+  "Untranslated/Total" header line; a language without a value gets `Key=` (shown in English) and is listed. A key
+  already there is left as it is. Do not add strings with `extract` + `update`: the files have drifted from a fresh
+  extract, so they rewrite thousands of lines - both now compute the result first, print the changed lines per file and
+  stop with exit 2 when a file would change by more than 20 lines (`--force` writes anyway, `--dry-run` prints only).
+  Tests: `python3 -m unittest tools.test_lang_tools`.
 
 ## Scanner processors (2026-09-24, autobleem-main `docs/archive/scanner-processors-plan.md`, `docs/history/scanner-processors.md` and `docs/history/launcher-scanner-processors.md`)
 
