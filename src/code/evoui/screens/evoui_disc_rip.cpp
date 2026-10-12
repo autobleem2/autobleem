@@ -91,7 +91,8 @@ void GuiDiscRip::draw() {
 void GuiDiscRip::loop() {
     menuVisible = true;
     gui->input().setFrameNeed(ableem::Input::FrameNeed::Active);
-    const function<void()> powerOff = gui->platform().setPowerOffHandler(nullptr);
+    const function<void()> powerOff = gui->platform().powerOffHandler();
+    gui->platform().setPowerOffHandler(nullptr);
     job.writeSbi = writeSbi;
     thread worker([this]() {
         RipJob::Result done = job.start(*drive, target, [this](const RipJob::Progress &p) {
