@@ -2,6 +2,13 @@
 # tests/ through the same AB_BUILD_TESTS switch; both use its harness (doctest, EnvFixture, TempDir).
 include(${CMAKE_SOURCE_DIR}/autobleem-core/tests/harness.cmake)
 
+# every language file through the Rust text engine: no empty boxes, the lines that got wider listed
+# (autobleem-core lib_ableem/rust/ab_text; on a build without cargo the suite says so and passes)
+if (ABLEEM_TEXT_RUST)
+    ab_add_test(test_text_languages screens/test_text_languages.cpp LIBS ableem ab_text SDL2_ttf SDL2)
+    target_compile_definitions(test_text_languages PRIVATE AB_LAUNCHER_RESOURCES="${CMAKE_SOURCE_DIR}/src/resources")
+endif()
+
 # abpad, the virtual gamepad for Apps (apps/abpad)
 ab_add_test(test_abpad_core apps/test_abpad_core.cpp LIBS abpad_core)
 
