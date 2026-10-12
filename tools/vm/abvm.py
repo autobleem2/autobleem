@@ -1107,6 +1107,27 @@ def sb_open_modes(path):
     subprocess.run(['chmod', '-R', 'a+rwX', path], check=False)
 
 
+def sb_open_tree(name, acl=False):
+    """every folder and file in sandbox `name` writable for the guest's user. A folder the guest makes through the
+    share is the host's QEMU user's (libvirt-qemu, 775: QEMU's umask, not the launcher's) and the guest checks
+    permissions against that owner, so the launcher's user `autobleem` could not write in it (seen: System/Updates,
+    Games/!SaveStates). The host user cannot chmod what QEMU owns, so the pass runs in the guest, as root, on the
+    share (the chmod goes through 9p to the owner): only what is not yet open is touched. The host's own part gets
+    the plain chmod. acl=True (at start): also a default ACL on the host's folders, best effort, so folders made
+    from then on are born 777 whatever QEMU's umask - the passes before each drive step close what that misses."""
+    root = sb_host(name)
+    sb_open_modes(root)
+    if acl:
+        try:
+            subprocess.run(['setfacl', '-R', '-d', '-m', 'u::rwx,g::rwx,o::rwx', root], check=False,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError:
+            pass  # no setfacl here: the passes do it
+    g = f'{SB_GUEST}/{name}'
+    guest_run(f'sudo find {g} \\( -type d ! -perm -0777 -o -type f ! -perm -0666 \\) -exec chmod a+rwX {{}} +; true',
+              check=False)
+
+
 def sb_setup():
     """once per VM (the VM's lease): the guest mounts the share at boot; the covers shared read-only"""
     unit = (f'[Unit]\\nDescription=abvm sandboxes (a 9p share from the test machine)\\n'
@@ -1412,6 +1433,7 @@ def sb_start(name, size=None, **lay):
     for sub in ('out', 'power_supply'):
         os.makedirs(os.path.join(sb_host(name), '.abvm', sub), exist_ok=True)
     sb_open_modes(os.path.join(sb_host(name), '.abvm'))
+    sb_open_tree(name, acl=True)  # the whole tree, what an earlier run's guest made too
     out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; mkdir -p {rt}; '
                     f'cd {g}/Autobleem/bin/autobleem; umask 000; '
                     f'{env} setsid nohup ./autobleem-gui {g} > {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
@@ -1462,7 +1484,8 @@ def sb_drive(name, script, out_dir):
     def to_host(path):  # the guest's name for a sandbox file -> this machine's
         return os.path.join(sb_host(name), path[len(guest_root):]) if path.startswith(guest_root) else None
 
-    d = sb_driver(name, out_prefix=run + '/', path_map=to_host)
+    # before each step the tree is opened again: a save folder made by the first game launch is the guest's
+    d = sb_driver(name, out_prefix=run + '/', path_map=to_host, before_step=lambda: sb_open_tree(name))
     cwd = os.getcwd()
     os.chdir(run_dir)
     failure = None
