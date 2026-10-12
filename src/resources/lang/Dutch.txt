@@ -142,6 +142,7 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Emulator configuratiemenu
 Emulator screen scaling:=Schermschaling van de emulator:
+Screen halo:=Schermhalo:
 Emulators=Emulators
 Enable=Inschakelen
 Enter new card name=Nieuwe kaart naam

@@ -170,6 +170,9 @@ void GuiOptions::fill() {
     // display mode, the owner's place for it (2026-09-29); it replaced the Widescreen switch
     lines.emplace_back(CFG_SCALER, _("Emulator screen scaling:"), "scaler", false,
                        vector<string>({"1x1", "2x", "4:3", "4:3i", "full"}));
+    // the bands beside the picture filled with its glow (pcsx-abnxt's own menu's "Screen halo", AB_SCREEN_HALO);
+    // right after the scaling, the owner's place for it (2026-10-11)
+    lines.emplace_back(CFG_SCREEN_HALO, _("Screen halo:"), "screenhalo", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_THEME, _("AutoBleem theme:"), "theme", false, getThemes());
     lines.emplace_back(CFG_JEWEL, _("Cover style:"), "jewel", false, getJewels());
     // the shine that crosses the selected cover when the row comes to rest (Carousel::drawShine)

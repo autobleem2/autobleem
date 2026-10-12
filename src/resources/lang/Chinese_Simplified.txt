@@ -142,6 +142,7 @@ EmulationStation=EmulationStation
 Emulator=模拟器
 Emulator config menu=模拟器配置菜单
 Emulator screen scaling:=模拟器画面缩放:
+Screen halo:=屏幕光晕:
 Emulators=模拟器
 Enable=启用
 Enter new card name=输入新卡名称
