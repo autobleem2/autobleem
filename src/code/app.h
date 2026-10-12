@@ -19,6 +19,7 @@
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
 #include "core/services/scan_service.h"
+#include "core/services/sbi_service.h"
 #ifdef AB_ONLINE_UPDATE
 #include "core/services/update_service.h"
 #endif
@@ -74,6 +75,10 @@ public:
     // the disc the launcher is about to play (GuiLauncher sets it with Session::runningGame = its game):
     // AutoBleem::launchGame runs it through LaunchService::launchDisc
     std::shared_ptr<DiscGame> pendingDisc;
+    // a LibCrypt disc's .sbi files from the site into the folder the disc plays from (docs/disc-drive-plan.md,
+    // piece 10); one SbiService per run. Never fails the launch: offline or any error is one log line. A no-op on
+    // Windows.
+    void fetchSbiFor(const std::string &serial, const std::string &saveFolder);
     // the watcher's change counter when the launcher's disc view last opened (kept here: the launcher is built anew
     // after a game); the view opens by itself when the disc's counter is another one. ~0u: open again (a disc was
     // just played)
@@ -121,6 +126,10 @@ protected:
 #endif
     std::unique_ptr<ProcessRunner> runner_;
     std::unique_ptr<DriveWatcher> driveWatcher_;
+#ifndef _WIN32
+    std::unique_ptr<Downloader> sbiDownloader_;
+    std::unique_ptr<SbiService> sbi_;
+#endif
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
 
     // last, so the extensions are shut down and destroyed first, while every service they may reach is

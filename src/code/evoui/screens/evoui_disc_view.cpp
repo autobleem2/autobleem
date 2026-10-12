@@ -68,12 +68,7 @@ void GuiLauncher::buildDisc() {
         game->gameId = -1;
         discPsGame = game;
         discTitle = game->title;
-        const string background = app.theme().launcher().background;
-        const size_t slash = background.find_last_of("/\\");
-        if (slash != string::npos)
-            discArt = bytesOf(background.substr(0, slash + 1) + "audio_cd_case.png");
-        if (discArt.empty())
-            discArt = bytesOf(Env::getWorkingPath() + sep + "evoimg" + sep + "audio_cd_case.png");
+        discArt = bytesOf(audioCdCaseFile());
     } else if (id.kind == DiscIdentity::Kind::Ps1Game) {
         DiscGameService service(app.library(), app.library().metadata());
         discGame = make_shared<DiscGame>(service.make(id.serial, id.region, id.volumeLabel, discStatus.sgIndex));
@@ -117,13 +112,25 @@ void GuiLauncher::pollDisc() {
             discFading = false;
         return;
     }
-    if (state != LauncherScreenState::Games || carousel.scrolling || menu->animating() || r2Held)
+    if (!discViewCanOpenIn() || r2Held)
+        return;
+    if (!carousel.games.empty() && (carousel.scrolling || menu->animating()))
         return;
     if (discview::closesByItself(drive, discViewOpen)) {
         leaveDiscView();
     } else if (discview::opensByItself(drive, discStatus.changes, app.discSeenChanges, discViewOpen) && discBuilt) {
         enterDiscView();
     }
+}
+
+//*******************************
+// GuiLauncher::discViewCanOpenIn
+//*******************************
+// The view opens whatever the library holds: on the carousel, and also on an empty roster (an empty library, a set or
+// the Apps tab with no games), where the screen rests in the Set state with only the settings icon. Not over the
+// resume picker or the info screen.
+bool GuiLauncher::discViewCanOpenIn() const {
+    return state == LauncherScreenState::Games || (state == LauncherScreenState::Set && carousel.games.empty());
 }
 
 //*******************************
@@ -148,9 +155,15 @@ void GuiLauncher::startDiscFade(bool entering) {
 bool GuiLauncher::enterDiscView() {
     if (discViewOpen || discFading || !discBuilt || !discview::isReady(discDriveNow()))
         return false;
-    if (state != LauncherScreenState::Games || carousel.scrolling)
+    if (!discViewCanOpenIn())
+        return false;
+    if (!carousel.games.empty() && carousel.scrolling)
         return false;
     app.discSeenChanges = discStatus.changes;
+    // an empty roster leaves the menu row open on its settings (settleEmptyRoster): the disc's cover takes the
+    // carousel's place, so the row closes first; leaving the view settles the empty roster again
+    if (state != LauncherScreenState::Games)
+        switchState(LauncherScreenState::Games, gui->platform().ticks());
     discSavedKey = selectedGameKey();
     rememberSelection(); // the Session keeps the library's place while the view is up
     app.audio().cursor.play();

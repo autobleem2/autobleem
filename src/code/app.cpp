@@ -93,6 +93,40 @@ void App::startDriveWatcher() {
 }
 
 //*******************************
+// App::fetchSbiFor
+//*******************************
+void App::fetchSbiFor(const string &serial, const string &saveFolder) {
+#ifndef _WIN32
+    if (serial.empty() || saveFolder.empty())
+        return;
+    if (!sbi_) {
+        // the same command and site as the update check (its own fetch command when the platform has one)
+        string command = Env::downloadCommand();
+        if (command.empty()) {
+            command = Env::updateDownloadCommand();
+            Strings::replaceAll(command, "%r", Env::getWorkingPath());
+        }
+        if (command.empty() || Env::repoUrl().empty()) {
+            PLOG_INFO << "SBI: no download here, " << serial << " plays without";
+            return;
+        }
+        sbiDownloader_ = std::make_unique<Downloader>(command);
+        sbi_ = std::make_unique<SbiService>(*sbiDownloader_, Env::repoUrl(),
+                                            Env::getPathToSystemDir() + sep + "Updates");
+    }
+    try {
+        const SbiService::Result result = sbi_->fetchFor(serial, saveFolder);
+        PLOG_INFO << "SBI for " << serial << ": " << SbiService::describe(result);
+    } catch (const std::exception &e) {
+        PLOG_WARNING << "SBI for " << serial << " failed: " << e.what();
+    }
+#else
+    (void)serial;
+    (void)saveFolder;
+#endif
+}
+
+//*******************************
 // App::takeExtensionRequests
 //*******************************
 App::ExtensionRequests App::takeExtensionRequests() {

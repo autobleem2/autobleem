@@ -364,6 +364,8 @@ void AutoBleem::launchGame() {
         disc = pendingDisc;
     runOutside(retroArch, picture, [this, watcher, &disc]() {
         if (disc) {
+            // a LibCrypt disc needs its .sbi in the save folder; offline or any error plays without
+            fetchSbiFor(disc->game->serial, disc->game->ssFolder);
             if (!launcher_.launchDisc(*disc, session_.resumePoint, watcher))
                 PLOG_WARNING << "The disc could not be played";
             return;

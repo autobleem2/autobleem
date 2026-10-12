@@ -84,5 +84,9 @@ private:
     int gridRows() const;
 };
 
+// the Audio CD case's image file: the theme's icon `audioCdCase` (launcher.icons, the theme's own, else the default
+// theme's, else the built-in), else the launcher's evoimg/audio_cd_case.png; "" when none exists
+std::string audioCdCaseFile();
+
 // the dev entry: with AB_CD_PLAYER_IMAGE set, opens the screen on that cue once (no-op the second time and when unset)
 void runCdPlayerDevEntry(ableem::GuiBase &gui);

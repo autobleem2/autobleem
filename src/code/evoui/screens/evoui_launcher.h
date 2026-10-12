@@ -521,6 +521,8 @@ public:
     // swaps at the middle
     bool discFading = false, discFadeEntering = false, discFadeSwapped = false;
     long discFadeStart = 0;
+    // the screen is in a state the view may open from (the carousel, or an empty roster's resting state)
+    bool discViewCanOpenIn() const;
     // once a frame: the watcher, the view opening/closing by itself, the fade's clock
     void pollDisc();
     // makes discGame/discPsGame/discArt/discTitle from discStatus

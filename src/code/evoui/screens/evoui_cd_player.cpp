@@ -130,17 +130,23 @@ void GuiCdPlayer::openDrive() {
     }
 }
 
-// the theme's jewel case (launcher.audioCdCase, images/audio_cd_case.png next to its other launcher images), else the
-// default theme's evoimg/audio_cd_case.png
-void GuiCdPlayer::loadCase() {
-    const string background = app.theme().launcher().background;
-    const size_t slash = background.find_last_of("/\\");
-    if (slash != string::npos) {
-        caseImage = ThemeAssets::loadImage(renderer, background.substr(0, slash + 1) + "audio_cd_case.png");
+string audioCdCaseFile() {
+    const auto specs = ThemeAssets::iconSpecs(AppBase::get().theme());
+    const auto it = specs.find("audioCdCase");
+    if (it != specs.end()) {
+        for (const string &file : {it->second.file, it->second.file2x})
+            if (!file.empty() && ifstream(file).good())
+                return file;
     }
-    if (!caseImage.valid())
-        caseImage =
-            ThemeAssets::loadImage(renderer, Env::getWorkingPath() + sep + "evoimg" + sep + "audio_cd_case.png");
+    const string builtIn = Env::getWorkingPath() + sep + "evoimg" + sep + "audio_cd_case.png";
+    return ifstream(builtIn).good() ? builtIn : string();
+}
+
+// the theme's jewel case: its icon `audioCdCase` by name, else the launcher's evoimg/audio_cd_case.png
+void GuiCdPlayer::loadCase() {
+    const string file = audioCdCaseFile();
+    if (!file.empty())
+        caseImage = ThemeAssets::loadImage(renderer, file);
 }
 
 string GuiCdPlayer::titleOf(int number) const {
