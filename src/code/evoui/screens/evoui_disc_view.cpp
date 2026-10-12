@@ -196,7 +196,7 @@ void GuiLauncher::swapDiscView(bool entering) {
         discViewOpen = true;
         app.pendingDisc = discAudio ? nullptr : discGame;
         carousel.setSolo(discPsGame, discArt);
-        carousel.snapMainCover(false);
+        carousel.snapMainCover(state == LauncherScreenState::Games); // in the row, above it only with the menu open
         updateMeta();
         if (!discAudio)
             menu->setResumePic(app.resumePoints().lastPicture(*discPsGame));
@@ -240,7 +240,7 @@ void GuiLauncher::reenterDiscViewAfterRun(const shared_ptr<DiscGame> &disc) {
     discViewOpen = true;
     app.pendingDisc = disc;
     carousel.setSolo(discPsGame, discArt);
-    carousel.snapMainCover(false);
+    carousel.snapMainCover(state == LauncherScreenState::Games); // in the row, above it only with the menu open
     lastHintSignature.clear();
 }
 
