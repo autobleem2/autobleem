@@ -135,11 +135,14 @@ enum class State { Idle, Running, Ok, Stopped, Error };
 struct JobState {
     State state = State::Idle;
     Progress progress;
-    std::string code;        // Error: the contract's code
-    bool stopAsked = false;  // stop() sent SIGTERM
-    Line ended;              // the file's end line, once seen
+    std::string code;       // Error: the contract's code
+    bool stopAsked = false; // stop() sent SIGTERM
+    Line ended;             // the file's end line, once seen
 
-    void begin() { *this = JobState(); state = State::Running; }
+    void begin() {
+        *this = JobState();
+        state = State::Running;
+    }
 
     void apply(const std::string &fileText) {
         if (state != State::Running)
@@ -187,10 +190,10 @@ struct JobState {
 //******************
 // the phase keys, in a run's order; a key outside the list is shown as "Working..."
 inline const std::vector<std::string> &phaseKeys() {
-    static const std::vector<std::string> keys = {"check-space",     "download-retroarch", "download-cores",
-                                                  "download-libs",   "download-apps",      "download-assets",
-                                                  "download-bios",   "unpack",             "merge-config",
-                                                  "install-binary",  "remove-files"};
+    static const std::vector<std::string> keys = {
+        "check-space",   "download-retroarch", "download-cores", "download-libs",
+        "download-apps", "download-assets",    "download-bios",  "unpack",
+        "merge-config",  "install-binary",     "remove-files"};
     return keys;
 }
 
@@ -224,11 +227,11 @@ inline std::string humanBytes(uint64_t bytes) {
 // runnerCommand
 //******************
 struct RunnerEnv {
-    std::string runnerOverride; // AB_RA_RUNNER: the runner on a dev host (words split on blanks)
-    bool psc = false;         // the console: abupdate <root> --retroarch
-    std::string root;         // the console's stick root
-    std::string abupdate;     // the console's abupdate
-    bool appliance = false;   // a Pi / PC stick
+    std::string runnerOverride;  // AB_RA_RUNNER: the runner on a dev host (words split on blanks)
+    bool psc = false;            // the console: abupdate <root> --retroarch
+    std::string root;            // the console's stick root
+    std::string abupdate;        // the console's abupdate
+    bool appliance = false;      // a Pi / PC stick
     std::string applianceRunner; // autobleem-retroarch (path decided by the appliance job)
 };
 

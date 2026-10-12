@@ -52,11 +52,27 @@ TEST_CASE("the progress line: the end lines") {
 }
 
 TEST_CASE("the progress line: anything else is garbled") {
-    for (const char *text : {"", "\n", "garbage", "phase", "phase 1/2|unpack|1", "phase 1/2|unpack|1|2|3",
-                             "phase 0/2|unpack|1|2", "phase 3/2|unpack|1|2", "phase a/b|unpack|1|2",
-                             "phase 1/2||1|2", "phase 1/2|unpack|-1|2", "phase 1/2|unpack|x|2", "end", "end|",
-                             "end|fine", "end|error", "end|error|", "end|ok|extra", "Phase 1/2|unpack|1|2",
-                             "phase 1/2|unpack|99999999999999999999|2", "\xff\xfe\x01"})
+    for (const char *text : {"",
+                             "\n",
+                             "garbage",
+                             "phase",
+                             "phase 1/2|unpack|1",
+                             "phase 1/2|unpack|1|2|3",
+                             "phase 0/2|unpack|1|2",
+                             "phase 3/2|unpack|1|2",
+                             "phase a/b|unpack|1|2",
+                             "phase 1/2||1|2",
+                             "phase 1/2|unpack|-1|2",
+                             "phase 1/2|unpack|x|2",
+                             "end",
+                             "end|",
+                             "end|fine",
+                             "end|error",
+                             "end|error|",
+                             "end|ok|extra",
+                             "Phase 1/2|unpack|1|2",
+                             "phase 1/2|unpack|99999999999999999999|2",
+                             "\xff\xfe\x01"})
         CHECK(parseLine(text).kind == Line::Kind::Garbled);
 }
 
@@ -93,9 +109,9 @@ TEST_CASE("status: a run that skips keys (the appliance never emits download-app
     JobState job;
     job.begin();
     // n is fixed per run: 7 phases, the counter walks 1..7 although two keys of phaseKeys() never come
-    const char *lines[] = {"phase 1/7|check-space|0|0",         "phase 2/7|download-retroarch|5|10",
-                           "phase 3/7|download-cores|5|10",     "phase 4/7|download-libs|5|10",
-                           "phase 5/7|unpack|0|0",              "phase 6/7|merge-config|0|0",
+    const char *lines[] = {"phase 1/7|check-space|0|0",     "phase 2/7|download-retroarch|5|10",
+                           "phase 3/7|download-cores|5|10", "phase 4/7|download-libs|5|10",
+                           "phase 5/7|unpack|0|0",          "phase 6/7|merge-config|0|0",
                            "phase 7/7|install-binary|0|0"};
     int expected = 1;
     for (const char *text : lines) {
@@ -316,7 +332,7 @@ std::string script(const TempDir &tmp, const std::string &body) {
 TEST_CASE("RaJobService: a runner that writes end|ok") {
     TempDir tmp("rajob_ok");
     const std::string file = tmp.at("p");
-    const std::string runner = script(tmp, "echo 'phase 1/1|unpack|1|2' > \"$3.tmp\"; mv \"$3.tmp\" \"$3\"\n"
+    const std::string runner = script(tmp, "echo 'phase 1/1|unpack|1|2' > \"$3.tmp\"; mv \"$3.tmp\" \"$3\"\nsleep 0.3\n"
                                            "echo 'end|ok' > \"$3.tmp\"; mv \"$3.tmp\" \"$3\"\nexit 0\n");
     RaJobService job;
     REQUIRE(job.startCommand({runner, "install", "--progress", file}, file));
@@ -396,7 +412,8 @@ TEST_CASE("RaJobService with the fake runner: stop() ends with end|stopped, the 
 
     RaJobService job;
     REQUIRE(job.startCommand({fake, "install", "--progress", file}, file));
-    for (int i = 0; i < 100 && job.status().progress.phase < 2; i++) { // let it get into the download
+    for (int i = 0; i < 500 && job.status().progress.phase < 2;
+         i++) { // let it get into the download (phase 1 takes ~2 s)
         job.poll();
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }

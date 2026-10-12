@@ -105,8 +105,8 @@ string GuiRaManager::descriptionOf(const rajob::Row &row) const {
 }
 
 void GuiRaManager::rebuild() {
-    const rajob::RowAction chosen = selected < static_cast<int>(rows_.size()) ? rows_[selected].action
-                                                                              : rajob::RowAction::Install;
+    const rajob::RowAction chosen =
+        selected < static_cast<int>(rows_.size()) ? rows_[selected].action : rajob::RowAction::Install;
     rows_ = rajob::panelRows(installed, networkUp, chosen);
     selected = min(selected, static_cast<int>(rows_.size()) - 1);
 }
@@ -166,8 +166,8 @@ void GuiRaManager::draw() {
         rowY += RowHeight;
     }
 
-    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w,
-                                    PanelStyle::FooterHeight),
+    style.footer(*gui,
+                 ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
                  {{{"X"}, _("Select")}, {{"O"}, _("Back")}}, "", false);
     gui->text().setShadow(classicShadow);
 }
@@ -282,10 +282,9 @@ void GuiRaProgress::draw() {
     ableem::Rect bar(panel.x + TextInset, y + 4, panel.w - 2 * TextInset, 22);
     style.progressBox(gui->uiContext(), bar, min(1.0, fraction));
 
-    style.footer(*gui,
-                 ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
-                 stopping ? vector<PanelStyle::HintItem>{} : vector<PanelStyle::HintItem>{{{"O"}, _("Stop")}}, "",
-                 true);
+    style.footer(
+        *gui, ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
+        stopping ? vector<PanelStyle::HintItem>{} : vector<PanelStyle::HintItem>{{{"O"}, _("Stop")}}, "", true);
     gui->text().setShadow(classicShadow);
 }
 

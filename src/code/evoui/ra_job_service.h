@@ -40,8 +40,8 @@ public:
     // the same with an explicit argv (tests, and start() itself)
     bool startCommand(const std::vector<std::string> &argv, const std::string &progressFile);
 
-    void stop();            // SIGTERM to a running job
-    const Status &poll();   // main thread, once a frame
+    void stop();          // SIGTERM to a running job
+    const Status &poll(); // main thread, once a frame
     const Status &status() const { return job_; }
     bool running() const { return job_.state == rajob::State::Running; }
     void reset() { job_ = Status(); } // an outcome was shown: idle again (never while running)

@@ -62,10 +62,10 @@ public:
     Kind kind = Kind::System;
     std::string retroArchLabel = "RetroArch"; // "RetroArch" or "EmulationStation", per retroboot.cfg
     bool retroArchInstalled = true;           // false: the RetroArch item is left out (no RetroArch program)
-    bool raManager = false;                   // this host has a RetroArch runner (RaJobService::available): the setup row
-    bool updateAvailable = false;            // shown as a note on the Software Update row
-    bool scanInProgress = false;              // shown as a note on the Re-Scan row, not a disabled state
-    bool networkProvided = false;             // an extension provides "network": the Network & Controllers row
+    bool raManager = false;       // this host has a RetroArch runner (RaJobService::available): the setup row
+    bool updateAvailable = false; // shown as a note on the Software Update row
+    bool scanInProgress = false;  // shown as a note on the Re-Scan row, not a disabled state
+    bool networkProvided = false; // an extension provides "network": the Network & Controllers row
     // with networkProvided: why the extension providing it cannot run ("PSC-Bios is switched off - ..."); set,
     // the row is greyed with this as its description, still selectable (the caller opens the Extensions list)
     std::string networkUnavailable;
