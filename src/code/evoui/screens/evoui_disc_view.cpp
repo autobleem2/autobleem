@@ -205,6 +205,21 @@ void GuiLauncher::swapDiscView(bool entering) {
 }
 
 //*******************************
+// GuiLauncher::restoreDiscView
+//*******************************
+// After a reload of the launcher's assets (Options closed, an extension's settings applied): the reload is the
+// library's, so a disc view that was up comes back at once - the carousel holds the disc alone again, its library
+// place still in discSavedKey. The disc taken out meanwhile: the library, as it now is (BUG-7).
+void GuiLauncher::restoreDiscView(bool wasOpen) {
+    if (!wasOpen)
+        return;
+    discViewOpen = false;
+    app.pendingDisc.reset();
+    if (discBuilt && discview::isReady(discDriveNow()))
+        swapDiscView(true);
+}
+
+//*******************************
 // GuiLauncher::reenterDiscViewAfterRun
 //*******************************
 // discBuilt stays false: the view is rebuilt from the watcher when the drive reads the disc again (buildDisc), and it

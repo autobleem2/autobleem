@@ -537,6 +537,8 @@ public:
     // the launcher is built anew after a disc game: the disc view stands again with that disc (no fade), before the
     // resume screen is made
     void reenterDiscViewAfterRun(const std::shared_ptr<DiscGame> &disc);
+    // after a reload of the assets (Options, an extension's settings): the disc view that was up stands again
+    void restoreDiscView(bool wasOpen);
     // R1 / a disc becoming ready: false when it cannot be shown now
     bool enterDiscView();
     // Circle / the disc taken out

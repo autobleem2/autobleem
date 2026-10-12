@@ -296,6 +296,7 @@ void GuiLauncher::loop_openOptions() {
     int lastUSBGameDirIndex = selection.usbGameDirIndex;
     int lastRAPlaylistIndex = selection.raPlaylistIndex;
     const GameKey lastGame = selectedGameKey(); // by id: setGames puts the row back on its first game
+    const bool wasDiscView = discViewOpen;      // put back after the reload (BUG-7): the reload is the library's
     GuiOptions option(*gui);
     BackdropScope backdrop(*this); // Options and what it opens draw over the launcher's snapshot
     // a language or font change: the snapshot is of the old language and font - taken again (the scope still owns it)
@@ -364,6 +365,8 @@ void GuiLauncher::loop_openOptions() {
             meta->gameName = "";
             menu->setResumePic("");
         }
+
+        restoreDiscView(wasDiscView);
 
         // the state is loadAssets()'s: Games, or Set with the row open when the set is empty
         gui->endBusy();
@@ -988,10 +991,12 @@ void GuiLauncher::applyExtensionRequests() {
 #ifdef AB_ONLINE_UPDATE
         app.applyUpdateSetting();
 #endif
+        const bool wasDiscView = discViewOpen;
         freeAssets();
         loadAssets();
         switchSet(selection.set, false);
         showSetName();
+        restoreDiscView(wasDiscView);
     } else if (r.reloadApps && selection.set == GameSet::Apps && !carousel.scrolling) {
         reloadGames();
     }
