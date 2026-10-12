@@ -345,6 +345,10 @@ if (MINGW)
     # (nor the text engine's Rust std, libab_text.a: Font's methods are the SDK, its internals are not)
     target_link_options(autobleem-gui PRIVATE
             -Wl,--exclude-libs=libgcc.a:libgcc_eh.a:libstdc++.a:libsupc++.a:libab_text.a)
+elseif (ABLEEM_TEXT_RUST)
+    # -rdynamic would put every global symbol of the Rust archive (std and the text engine's crates, long mangled
+    # names by the thousand) into the dynamic symbol table - megabytes no plugin needs
+    target_link_options(autobleem-gui PRIVATE -Wl,--exclude-libs=libab_text.a)
 endif()
 # ...and all of the SDK, not just what the launcher itself calls: from a static library the linker takes only
 # the objects something references, so a plugin using a part of the SDK the launcher does not (the Store's
