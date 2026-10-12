@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import abvm  # noqa: E402
 
 
+@unittest.skipIf(os.name == 'nt', 'grp and getuid: the share and its gid live on the Linux test machine')
 class ShareGid(unittest.TestCase):
     def test_the_gid_is_read_from_the_host_group(self):
         with mock.patch('grp.getgrnam', return_value=SimpleNamespace(gr_gid=64055)) as g:

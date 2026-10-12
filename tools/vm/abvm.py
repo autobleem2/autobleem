@@ -128,6 +128,7 @@ Never pipes into ssh (on Windows the EOF never arrives): files go by scp, comman
 import hashlib
 import json
 import os
+import posixpath  # the guest's paths, whatever this machine is
 import re
 import shlex
 import shutil
@@ -1537,14 +1538,14 @@ def sb_probe_path(name, rel):
     rel = rel.strip()
     if not rel or rel.startswith(('/', '\\')) or re.match(r'^[A-Za-z]:', rel) or '..' in re.split(r'[\\/]+', rel):
         raise Fail(f'probe {rel!r}: a path inside the sandbox, relative, with no ..')
-    return os.path.normpath(f'{SB_GUEST}/{name}/{rel}')
+    return posixpath.normpath(f'{SB_GUEST}/{name}/{rel}')
 
 
 def sb_probe(name, rel):
     """read-only, in the guest: who the launcher's user is and who owns the path and its parent, with what mode"""
     path = sb_probe_path(name, rel)
     root = f'{SB_GUEST}/{name}'
-    parent = os.path.dirname(path) if path != root else root
+    parent = posixpath.dirname(path) if path != root else root
     q, qp = shlex.quote(path), shlex.quote(parent)
     out = guest_run(f"id autobleem; stat -c '%U:%G %a %n' {q} {qp}; ls -la {q}; true", check=False)
     return ProbeReply(f'probe {rel.strip()}:\n{out.rstrip()}')
