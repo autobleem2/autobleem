@@ -28,6 +28,13 @@ if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
     ab_add_test(test_abfetch tools/test_abfetch.cpp LIBS abfetch_core)
 endif()
 
+# abupdate (src/tools/abupdate.cpp), the built program: the --retroarch mode's arguments and progress file, the old mode
+if (NOT AB_TARGET STREQUAL "win")
+    ab_add_test(test_abupdate tools/test_abupdate.cpp)
+    add_dependencies(test_abupdate abupdate)
+    target_compile_definitions(test_abupdate PRIVATE AB_ABUPDATE_PATH="$<TARGET_FILE:abupdate>")
+endif()
+
 # ab_gui G5o3: the launcher's state change on tweens - the menu row, its option move and zoom, the meta panel and the
 # settings band at every millisecond against a frozen copy of the old timers (the controls need a live Gui, see the
 # file's opening comment); evoui_motion.h is pure
