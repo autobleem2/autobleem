@@ -88,8 +88,8 @@ TEST_CASE("the resume screen after a run is about the disc that played, else the
     auto disc = std::make_shared<std::string>("disc");
     auto carousel = std::make_shared<std::string>("carousel");
     const std::shared_ptr<std::string> none;
-    CHECK(resumeGameFor(disc, carousel) == disc);
-    CHECK(resumeGameFor(none, carousel) == carousel);
-    CHECK(resumeGameFor(disc, none) == disc);
-    CHECK(resumeGameFor(none, none) == nullptr);
+    CHECK(resumeGameFor(disc, carousel).get() == disc.get());
+    CHECK(resumeGameFor(none, carousel).get() == carousel.get());
+    CHECK(resumeGameFor(disc, none).get() == disc.get());
+    CHECK(resumeGameFor(none, none).get() == nullptr);
 }
