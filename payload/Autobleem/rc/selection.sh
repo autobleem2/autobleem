@@ -367,9 +367,8 @@ rear_detect() {
 }
 
 # CONSOLE-15 P2: a hub with a Wi-Fi dongle on the rear port keeps its root port from suspending, and the kernel
-# then refuses the suspend (see rear_quiesce above): the rear devices are made idle first (the stick still mounted at
-# the first standby, so that the markers go straight to it). A real suspend is tried either way; poweroff_instead only
-# after it failed. Bluetooth stopped for the suspend and started again by rear_wake once its adapter is back (see
+# then refuses the suspend (see rear_quiesce above): the rear devices are made idle first - after the stick's umount, which
+# may be on that hub. A real suspend is tried either way; poweroff_instead only after it failed. Bluetooth stopped for the suspend and started again by rear_wake once its adapter is back (see
 # there). The kernel overlay's start script binds its key store over /var/lib/bluetooth again on every start - the
 # same directory, so the extra layer changes nothing and is left alone (the pairings live there)
 quiesce_for_suspend() {
@@ -506,10 +505,11 @@ sleep_again() {
     quiesce_for_suspend
 }
 
-# after a wake: the stick within 5 s (the wake picture up meanwhile), else the insert-stick wait. 0 = mounted.
+# after a wake: the stick within 5 s (the wake picture up meanwhile) - or while the rear port is being brought back
+# (rear_wake, up to 25 s: a stick on the rear hub returns only with it) - else the insert-stick wait. 0 = mounted.
 stick_after_wake() {
     i=0
-    while [ $i -lt 5 ]; do
+    while [ $i -lt 5 ] || { [ -f /tmp/.abrearwake ] && [ $i -lt 25 ]; }; do
         DEV=$(find_stick)
         [ $i = 0 ] && { echo "$(date) after the wake:"; blkid | grep '^/dev/sd' | sed 's/^/  /'; } >> $SLOG
         if [ -n "$DEV" ] && mount "$DEV" /media; then
@@ -574,7 +574,6 @@ standby() {
     state_dump >> $FAILLOG
     sync
     mark "state before the first step saved (watchdog, usb, power supplies, boot reason)"
-    quiesce_for_suspend
     mark "umount /media next"
     n=0
     until umount /media; do
@@ -597,6 +596,10 @@ standby() {
         sync
     fi
     mark "/media unmounted, fat flag cleared"
+    # the rear port idle only now: a stick on the rear hub goes with it, and quiesced before the umount it was gone
+    # when the kernel came to mark the volume clean ("unable to read boot sector") - every such stick came back
+    # "not properly unmounted" (2026-10-13)
+    quiesce_for_suspend
 
     # AUTOBLEEM-28: asleep until the stick is back - a wake with no stick in shows the insert-stick picture (5 minutes;
     # POWER on it = at once) and sleeps again, where it used to reboot after 60 s
