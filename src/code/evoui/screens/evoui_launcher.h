@@ -530,6 +530,8 @@ public:
     void pollDisc();
     // makes discGame/discPsGame/discArt/discTitle from discStatus
     void buildDisc();
+    // box art was fetched into the thumbnails tree: a PS1 disc still on default.png takes it
+    void discBoxArtArrived();
     // enterDiscView / leaveDiscView through the crossfade
     void startDiscFade(bool entering);
     // the carousel <-> the disc, at the fade's middle
