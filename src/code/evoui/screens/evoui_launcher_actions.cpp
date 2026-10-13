@@ -640,25 +640,33 @@ void GuiLauncher::loop_openSystemMenu() {
 
     // the menu and whatever it opens (runMenuAction below) draw over one snapshot of the launcher (G5r5)
     BackdropScope backdrop(*this);
-    SystemMenuAction action;
-    {
-        GuiSystemMenu systemMenu(*gui);
-        systemMenu.retroArchLabel = retroArchLabel;
-        systemMenu.retroArchInstalled = retroArchInstalledCached();
-        systemMenu.scanInProgress = app.scans().scanning();
-        systemMenu.networkUnavailable = networkUnavailable();
-        systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
+    SystemMenuAction startOn = SystemMenuAction::None;
+    for (;;) {
+        SystemMenuAction action;
+        {
+            GuiSystemMenu systemMenu(*gui);
+            systemMenu.retroArchLabel = retroArchLabel;
+            systemMenu.retroArchInstalled = retroArchInstalledCached();
+            systemMenu.scanInProgress = app.scans().scanning();
+            systemMenu.networkUnavailable = networkUnavailable();
+            systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
 #ifdef AB_ONLINE_UPDATE
-        systemMenu.updateAvailable = app.updates().status().info.any();
+            systemMenu.updateAvailable = app.updates().status().info.any();
 #endif
-        systemMenu.show();
-        action = systemMenu.result;
+            systemMenu.startOn = startOn;
+            systemMenu.show();
+            action = systemMenu.result;
+        }
+        // reached with L2 held: its release (and R2's) went to the menu, and the sub-screens below run their own
+        // loops too - without this the launcher came back with the L2 shift still on, and every button behaved
+        // as if L2 were down until it was pressed and released again
+        forgetHeldModifiers();
+        runMenuAction(action);
+        // these pages are only looked at: Circle goes back to the menu, on the row it came from
+        if (action != SystemMenuAction::PadDaemon && action != SystemMenuAction::HardwareInfo)
+            break;
+        startOn = action;
     }
-    // reached with L2 held: its release (and R2's) went to the menu, and the sub-screens below run their own
-    // loops too - without this the launcher came back with the L2 shift still on, and every button behaved
-    // as if L2 were down until it was pressed and released again
-    forgetHeldModifiers();
-    runMenuAction(action);
 }
 
 //*******************************
