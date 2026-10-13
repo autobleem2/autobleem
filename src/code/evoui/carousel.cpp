@@ -51,6 +51,24 @@ void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
 }
 
 //*******************************
+// Carousel::setSolo
+//*******************************
+void Carousel::setSolo(const PsGamePtr &game, std::vector<char> art) {
+    freeTextures();
+    movesOwner_.cancel();
+    mainMove_ = CarouselMotion::MoveRef();
+    games.clear();
+    games.emplace_back(game);
+    games.back().memoryArt = std::move(art);
+    boxKind = BoxKind::JewelCase;
+    leftFill.clear();
+    rightFill.clear();
+    selected = 0;
+    setInitialPositions(selected);
+    texturesDrawnAt_ = gui_.renderer().targetsLost();
+}
+
+//*******************************
 // Carousel::freeTextures
 //*******************************
 void Carousel::freeTextures() {
@@ -312,6 +330,17 @@ bool Carousel::pumpCovers() {
         }
     }
     return did;
+}
+
+//*******************************
+// Carousel::shownCoversDone
+//*******************************
+bool Carousel::shownCoversDone() const {
+    for (const auto &game : games) {
+        if (game.visible && !game.placeholder && !game.coverPng.valid() && !game.artFailed)
+            return false;
+    }
+    return true;
 }
 
 //*******************************

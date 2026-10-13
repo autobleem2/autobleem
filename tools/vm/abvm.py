@@ -71,7 +71,10 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          grabs and clips (MP4, ffmpeg on the test machine) come back
                                                          to DIR - they are written into <sandbox>/.abvm/out/<run>/;
                                                          a failing step stops the run but the shots made before it
-                                                         still come back, then one error line and exit code 1
+                                                         still come back, then one error line and exit code 1;
+                                                         `probe <path>` (relative to the sandbox, no ..) is read-only
+                                                         in the guest: id autobleem, owner/mode of the path and its
+                                                         parent, ls -la - the output is among the results
   python tools/vm/abvm.py sandbox logs <name> [n]        the launcher's output
   python tools/vm/abvm.py sandbox stop|reset|rm <name>   quit it (the driver's `quit`, a kill after 5 s) / start it
                                                          afresh from the template / delete it
@@ -125,6 +128,7 @@ Never pipes into ssh (on Windows the EOF never arrives): files go by scp, comman
 import hashlib
 import json
 import os
+import posixpath  # the guest's paths, whatever this machine is
 import re
 import shlex
 import shutil
@@ -1107,6 +1111,78 @@ def sb_open_modes(path):
     subprocess.run(['chmod', '-R', 'a+rwX', path], check=False)
 
 
+def sb_open_tree(name, acl=False):
+    """every folder and file in sandbox `name` writable for the guest's user. A folder the guest makes through the
+    share is the host's QEMU user's (libvirt-qemu, 775: QEMU's umask, not the launcher's) and the guest checks
+    permissions against that owner, so the launcher's user `autobleem` could not write in it (seen: System/Updates,
+    Games/!SaveStates). The host user cannot chmod what QEMU owns, so the pass runs in the guest, as root, on the
+    share (the chmod goes through 9p to the owner): only what is not yet open is touched. The host's own part gets
+    the plain chmod. acl=True (at start): also a default ACL on the host's folders, best effort, so folders made
+    from then on are born 777 whatever QEMU's umask - the passes before each drive step close what that misses."""
+    root = sb_host(name)
+    sb_open_modes(root)
+    if acl:
+        try:
+            subprocess.run(['setfacl', '-R', '-d', '-m', 'u::rwx,g::rwx,o::rwx', root], check=False,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError:
+            pass  # no setfacl here: the passes do it
+    g = f'{SB_GUEST}/{name}'
+    guest_run(f'sudo find {g} \\( -type d ! -perm -0777 -o -type f ! -perm -0666 \\) -exec chmod a+rwX {{}} +; true',
+              check=False)
+
+
+SB_SHARE_GROUP = 'abvmshare'  # the guest group made when no group of the share's gid is there yet
+SB_QEMU_GROUP = 'libvirt-qemu'
+
+
+def sb_share_gid():
+    """the gid the share's folders carry on this machine - the group of QEMU's user, read now, never hard-coded
+    (libvirt-qemu is 64055 on the test laptop). The group by name, else the group of a folder in the share that is
+    not this user's (one QEMU made). None when neither is found."""
+    try:
+        import grp  # not on Windows, where the share is not made
+        return grp.getgrnam(os.environ.get('ABVM_SHARE_GROUP', SB_QEMU_GROUP)).gr_gid
+    except (ImportError, KeyError):
+        pass
+    root = sb_host()
+    try:
+        for entry in sorted(os.listdir(root)):
+            st = os.stat(os.path.join(root, entry))
+            if st.st_uid != os.getuid():
+                return st.st_gid
+    except OSError:
+        pass
+    return None
+
+
+def sb_group_script(gid):
+    """the guest's commands (run as root through sudo): a group with that gid (abvmshare when none is), and
+    `autobleem` a member of it - both only when missing, so a second run changes nothing"""
+    g = int(gid)
+    return (f'g=$(getent group {g} | cut -d: -f1); '
+            f'[ -n "$g" ] || {{ sudo groupadd -g {g} {SB_SHARE_GROUP}; g={SB_SHARE_GROUP}; }}; '
+            f'id -G autobleem | tr " " "\\n" | grep -qx {g} || sudo usermod -aG "$g" autobleem; '
+            f'id autobleem')
+
+
+def sb_share_group(strict=False):
+    """The folders the guest makes on the share are QEMU's (libvirt-qemu:libvirt-qemu, 775: QEMU's 9p backend
+    chmods the guest's mode over any default ACL), and the guest checks permissions against that owner, so
+    `autobleem` was "other" to them and could not write in them (curl exit 23 into System/Updates). Making it a
+    member of the share's group is the fix; sb_open_tree stays as the safety net. The launcher is started by
+    `sandbox start` in a fresh ssh session, so the new membership applies to it (a launcher already running keeps
+    its old groups until it is restarted)."""
+    gid = sb_share_gid()
+    if gid is None:
+        if strict:
+            raise Fail(f'no group {SB_QEMU_GROUP} and no folder of QEMU\'s in {sb_host()}: the share\'s gid is unknown')
+        print('warning: the share\'s group is unknown; the guest user may not write in folders it makes', file=sys.stderr)
+        return None
+    guest_run(f'set -e; {sb_group_script(gid)}', check=strict)
+    return gid
+
+
 def sb_setup():
     """once per VM (the VM's lease): the guest mounts the share at boot; the covers shared read-only"""
     unit = (f'[Unit]\\nDescription=abvm sandboxes (a 9p share from the test machine)\\n'
@@ -1120,6 +1196,7 @@ def sb_setup():
               f'systemctl is-enabled {MOUNT_UNIT}; mountpoint {SB_GUEST}')
     # the cover DBs: 280 MB, the same for every sandbox - one copy, linked from each
     guest_run(f'set -e; [ -d {SB_GUEST}/_shared/db ] || sudo cp -r {STICK}/Autobleem/bin/db {SB_GUEST}/_shared/db')
+    sb_share_group(strict=True)
     print(f'sandboxes: {SB_GUEST} in the guest = {sb_host()} here; covers in _shared/db')
 
 
@@ -1412,6 +1489,8 @@ def sb_start(name, size=None, **lay):
     for sub in ('out', 'power_supply'):
         os.makedirs(os.path.join(sb_host(name), '.abvm', sub), exist_ok=True)
     sb_open_modes(os.path.join(sb_host(name), '.abvm'))
+    sb_share_group()  # a VM set up before the group existed gets it here
+    sb_open_tree(name, acl=True)  # the whole tree, what an earlier run's guest made too
     out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; mkdir -p {rt}; '
                     f'cd {g}/Autobleem/bin/autobleem; umask 000; '
                     f'{env} setsid nohup ./autobleem-gui {g} > {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
@@ -1450,10 +1529,55 @@ def sb_driver(name, **kwargs):
     return ab_drive.Driver(st['port'], **kwargs)
 
 
+class ProbeReply(str):
+    """a probe's output: the guest's own view, its paths not mapped to this machine's"""
+
+
+def sb_probe_path(name, rel):
+    """the guest's path of `rel` inside sandbox `name`; Fail for an absolute path or a `..`"""
+    rel = rel.strip()
+    if not rel or rel.startswith(('/', '\\')) or re.match(r'^[A-Za-z]:', rel) or '..' in re.split(r'[\\/]+', rel):
+        raise Fail(f'probe {rel!r}: a path inside the sandbox, relative, with no ..')
+    return posixpath.normpath(f'{SB_GUEST}/{name}/{rel}')
+
+
+def sb_probe(name, rel):
+    """read-only, in the guest: who the launcher's user is and who owns the path and its parent, with what mode"""
+    path = sb_probe_path(name, rel)
+    root = f'{SB_GUEST}/{name}'
+    parent = posixpath.dirname(path) if path != root else root
+    q, qp = shlex.quote(path), shlex.quote(parent)
+    out = guest_run(f"id autobleem; stat -c '%U:%G %a %n' {q} {qp}; ls -la {q}; true", check=False)
+    return ProbeReply(f'probe {rel.strip()}:\n{out.rstrip()}')
+
+
+def sb_split_probes(name, script):
+    """[('drive', 'step; step'), ('probe', 'rel/path'), ...] in order: a `probe <path>` step is the abvm's own and
+    never goes to the DebugDriver. Every probe path is checked here, before anything runs."""
+    segments, batch = [], []
+    for part in script.split(';'):
+        part = part.strip()
+        if not part:
+            continue
+        if part.split(None, 1)[0] == 'probe':
+            rel = part[len('probe'):].strip()
+            sb_probe_path(name, rel)
+            if batch:
+                segments.append(('drive', '; '.join(batch)))
+                batch = []
+            segments.append(('probe', rel))
+        else:
+            batch.append(part)
+    if batch:
+        segments.append(('drive', '; '.join(batch)))
+    return segments
+
+
 def sb_drive(name, script, out_dir):
     """on the test machine: the script through the sandbox's driver. Its shots, clips and grabs land in the
     sandbox's own <sandbox>/.abvm/out/<run>/ - the launcher writes shots and clip frames there itself (its
     AB_DEBUG_OUT, this machine's folder through the share), grabs come over the socket; a clip becomes an MP4"""
+    segments = sb_split_probes(name, script)  # a bad probe path fails before the run starts
     run = uuid.uuid4().hex[:8]
     run_dir = os.path.join(sb_host(name), '.abvm', 'out', run)
     os.makedirs(run_dir, exist_ok=True)
@@ -1462,16 +1586,27 @@ def sb_drive(name, script, out_dir):
     def to_host(path):  # the guest's name for a sandbox file -> this machine's
         return os.path.join(sb_host(name), path[len(guest_root):]) if path.startswith(guest_root) else None
 
-    d = sb_driver(name, out_prefix=run + '/', path_map=to_host)
+    # before each step the tree is opened again: a save folder made by the first game launch is the guest's
+    d = sb_driver(name, out_prefix=run + '/', path_map=to_host, before_step=lambda: sb_open_tree(name))
     cwd = os.getcwd()
     os.chdir(run_dir)
     failure = None
     try:
-        try:
-            replies = d.run(script)
-        except import_ab_drive().RunFailed as e:
-            replies, failure = e.replies, e  # a failed run keeps what it made: the replies and the run's folder
+        replies = []
+        for kind, text in segments:
+            if kind == 'probe':
+                replies.append(sb_probe(name, text))
+                continue
+            try:
+                replies += d.run(text)
+            except import_ab_drive().RunFailed as e:
+                replies += e.replies  # a failed run keeps what it made: the replies and the run's folder
+                failure = e
+                break
         for reply in replies:
+            if isinstance(reply, ProbeReply):
+                print(reply)
+                continue
             # the guest's paths as this machine names them
             print(re.sub(re.escape(guest_root) + r'\S*', lambda m: to_host(m.group(0)) or m.group(0), reply))
     except RuntimeError as e:

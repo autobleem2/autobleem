@@ -5,6 +5,7 @@
 #include "core/services/system.h"
 #include "core/version.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -64,6 +65,78 @@ App::App(std::unique_ptr<ProcessRunner> runner)
     gameQuery_.setPackages(&packages_);
     scans_.setPackages(&packages_);
     launcher_.setRaOptions(&raOptions_);
+}
+
+//*******************************
+// App::startDriveWatcher
+//*******************************
+void App::startDriveWatcher() {
+#ifndef _WIN32
+    if (driveWatcher_)
+        return;
+    // dev only, for the VM that cannot set the environment: a disc image laid in as an extension folder
+    // (Extensions/disc-fake*/fake.cue, any folder name starting so) stands for the drive's disc, as AB_FAKE_DRIVE does
+    if (DriveWatcher::fakeCue().empty()) {
+        const string extensions = Env::getPathToUSBRoot() + sep + "Extensions";
+        DirEntries folders = DirEntry::diru_DirsOnly(extensions);
+        sort(folders.begin(), folders.end(), DirEntry::sortDirEntryByName);
+        for (const DirEntry &folder : folders) {
+            if (folder.name.compare(0, 9, "disc-fake") != 0)
+                continue;
+            const string &name = folder.name;
+            const string cue = extensions + sep + name + sep + "fake.cue";
+            if (std::ifstream(cue).good()) {
+                setenv("AB_FAKE_DRIVE", cue.c_str(), 1);
+                const string eject = extensions + sep + name + sep + "eject";
+                setenv("AB_FAKE_DRIVE_EJECT", eject.c_str(), 1);
+                break;
+            }
+        }
+    }
+    driveWatcher_ = std::make_unique<DriveWatcher>(DriveWatcher::defaultBackend());
+    driveWatcher_->start();
+#endif
+}
+
+//*******************************
+// App::fetchSbiFor
+//*******************************
+void App::fetchSbiFor(const string &serial, const string &saveFolder) {
+#ifndef _WIN32
+    if (serial.empty() || saveFolder.empty())
+        return;
+    if (!sbi_) {
+        // the same command and site as the update check (its own fetch command when the platform has one)
+        string command = Env::downloadCommand();
+        if (command.empty()) {
+            command = Env::updateDownloadCommand();
+            Strings::replaceAll(command, "%r", Env::getWorkingPath());
+        }
+        if (command.empty() || Env::repoUrl().empty()) {
+            PLOG_INFO << "SBI: no download here, " << serial << " plays without";
+            return;
+        }
+        sbiDownloader_ = std::make_unique<Downloader>(command);
+        // scratch in RAM: the launcher's runtime dir (AB_RUNTIME_DIR), not the stick
+        const string scratch = Env::getPathToRuntimeDir() + sep + "sbi";
+        sbi_ = std::make_unique<SbiService>(*sbiDownloader_, Env::repoUrl(), scratch);
+    }
+    try {
+        const SbiService::Result result = sbi_->fetchFor(serial, saveFolder);
+        string held; // what the save folder holds now, for the one log line
+        for (const DirEntry &file : DirEntry::diru_FilesOnly(saveFolder))
+            if (file.name.size() > 4 && file.name.compare(file.name.size() - 4, 4, ".sbi") == 0)
+                held += " " + file.name;
+        PLOG_INFO << "SBI for " << serial << ": " << SbiService::describe(result) << " (" << saveFolder
+                  << (held.empty() ? ": no .sbi" : ":" + held) << "; last curl exit " << sbiDownloader_->lastStatus()
+                  << ")";
+    } catch (const std::exception &e) {
+        PLOG_WARNING << "SBI for " << serial << " failed: " << e.what();
+    }
+#else
+    (void)serial;
+    (void)saveFolder;
+#endif
 }
 
 //*******************************

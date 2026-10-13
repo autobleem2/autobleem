@@ -11,7 +11,7 @@ classic start screen of earlier versions is gone.
 | L1 / R1 | Jump to the previous / next first letter of the title. |
 | Up | The Quick menu (below). Also on an empty set. |
 | Down | Opens the options row for the selected game (see below). |
-| Cross | Starts the selected item. A PS1 game runs in pcsx-ab unless "Play using RA" (per game) or "Play all PSX games with RA" (Options) says RetroArch; a light-gun game always runs in RetroArch. A RetroArch entry starts RetroArch with its core. An App shows its readme first. |
+| Cross | Starts the selected item. A PS1 game runs in pcsx-ab unless "Play using RA" (per game) or "Play all PSX games with RA" (Options) says RetroArch; a light-gun game always runs in RetroArch. A RetroArch entry starts RetroArch with its core. A PS1 game in RetroArch (Play using RA, Play all PSX games with RA, a light-gun game) plays with the core chosen on the first row of the "RetroArch cores" window, "PlayStation 1 Games": every installed core that lists the Sony - PlayStation database (greyed when there is only one); the platform's own core is the default (PCSX ReARMed; SwanStation on a PC stick and Windows). An App shows its readme first. |
 | Square | Starts the selected PS1 game in RetroArch (when RetroArch is installed). |
 | Triangle | Button guide. In resume-slot mode, deletes the selected resume point after a confirmation. |
 | Select | The set picker: the PlayStation, RetroArch and Apps tabs (L1 / R1) and the groups in each - All Games, Internal Games, a game folder, Favorites, History, Lightgun Games; a RetroArch playlist; the Apps. |
@@ -157,7 +157,7 @@ folder's, and the copy in `!SaveStates`); the per-platform lists are `GameSettin
 | Scanlines | Off / 1 / 2 / 3, `scanlines` (how thick the dark lines are; an older 1 is the thinnest). The classic pcsx-ab has them on or off. RetroArch: its scanline overlay for anything but Off. Greyed with a CRT filter, which draws its own. |
 | Scanline brightness | 0-100, `scanline_level` (hex in the file): how much of the picture shows through the lines. RetroArch: the overlay's opacity. Greyed with a CRT filter. |
 | **Rendering** | |
-| Plugin | `Gpu3`: the built-in GPU or `gpu_peops.so` (USB games only). |
+| Plugin | `Gpu3`: the built-in GPU or `gpu_peops.so` (USB games only). PCSX's alone - it does not pick RetroArch's core: that is the "PlayStation 1 Games" row of the Quick menu's "RetroArch cores" window. |
 | Frameskip | `frameskip3`, the emulators' own setting and names: Auto (0 - what the shipped pcsx.cfg gives every game), Off (1, no line), 1 / 2 / 3 frames skipped (2-4). RetroArch gets `pcsx_rearmed_frameskip_type` auto / disabled / fixed_interval with `pcsx_rearmed_frameskip_interval`. |
 | **Emulator** | |
 | SpeedHack, Clock, Spu Interpolation, Boot logo | The game's pcsx.cfg. Boot logo off (`SlowBoot = 0`) skips the BIOS shell - for a homebrew disc whose custom logo breaks the boot; RetroArch's `pcsx_rearmed_show_bios_bootlogo` follows it. |

@@ -26,6 +26,7 @@
 #include <vector>
 #include <ableem/engine/ext_trace.h>
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 
 using namespace std;
 
@@ -56,8 +57,13 @@ void GuiLauncher::updateMeta(bool withSnap) {
             loadSnap();
         return;
     }
+    if (discViewOpen && discAudio) { // an audio CD: no game behind it - no menu row, no snap
+        applyDiscMeta();
+        return;
+    }
     if (carousel.selectedIsValid())
         meta->updateTexts(carousel.games[carousel.selected], fgColor);
+    applyDiscMeta();
     showOptions(); // a mixed set (Lightgun) changes game type as the carousel moves
     if (withSnap)
         loadSnap();
@@ -208,7 +214,7 @@ bool GuiLauncher::refuseLicenceProtected() {
     if (!selectedIsPs1() || !carousel.games[carousel.selected]->licenceProtected)
         return false;
     app.audio().cancel.play();
-    notificationLines[1].setText(_("This game is protected by its PSN licence and cannot be started"),
+    notificationLines[1].setText(_("This game is protected by its PSN license and cannot be started"),
                                  2 * DefaultShowingTimeout);
     return true;
 }
@@ -225,7 +231,7 @@ bool GuiLauncher::refuseLicenceProtected() {
 // way - worth revisiting as a behaviour question, not as part of a structural move.
 //*******************************
 void GuiLauncher::rememberSelection() {
-    if (carousel.selectedIsValid())
+    if (carousel.selectedIsValid() && !discViewOpen) // the disc view holds the disc alone: the set's place stays
         selection.gameIndex = carousel.selected;
 
     Ps1SelectState rememberedPS1SubSet = app.session().launcher.ps1SelectState;
@@ -354,8 +360,16 @@ int GuiLauncher::findGame(const GameKey &key) const {
 // folder removed while the scanner watched, or merged into another) the first game of the set - or none -
 // is highlighted instead, and a resume-point picker that was showing its slots is closed.
 void GuiLauncher::reloadGames() {
+    if (discViewOpen) { // the carousel holds the disc: the set is read again when the view is left
+        scanRosterChangedSinceReload = false;
+        forgetSetCounts();
+        return;
+    }
+    reloadGames(selectedGameKey());
+}
+
+void GuiLauncher::reloadGames(const GameKey &keep) {
     forgetSetCounts(); // the roster changed: the picker counts again
-    const GameKey keep = selectedGameKey();
 
     switchSet(selection.set, false);
 
@@ -416,7 +430,7 @@ void GuiLauncher::scanStatusText(const ScanUpdate &update, string &title, string
         detail = DirEntry::getFileNameFromPath(update.detail);
         break;
     case ScanStage::MovingFile:
-        title = _("Moving :");
+        title = _("Moving:");
         break;
     case ScanStage::MergingDiscs:
         title = _("Merging discs:");
@@ -748,6 +762,8 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
         scanRosterChangedSinceReload = true;
 
     if (update.finished) {
+        if (!ripSelectFolder.empty())
+            ripScanFinished = true; // the copied disc is in the scan: selectRippedGame() can pick it
         string text = pluralGames(static_cast<size_t>(update.finishedGameCount));
         if (update.finishedFailedCount > 0)
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
@@ -777,6 +793,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
     // carousel has covers to pick up (reloadGames() re-creates its textures)
     if (update.boxArtFetched > 0) {
         app.thumbnails().clearCache();
+        discBoxArtArrived();
         if (selection.set == GameSet::RetroArch)
             scanRosterChangedSinceReload = true;
     }
@@ -932,8 +949,40 @@ void GuiLauncher::renderPlayFrame() {
 //*******************************
 // GuiLauncher::loadAssets
 //*******************************
+//*******************************
+// GuiLauncher::warmUpFirstFrame
+//*******************************
+// the same layout loadAssets() picks; the fonts stay in ThemeAssets::fixedFonts() and the icons in the Gui's icon
+// set until the next theme load or display release, when they are opened again on first use as before
+void GuiLauncher::warmUpFirstFrame(Gui &gui) {
+    EvoLayout layout = EvoLayout::wide();
+    if (gui.renderer().fourByThreeOutput()) {
+        const ableem::ThemeLayout4x3 theme4x3 = ableem::loadThemeLayout4x3(App::get().theme().loadedPath());
+        if (theme4x3.set)
+            layout = EvoLayout::fromLayout4x3(theme4x3);
+    }
+    // PsMeta::render: the title, the values, the labels, the icon row's text
+    const MetaLayout::Metrics &m = layout.meta.metrics;
+    Fonts &fixed = ThemeAssets::fixedFonts();
+    fixed.boldAtSize(m.titleSize);
+    fixed.atSize(FONT_MED, m.valueSize);
+    fixed.boldAtSize(m.labelSize);
+    if (m.infoSize != 15)
+        fixed.boldAtSize(m.infoSize);
+    for (const char *icon : {"players", "disc", "internal", "usb", "hd", "sd", "lock", "unlock", "favorite",
+                             "retroarch", "lightgun", "lightgun2"}) {
+        gui.uiContext().icon(icon);
+        gui.uiContext().iconHalo(icon);
+    }
+    // updateHints: the label sizes HintBar::layoutGrid tries after the fixed 22, largest first
+    for (int size : {20, 18, 16})
+        fixed.atSize(FONT_MED, size);
+}
+
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
+    ableem::StartupTimer::milestone("launcher-load-assets-start");
+    ableem::StartupTimer assetsTimer("launcher-load-assets"); // the first set, the carousel, the screen's elements
     forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();
@@ -1032,6 +1081,7 @@ void GuiLauncher::loadAssets() {
     carousel.initPositions();
     switchSet(selection.set, true);
     showSetName();
+    ableem::StartupTimer::milestone("launcher-set-loaded");
 
     gameName = "";
     publisher = "";
@@ -1172,9 +1222,20 @@ void GuiLauncher::loadAssets() {
 
     if (app.session().resumingGui) {
         PLOG_INFO << "Restoring GUI state";
-        PsGamePtr &game = carousel.games[carousel.selected];
+        // a disc game that just played: the launcher goes straight back into the disc view (the carousel holds the disc
+        // alone, App::pendingDisc is the disc again) so nothing below can reach the carousel's old selection
+        resumeGame.reset();
+        if (app.lastDisc && app.lastDisc->game) {
+            reenterDiscViewAfterRun(app.lastDisc);
+            app.lastDisc.reset();
+        }
+        const PsGamePtr carouselGame = carousel.selectedIsValid() ? carousel.games[carousel.selected] : PsGamePtr();
+        PsGamePtr game = discview::resumeGameFor(discViewOpen ? discPsGame : PsGamePtr(), carouselGame);
+        resumeGame = discViewOpen ? game : PsGamePtr();
 
-        if (app.session().emuMode == EmuMode::Pcsx) {
+        if (!game) {
+            // nothing to be about
+        } else if (app.session().emuMode == EmuMode::Pcsx) {
             if (app.resumePoints().exitedCleanly(*game)) {
                 if (GameSettingsService::resumeModeOf(*game) == ResumePointService::Never) {
                     // the game editor's Resume row "Never" (EMU-26): the state the emulator wrote is not offered
@@ -1200,10 +1261,18 @@ void GuiLauncher::loadAssets() {
                     // the core says it can save, RetroArch tried on the way out and failed (its own log says so)
                     notificationLines[1].setText(_("This core cannot save its state"), DefaultShowingTimeout);
                 }
-            } else {
-                // one of our PS1 games played in RetroArch's PS1 core: no slots of ours
-                notificationLines[1].setText(_("AutoBleem resume points not available in RetroArch."),
-                                             DefaultShowingTimeout);
+            } else if (!game->foreign) {
+                // one of our PS1 games played in RetroArch: its state goes to the game's own slots, marked RA - the
+                // same slot picker as after PCSX (the owner, 2026-10-11)
+                if (GameSettingsService::resumeModeOf(*game) == ResumePointService::Never) {
+                    app.resumePoints().discardRun(*game);
+                } else if (app.resumePoints().raStateWritten(*game)) {
+                    sselector->loadSaveStateImages(game, true);
+                    sselector->visible = true;
+                    state = LauncherScreenState::Resume;
+                } else if (app.resumePoints().raAutoSaveFailed(*game)) {
+                    notificationLines[1].setText(_("This core cannot save its state"), DefaultShowingTimeout);
+                }
             }
         }
         // EmuMode::Launcher (an App): returning to the launcher isn't a "resume points" situation - nothing to say
@@ -1319,6 +1388,12 @@ string GuiLauncher::hintSignature() const {
             sig += g.app ? "|a1" : "|a0";
         }
         sig += retroArchInstalledCached() ? "|ra" : "";
+        if (discViewOpen)
+            sig += discAudio ? "|dvA" : "|dvG";
+        else if (discview::circleShowsDisc(discDriveNow(), discViewOpen))
+            sig += "|disc";
+        if (copyDiscOffered())
+            sig += "|cp";
     }
     return sig;
 }
@@ -1349,6 +1424,10 @@ static string hintLabel(HintSlots::Item item) {
         return _("Delete slot");
     case Item::Random:
         return _("Random");
+    case Item::Disc:
+        return _("Disc");
+    case Item::CopyDisc:
+        return _("Copy disc");
     case Item::GameMenu:
         return _("Game menu");
     case Item::Choose:
@@ -1385,6 +1464,8 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
     if (state == LauncherScreenState::Set) {
         slots.screen = HintSlots::Screen::GameMenu;
         slots.emptyRoster = carousel.games.empty();
+        // an empty roster rests here, and Circle brings the disc view back from it
+        slots.discReady = discViewCanOpenIn() && discview::circleShowsDisc(discDriveNow(), discViewOpen);
     } else if (state == LauncherScreenState::Resume && sselector != nullptr) {
         slots.screen = sselector->operation == OP_LOAD ? HintSlots::Screen::ResumeLoad : HintSlots::Screen::ResumeSave;
         slots.slotUsed = sselector->slotActive[sselector->selSlot];
@@ -1392,7 +1473,10 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
         slots.emptyRoster = carousel.games.empty();
         const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
         slots.app = game != nullptr && game->app;
-        slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached();
+        slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached() && !discViewOpen;
+        slots.discReady = discview::circleShowsDisc(discDriveNow(), discViewOpen);
+        slots.copyDisc = copyDiscOffered();
+        slots.noMenu = discViewOpen && discAudio;
     }
     const HintSlots::Grid grid = HintSlots::gridFor(slots);
     auto fill = [](const std::array<HintSlots::Cell, HintSlots::Columns> &cells, std::vector<Hint> &line) {
@@ -1637,13 +1721,13 @@ void GuiLauncher::renderWelcomeCard() {
     // where the games go depends on the platform: the Pi reads its SD card, Windows the AutoBleem folder, the
     // console and the PC stick a USB stick
 #if defined(AB_PLATFORM_RPI)
-    const string body = _("Everything's set up - now drop some games into Games on your SD card, hit Re-Scan Games, "
+    const string body = _("Everything's set up - now drop some games into Games on your SD card, hit Re-scan games, "
                           "and you've got yourself a great console.");
 #elif defined(AB_PLATFORM_WIN)
-    const string body = _("Everything's set up - now drop some games into Games in your AutoBleem folder, hit Re-Scan "
-                          "Games, and you've got yourself a great console.");
+    const string body = _("Everything's set up - now drop some games into Games in your AutoBleem folder, hit Re-scan "
+                          "games, and you've got yourself a great console.");
 #else
-    const string body = _("Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and "
+    const string body = _("Everything's set up - now drop some games into Games on your stick, hit Re-scan games, and "
                           "you've got yourself a great console.");
 #endif
     const vector<string> lines = gui->text().wrapLines(bodyFont, body, boxW - 2 * pad);
@@ -1676,6 +1760,15 @@ void GuiLauncher::renderWelcomeCard() {
 // GuiLauncher::draw
 //*******************************
 void GuiLauncher::draw() {
+    // the process's first launcher picture, timed in parts ("startup: at draw-*")
+    static bool firstDrawTimed = false;
+    const bool timeDraw = !firstDrawTimed;
+    firstDrawTimed = true;
+    auto drawMark = [timeDraw](const char *name) {
+        if (timeDraw)
+            ableem::StartupTimer::milestone(name);
+    };
+    drawMark("draw-start");
     if (ableem::ext_trace::active())
         ableem::ext_trace::note(std::string("launcher draw") + (snapshotFrame ? " (snapshot frame)" : "") +
                                 " fadeAlpha=" + std::to_string(fadeAlpha));
@@ -1707,6 +1800,7 @@ void GuiLauncher::draw() {
     // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
     if (gui->launcherLogo().valid())
         renderer.copy(gui->launcherLogo(), nullptr, layout.logoSet ? &layout.logo : &gui->launcherLogoRect());
+    drawMark("draw-behind-row");
     // an empty "all games" shelf gives way to the welcome card: no empty cover frame, no arrow
     const bool welcome = welcomeCardShows();
     if (welcome) {
@@ -1714,6 +1808,8 @@ void GuiLauncher::draw() {
             renderWelcomeCard();
     } else if (!benchSkips("carousel"))
         carousel.render();
+    renderDiscFade();
+    drawMark("draw-carousel");
     // a theme with the `play` frame (G5j) draws Play as that frame, the icon and the label - not the two images
     // and their outline
     const bool playFramed = gui->uiContext().frame("play").valid();
@@ -1739,13 +1835,24 @@ void GuiLauncher::draw() {
         if (playFramed && obj.get() == playButton)
             continue;
         if (playFramed && obj.get() == playText) { // its pulse drives the frame, in the images' place in the order
-            if (playText->visible)
+            if (playText->visible) {
+                std::unique_ptr<ableem::StartupTimer> playTimer;
+                if (timeDraw)
+                    playTimer = std::make_unique<ableem::StartupTimer>("draw-element play frame");
                 renderPlayFrame();
+            }
             continue;
         }
-        obj->render();
+        if (timeDraw) {
+            ableem::StartupTimer elementTimer("draw-element " + obj->name);
+            obj->render();
+        } else {
+            obj->render();
+        }
     }
+    drawMark("draw-front-loop");
     drawWide([this] { renderSnap(); }); // a theme's snapPanel is a 1280x720 rect
+    drawMark("draw-front-elements");
 
     // any other set with no games shows only the empty shelf: one line under it says so
     if (carousel.games.empty() && !welcome && !snapshotFrame && !benchSkips("carousel")) {
@@ -1762,12 +1869,14 @@ void GuiLauncher::draw() {
 
     if (!benchSkips("menu"))
         menu->render();
+    drawMark("draw-menu");
 
     // the footer's two hint lines, built from the state and the selection - see buildHintLines(). Rebuilt
     // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed. Not in the backdrop's frame
     // (G5r5), nor the pad batteries and the top-right bubbles: what a screen over it draws is its own
     if (!snapshotFrame) {
         updateHintsIfNeeded();
+        drawMark("draw-hints-laid-out");
         PanelStyle style = gui->panelStyle();
         // an item that does nothing in this state (line 2) is drawn at 35 %: the chip and the label together
         auto drawHint = [&](const Hint &hint, int chipY, int labelY) {
@@ -1819,8 +1928,11 @@ void GuiLauncher::draw() {
             }
         }
 
+        drawMark("draw-hints");
         // top-left corner, one icon per known wireless pad (C8); the channel tag (UIREV-40) under its plate
         renderChannelWatermark(renderPadBatteries());
+
+        renderDiscChip();
 
         // the top-right corner: the scan's bubble, the notification lines stacked under it
         if (!benchSkips("bubbles"))
@@ -1845,6 +1957,7 @@ void GuiLauncher::draw() {
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.fillRect();
     }
+    drawMark("draw-end");
 }
 
 //*******************************

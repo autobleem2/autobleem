@@ -124,9 +124,9 @@ void GuiManager::renderPreview() {
         const PsGame &game = *psGames[selected];
         previewCover = ableem::Texture();
         previewSnap = ableem::Texture();
-        // the same chain as the carousel's: the PNG next to the game, the cached thumbnail, a fresh look
-        string cover = game.folder + sep + game.base + ".png";
-        if (!DirEntry::exists(cover))
+        // the same chain as the carousel's: the cover next to the game, the cached thumbnail, a fresh look
+        string cover = ableem::findGameCover(game.folder, game.base);
+        if (cover.empty())
             cover = game.coverPath;
         if (cover.empty() || !DirEntry::exists(cover))
             cover =
@@ -161,7 +161,7 @@ void GuiManager::renderPreview() {
 // GuiManager::getTitle
 //*******************************
 std::string GuiManager::getTitle() {
-    return _("Game manager - Select game");
+    return _("Game Manager - Select game");
 }
 
 //*******************************
@@ -225,7 +225,7 @@ void GuiManager::doSquare_Pressed() {
 
     if (delGame) {
         PLOG_INFO << "Trying to delete " << gameName;
-        gui->beginBusy(_("Please wait ... deleting") + " " + gameName, [this]() { render(); });
+        gui->beginBusy(_("Please wait... deleting") + " " + gameName, [this]() { render(); });
         auto result = app.gameCatalog().deleteUsbGame(*game);
         gui->endBusy();
         if (result.removed) {
@@ -267,7 +267,7 @@ void GuiManager::deleteFailedFolder() {
     confirm.show();
     if (confirm.result) {
         PLOG_INFO << "Deleting the folder the scan refused: " << path;
-        gui->beginBusy(_("Please wait ... deleting") + " " + name, [this]() { render(); });
+        gui->beginBusy(_("Please wait... deleting") + " " + name, [this]() { render(); });
         if (!DirEntry::removeDirAndContents(path))
             showError(_("Failed to delete") + " " + name);
         gui->endBusy();
@@ -302,7 +302,7 @@ void GuiManager::doTriangle_Pressed() {
 
     if (delCovers) {
         PLOG_INFO << "Trying to delete covers";
-        gui->beginBusy(_("Please wait ... deleting covers..."), [this]() { render(); });
+        gui->beginBusy(_("Please wait... deleting covers..."), [this]() { render(); });
         PLOG_INFO << "Flushed " << app.gameCatalog().flushAllCovers() << " covers";
         gui->endBusy();
 

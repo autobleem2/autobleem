@@ -236,6 +236,26 @@ gives the lease back - a forgotten launcher takes a whole CPU and a place under 
 refused because someone else holds the sandbox touches nothing. When the cap is full, `sandbox start` first stops
 the launchers whose lease is gone (expired - their holder died - or released without a stop) and only then refuses.
 
+Writable folders: a folder the guest makes on the 9p share is owned, on the test machine, by QEMU's user
+(`libvirt-qemu:libvirt-qemu`, 775: QEMU's 9p backend chmods the guest's requested mode over any default ACL, so even a
+folder made and written in the SAME step is born closed), and the guest checks permissions against that owner, so the
+launcher's user `autobleem` was "other" to it and could not write in it (System/Updates -> the update download's curl
+exit 23; Games/!SaveStates -> a save folder that cannot be made). **The fix is the group**: `autobleem` is made a
+member of a guest group whose gid is the gid of the share's folders - read on the test machine at run time (the
+group `libvirt-qemu`, else the group of a folder QEMU made in the share; never hard-coded), the guest group named
+`abvmshare` made with `groupadd -g` only when no group has that gid, `usermod -aG` only when `autobleem` is not yet a
+member (idempotent). `sandbox setup` does it once per VM and `sandbox start` checks it (a VM set up earlier gets it
+there); the launcher is started by `sandbox start` in a fresh ssh session, so it has the new membership (a launcher
+already running keeps its old groups until restarted). **The net**, for what the group does not cover: `sb_open_tree`
+runs at `sandbox start` and before every step of `sandbox drive`: in the guest, as root, `chmod a+rwX` on the folders
+and files of the WHOLE sandbox that are not yet open (a `find` for the closed ones only, so a pass over an open tree is
+cheap); at start also a best-effort default ACL on the host's folders.
+`probe <path>` is a read-only step of `sandbox drive` (abvm's own, never sent to the DebugDriver): in the guest,
+`id autobleem; stat -c '%U:%G %a %n' <path> <its parent>; ls -la <path>`, the output among the run's results, e.g.
+`sandbox drive sb1 "wait_idle 5; probe System/Updates"`. The path is relative to the sandbox; an absolute path or a
+`..` is refused before the run starts.
+To check: `abvm.py guest "touch /mnt/abvm/<sb>/System/Updates/w && echo WRITE_OK; true"` prints WRITE_OK.
+
 A sandbox runs with `AB_INPUT_ISOLATED=1` (the VM's own pads and keyboard never reach it), `AB_WINDOW_SIZE`
 (1280x720, `--size WxH` or `ABVM_SANDBOX_SIZE` for another), `AB_MAX_FPS=30 AB_AMBIENT_FPS=5` (the VM draws in software, every frame costs CPU: an idle launcher's
 ambient frames - the Play pulse, the arrow - drop from 30 to 5 a second, about 160% CPU -> 30%, while input and

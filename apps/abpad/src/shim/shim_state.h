@@ -8,6 +8,7 @@
 // the steady state and never touches a device: everything hard already happened in abpadd.
 
 #include "core/key_names.h"
+#include "core/keyboard_mode.h"
 #include "core/mapping.h"
 #include "core/profile.h"
 #include "core/shared_state.h"
@@ -17,6 +18,7 @@
 #include <cstdio>
 #include <deque>
 #include <string>
+#include <vector>
 
 namespace abpad {
 
@@ -86,7 +88,8 @@ private:
     int sdl2_ = -1;
     Profile profile_;
     const VirtualLayout *layout_ = nullptr;
-    KeyCode keys_[ElementCount];
+    KeyboardMode keyboard_; // keyboard mode: the profile's keys and what is down
+    std::vector<KeyChange> keyChanges_;
 
     ShmBlock block_;
     const SharedState *shared_ = nullptr;
@@ -96,15 +99,13 @@ private:
 
     RawPadState raw_[MaxPads];
     ControllerState controller_[MaxPads];
-    bool lastHeld_[MaxPads][ElementCount] = {}; // keyboard mode: what was down last time round
     RawPadState rawBefore_[MaxPads];
     ControllerState controllerBefore_[MaxPads];
     bool announcedPads_ = false;
     // The hotkey has to be *held*, not merely pressed: Start and Select are both live buttons in
     // plenty of games, and a pad quitting the game because two of them were pressed together would
-    // be worse than having no way out at all.
-    unsigned hotkeyHeldCycles_ = 0;
-    bool hotkeyQuitSent_ = false;
+    // be worse than having no way out at all. Two seconds of the clock, the same count the daemon makes.
+    ExitHold exitHold_;
     // the daemon's quit requests (the console's Reset button): a count, so the first snapshot sets the
     // baseline and only a later, different count asks the app to quit
     uint32_t quitRequestsSeen_ = 0;

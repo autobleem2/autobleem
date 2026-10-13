@@ -5,8 +5,9 @@
 # the other systems' games) and our own RetroArch build (github.com/autobleem/retroarch-psc: the cores
 # are unpacked by RetroArch itself, libstdc++ is inside it - no RetroBoot libraries on the path).
 #
-#   launch_rb.sh <file> <core>   a game: <core> is a core's path, or NEON / PEOPS for a PS1 game
-#                                (LaunchService::launchRetroArch's argv)
+#   launch_rb.sh <file> <core>   a game: <core> is a core's path (a PS1 game gets the core picked
+#                                for "PlayStation 1 Games" in the RetroArch cores window); NEON / PEOPS only
+#                                from a resume slot an older build wrote (LaunchService::launchRetroArch's argv)
 #   launch_rb.sh                 RetroArch's own menu, nothing loaded (rc/retroarch.sh)
 #
 # What this script says goes to launch.log in the logs dir, RetroArch's own output to retroarch.log there -
@@ -19,6 +20,7 @@ BIN=$RA/bin
 BIOS=$RA/bios
 ROMS=$RA/roms
 . /media/Autobleem/rc/ab_log.sh
+. /media/Autobleem/rc/ab_exitwatch.sh
 LOGS=$AB_LOG_DIR
 RALOG=$LOGS/retroarch.log
 # what the launcher starts RetroArch with on top of retroarch.cfg - config_save_on_exit (Options ->
@@ -80,10 +82,18 @@ show_launch_splash()
 retroarch_run()
 {
 	if [ -f "$RA_APPEND" ]; then
-		"$BIN/retroarch" --verbose --config "$BIN/retroarch.cfg" --appendconfig "$RA_APPEND" "$@"
+		"$BIN/retroarch" --verbose --config "$BIN/retroarch.cfg" --appendconfig "$RA_APPEND" "$@" &
 	else
-		"$BIN/retroarch" --verbose --config "$BIN/retroarch.cfg" "$@"
+		"$BIN/retroarch" --verbose --config "$BIN/retroarch.cfg" "$@" &
 	fi
+	RA_PID=$!
+	# the way out beside RetroArch: hold Start+Select or Home for two seconds = SIGTERM (SRAM saved), SIGKILL 3 s
+	# later; the front Reset stays RetroArch's own (input_exit_emulator), hence --no-reset
+	ab_exitwatch_start /media $RA_PID --no-reset
+	wait $RA_PID
+	RA_STATUS=$?
+	ab_exitwatch_stop
+	return $RA_STATUS
 }
 
 show_return_splash()
@@ -125,6 +135,7 @@ prepare
 
 if [ -n "$2" ]; then
 	case "$2" in
+		# only an old resume slot says these: the slot resumes with the core that wrote it
 		NEON)  CORE=$BIN/cores/pcsx_rearmed_libretro.so ;;
 		PEOPS) CORE=$BIN/cores/swanstation_libretro.so ;;
 		*)     CORE=$2 ;;
@@ -139,6 +150,11 @@ else
 	LVL=$?
 fi
 echo "retroarch exited with status $LVL"
+if [ $LVL -ne 0 ] && ab_exitwatch_fired; then
+	# the player held Start+Select or Home: that is a way out, not a crash
+	echo "retroarch was ended by the exit hold"
+	LVL=0
+fi
 touch /tmp/.ra_up
 
 if [ $LVL -ne 0 ]; then

@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -12,10 +13,13 @@ using namespace std;
 
 namespace abpad {
 
-// update() runs once per frame of whatever the app is doing, so this is a count of frames rather
-// than a duration - about a second and a half at anything from 30 fps up, and longer on a game that
-// crawls, which is the right way round: a struggling game should be harder to quit by accident.
-constexpr unsigned HotkeyHoldCycles = 60;
+// the clock the hold is counted on: update() runs once per frame of whatever the app is doing, but the hold is two
+// seconds whatever the frame rate (the daemon counts the same two seconds)
+static int64_t monotonicMs() {
+    timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return static_cast<int64_t>(now.tv_sec) * 1000 + now.tv_nsec / 1000000;
+}
 
 //*******************************
 // ShimState::get
@@ -41,12 +45,15 @@ ShimState::ShimState() {
     loadProfile();
     layout_ = &virtualLayout(profile_.virtualPad);
     for (int i = 0; i < ElementCount; ++i) {
-        string name = profile_.keyFor(static_cast<Element>(i));
-        if (!name.empty()) {
-            keys_[i] = keyCodeFromName(name);
-            if (!keys_[i].valid()) {
-                log("abpad: %s is bound to \"%s\", which is not a key name I know",
-                    elementName(static_cast<Element>(i)), name.c_str());
+        for (int negative = 0; negative < 2; ++negative) {
+            string name = profile_.keyFor(static_cast<Element>(i), negative != 0);
+            if (!name.empty()) {
+                KeyCode key = keyCodeFromName(name);
+                keyboard_.bind(static_cast<Element>(i), key, negative != 0);
+                if (!key.valid()) {
+                    log("abpad: %s%s is bound to \"%s\", which is not a key name I know", negative ? "-" : "",
+                        elementName(static_cast<Element>(i)), name.c_str());
+                }
             }
         }
     }
@@ -278,21 +285,14 @@ void ShimState::update() {
                 diffController(pad, previous, controller);
             }
             if (profile_.wantsKeyboard()) {
-                for (int i = 0; i < ElementCount; ++i) {
-                    if (!keys_[i].valid()) {
-                        continue;
-                    }
-                    Element element = static_cast<Element>(i);
-                    bool was = lastHeld_[pad][i];
-                    bool now = controller.held(element);
-                    if (was != now) {
-                        ShimEvent event;
-                        event.kind = now ? ShimEvent::Kind::KeyDown : ShimEvent::Kind::KeyUp;
-                        event.pad = pad;
-                        event.key = keys_[i];
-                        events_.push_back(event);
-                    }
-                    lastHeld_[pad][i] = now;
+                keyChanges_.clear();
+                keyboard_.update(pad, controller, keyChanges_);
+                for (const KeyChange &change : keyChanges_) {
+                    ShimEvent event;
+                    event.kind = change.down ? ShimEvent::Kind::KeyDown : ShimEvent::Kind::KeyUp;
+                    event.pad = pad;
+                    event.key = change.key;
+                    events_.push_back(event);
                 }
             }
         }
@@ -306,17 +306,13 @@ void ShimState::update() {
     // agreed or not. One gesture, escalating, so a person who just wants out holds until it goes.
     bool held = false;
     for (int pad = 0; pad < profile_.players; ++pad) {
-        held = held || hotkeyHeld(profile_.hotkey, controller_[pad]);
+        held = held || hotkeySetHeld(profile_.hotkey, controller_[pad]);
     }
-    if (!held) {
-        hotkeyHeldCycles_ = 0;
-        hotkeyQuitSent_ = false;
-    } else if (++hotkeyHeldCycles_ >= HotkeyHoldCycles && !hotkeyQuitSent_) {
+    if (exitHold_.update(held, monotonicMs()) == ExitHold::Action::Terminate) {
         log("abpad: the hotkey was held - asking the app to quit");
         ShimEvent event;
         event.kind = ShimEvent::Kind::Quit;
         events_.push_back(event);
-        hotkeyQuitSent_ = true;
     }
 
     // The console's Reset button, which abpadd reads (the app never sees it as anything it knows): the

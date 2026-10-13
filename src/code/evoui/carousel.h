@@ -37,6 +37,9 @@ public:
     // is no game to take it from (an empty set). Frees the old covers, selects the first game (or none:
     // `selected` is -1 for an empty list) and places the covers.
     void setGames(const PsGames &gamesList, BoxKind kind);
+    // the disc view: one cover alone in the row - `game` with `art` (encoded image bytes) as its cover, no empty
+    // boxes either side. A normal setGames brings the row back.
+    void setSolo(const PsGamePtr &game, std::vector<char> art);
     void freeTextures();
     void initPositions() { positions.initCoverPositions(); }
 
@@ -71,6 +74,8 @@ public:
     // puts the covers the CoverLoader has finished on the GPU, the nearest first - one a frame while the
     // row moves, two at rest; true if it did any. Once a frame from the launcher's loop.
     bool pumpCovers();
+    // every cover shown in the row is up (or could not be read): what the 'startup: at covers-shown' line waits for
+    bool shownCoversDone() const;
     // start the scroll animation towards the next / previous game, `speed` milliseconds long; eased
     // (easeOutCubic) for a tap, linear for a held stick so that one step runs into the next. Each is one tween run
     // on the program's Tweens (carousel_motion.h, G5o5), so the DebugDriver is busy until the covers rest

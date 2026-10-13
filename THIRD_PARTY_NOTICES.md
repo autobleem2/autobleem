@@ -958,6 +958,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Copyright (C) 1999-2022 Free Software Foundation, Inc. Distributed as an unmodified shared library; the source is at https://www.gnu.org/software/libiconv/ and the licence text at https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
 ```
 
+## dosfstools, exfatprogs, e2fsprogs
+
+*payload/Autobleem/bin/fsck/ - fsck.fat, fsck.exfat and e2fsck, static console builds (the stick's check at boot), in
+the console package as separate programs* - **GPL-3.0-or-later** (dosfstools), **GPL-2.0-or-later** (exfatprogs),
+**GPL-2.0** (e2fsprogs)
+
+```
+fsck.fat: dosfstools 4.2, copyright the dosfstools authors - with one patch
+(tools/fsck_psc/dosfstools-4.2-ab-progress.patch).
+fsck.exfat: exfatprogs 1.4.3, copyright the exfatprogs authors.
+e2fsck: e2fsprogs 1.47.4, copyright Theodore Ts'o and the e2fsprogs authors.
+The licence texts are in payload/Autobleem/bin/fsck/licenses/; the sources are the upstream release tarballs named in
+payload/Autobleem/bin/fsck/README.md, built by tools/fsck_psc/build_fsck.sh.
+```
+
 ## doctest
 
 *tests/third_party/doctest - the unit tests only, in no package* - **MIT**
@@ -1050,6 +1065,14 @@ Copyright 2016 The Saira Project Authors (omnibus.type@gmail.com), with Reserved
 
 ```
 Game metadata (.rdb) and box art come from https://github.com/libretro/libretro-database and https://github.com/libretro/libretro-thumbnails under their own terms.
+```
+
+## RetroArch logo (retroarch-assets)
+
+*src/resources/evoimg/emu_ra.png, emu_ra@2x.png - a resume slot's "resumes in RetroArch" badge, drawn by tools/make_emu_badges.py from tools/art/retroarch-monochrome.svg* - **CC-BY-4.0**
+
+```
+The RetroArch logo, src/xmb/monochrome/retroarch.svg of https://github.com/libretro/retroarch-assets by the libretro team, licensed under the Creative Commons Attribution 4.0 International licence (https://creativecommons.org/licenses/by/4.0/). Changed: only the invader is kept (white, its rounded square dropped), on a dark square tile, scaled to 32 and 64 pixels. RetroArch is a trademark of its owners.
 ```
 
 ## gl4es

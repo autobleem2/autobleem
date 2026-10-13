@@ -33,8 +33,11 @@ public:
     bool slotActive[4];      // the slot can be picked (load: it holds a state; save: always)
     bool slotUsed[4] = {};   // the slot holds a state
     std::string slotDate[4]; // its date as shown, "" when the console has no clock
+    std::string slotEmu[4];  // one of our PS1 games' used slot: "RA" (RetroArch wrote it) or "AB" (PCSX), else ""
     int newest = -1;         // the slot with the latest time (two or more used), else -1
     std::string gameTitle;   // under the heading
+    // slotEmu's badge: evoimg/emu_ab.png, emu_ra.png (tools/make_emu_badges.py)
+    ableem::Texture emuBadgeAb, emuBadgeRa;
 
     ableem::Font font30;
 

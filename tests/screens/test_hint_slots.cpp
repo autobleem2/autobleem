@@ -170,3 +170,41 @@ TEST_CASE("the chips: the face buttons, the d-pad as arrows, L2+R2 one chip") {
 TEST_CASE("the dim is 35 % of 255") {
     CHECK(DimAlpha == 89);
 }
+
+TEST_CASE("Games with a disc ready: Circle Disc takes the Play in RetroArch slot") {
+    State s = games(false, true);
+    s.discReady = true;
+    checkLine1(gridFor(s), Item::Play, Item::Disc, Item::GameMenu, Item::QuickMenu);
+    s.retroArch = false;
+    checkLine1(gridFor(s), Item::Play, Item::Disc, Item::GameMenu, Item::QuickMenu);
+    CHECK(std::string(markersOf(Item::Disc)) == "|@O|");
+    CHECK(columnOf(Item::Disc) == 1);
+}
+
+TEST_CASE("an empty roster with a disc ready: Circle Disc in Games and in the game menu state") {
+    State s;
+    s.emptyRoster = true;
+    s.discReady = true;
+    s.screen = Screen::Games;
+    checkLine1(gridFor(s), Item::None, Item::Disc, Item::None, Item::QuickMenu);
+    s.screen = Screen::GameMenu;
+    checkLine1(gridFor(s), Item::Open, Item::Disc, Item::None, Item::QuickMenu);
+    s.discReady = false;
+    checkLine1(gridFor(s), Item::Open, Item::None, Item::None, Item::QuickMenu);
+}
+
+TEST_CASE("Games, the audio CD's disc view: no game menu") {
+    State s = games();
+    s.noMenu = true;
+    checkLine1(gridFor(s), Item::Play, Item::None, Item::None, Item::QuickMenu);
+}
+
+TEST_CASE("Games, the disc view of a PS1 disc the databases know: Square copies it to Games") {
+    State s = games();
+    s.copyDisc = true;
+    checkLine1(gridFor(s), Item::Play, Item::CopyDisc, Item::GameMenu, Item::QuickMenu);
+    CHECK(std::string(markersOf(Item::CopyDisc)) == "|@S|");
+    CHECK(columnOf(Item::CopyDisc) == 1);
+    s.copyDisc = false;
+    checkLine1(gridFor(s), Item::Play, Item::None, Item::GameMenu, Item::QuickMenu);
+}

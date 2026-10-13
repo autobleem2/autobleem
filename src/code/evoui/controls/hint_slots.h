@@ -30,6 +30,8 @@ enum class Item {
     PlayInRetroArch, // Square
     DeleteSlot,      // Triangle
     Random,          // Start
+    Disc,            // Circle - the disc in the drive (only while one is ready; takes Play in RetroArch's slot)
+    CopyDisc,        // Square - the disc view of a PS1 disc the databases know: copy it to Games (RetroArch's slot)
     // column 3 - move
     GameMenu, // Down
     Choose,   // Left/Right
@@ -43,13 +45,13 @@ enum class Item {
     System,      // L2+R2
 };
 
-constexpr int ItemCount = 19; // the Item values, None included
+constexpr int ItemCount = 21; // the Item values, None included
 
 // the column an item lives in (0..3); None has none (-1)
 constexpr int columnOf(Item item) {
     return item == Item::None         ? -1
            : item <= Item::GamesShown ? 0
-           : item <= Item::Random     ? 1
+           : item <= Item::CopyDisc   ? 1
            : item <= Item::Guide      ? 2
                                       : 3;
 }
@@ -66,6 +68,7 @@ constexpr const char *markersOf(Item item) {
     case Item::GamesShown:
         return "|@Select|";
     case Item::PlayInRetroArch:
+    case Item::CopyDisc:
         return "|@S|";
     case Item::DeleteSlot:
     case Item::Guide:
@@ -80,6 +83,7 @@ constexpr const char *markersOf(Item item) {
     case Item::QuickMenu:
     case Item::BackToGames:
         return "|@Up|";
+    case Item::Disc:
     case Item::Back:
     case Item::DontSave:
         return "|@O|";
@@ -113,6 +117,9 @@ struct State {
     bool app = false;         // Games: the selected game is an App (X Start)
     bool retroArch = false;   // Games: Square plays in RetroArch (a PS1 game, RetroArch installed)
     bool slotUsed = false;    // ResumeLoad: the highlighted slot holds a save (Triangle deletes it)
+    bool discReady = false;   // Games: a disc is ready and the carousel shows - Circle "Disc" (the disc view is not up)
+    bool noMenu = false;      // Games: the disc view of an audio CD - no game menu below it (Down does nothing)
+    bool copyDisc = false;    // Games: the disc view of a PS1 disc the databases know - Square copies it to Games
 };
 
 // the line 2 items, in slot order (always shown)
@@ -131,20 +138,29 @@ inline Grid gridFor(const State &state) {
     case Screen::Games:
         if (state.emptyRoster) { // an empty set: only the way into the Quick menu
             put(Item::QuickMenu);
+            if (state.discReady)
+                put(Item::Disc);
             dim(Item::Random);
             dim(Item::Guide);
             break;
         }
         put(state.app ? Item::Start : Item::Play);
-        if (state.retroArch)
+        if (state.discReady)
+            put(Item::Disc);
+        else if (state.copyDisc)
+            put(Item::CopyDisc);
+        else if (state.retroArch)
             put(Item::PlayInRetroArch);
-        put(Item::GameMenu);
+        if (!state.noMenu)
+            put(Item::GameMenu);
         put(Item::QuickMenu);
         break;
     case Screen::GameMenu:
         put(Item::Open);
         if (state.emptyRoster) { // Up opens the Quick menu: there is no Games state to go back to
             put(Item::QuickMenu);
+            if (state.discReady)
+                put(Item::Disc);
             dim(Item::Random);
             dim(Item::Guide);
         } else {

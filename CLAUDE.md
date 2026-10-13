@@ -34,8 +34,10 @@ decisions) is in `autobleem2/autobleem-main` (`CLAUDE.md`, `docs/`); history in 
 ## Rules that bite (details: developer guide "Conventions and gotchas", "The quiet stick")
 
 - **Never `#include <SDL2/...>` under `src/code/`** - new SDL functionality goes into lib_ableem.
-- **Every on-screen string is `_()`** and lands in all 16 `src/resources/lang/*.txt` in the same commit
-  (`tools/lang_tools.py`); no `=` in a key.
+- **Every on-screen string is `_()`.** Add each new string to all 17 `src/resources/lang/*.txt` files in the same
+  commit with `tools/lang_tools.py add` (sorted insert, touches nothing else); then `lang_tools.py validate`. Never
+  run `extract`/`update` to add strings: the files differ from a fresh extract and they rewrite thousands of lines
+  (they now stop with exit 2 past 20 changed lines per file). No `=` in a key.
 - **A game launch gives the display up**: never keep an `ableem::Texture`/`Font` in an object that outlives a
   launch (only `ThemeAssets`).
 - **The quiet stick**: anything that runs per boot/scan/launch writes through `DirEntry::writeFileIfChanged` or to

@@ -2,6 +2,8 @@
 // and/or RetroArch's zip.
 //
 //   abupdate ROOT [--download "COMMAND %u %o"] [--repo URL]
+//   abupdate ROOT --retroarch install|remove [--bios] --progress FILE [--download "CMD"] [--repo URL]
+//       (RetroArch alone, see retroarchMode(); everything below is the first form)
 //
 // The launcher's online update (UpdateService - only on a console with a network, which the AutoBleem
 // kernel's WiFi gives it) fetches the channel's autobleem-psc-<version>.tar.gz (and, when the stick has RetroArch and
@@ -23,6 +25,8 @@
 // half way through the unpacking, which the next update or the PC installer repairs.
 #include "installer/command_downloader.h"
 #include "installer/installer_job.h"
+#include "installer/progress_file.h"
+#include "installer/retroarch_runner.h"
 
 #include <ableem/engine/filesystem.h>
 #include <ableem/engine/log.h>
@@ -98,8 +102,61 @@ public:
 };
 
 int usage() {
-    cerr << "usage: abupdate ROOT [--download \"COMMAND %u %o\"] [--repo URL]" << endl;
+    cerr << "usage: abupdate ROOT [--download \"COMMAND %u %o\"] [--repo URL]" << endl
+         << "       abupdate ROOT --retroarch install|remove [--bios] --progress FILE [--download \"COMMAND %c %u %o\"]"
+            " [--repo URL]"
+         << endl;
     return 2;
+}
+
+// abupdate ROOT --retroarch install|remove [--bios] --progress FILE [--download CMD] [--repo URL]: RetroArch alone,
+// autobleem-core's RetroArchRunner (progress file, SIGTERM stops). The launcher runs it as its own child from its
+// folder, next to abfetch and cacert.pem; no System/Updates/pending.json, no package or zip. Exit 0 ok, 3 stopped,
+// 1 error, 2 bad arguments.
+int retroarchMode(const string &root, int argc, char **argv) {
+    string verb, progressFile, repo;
+    bool bios = false;
+    // %c = abfetch's --continue (the resume of a .part file)
+    string download = "\"" + ownDir() + "abfetch\" %c --connect-timeout 20 --stall-timeout 60 -o \"%o\" \"%u\"";
+    for (int i = 2; i < argc; i++) {
+        if (strcmp(argv[i], "--retroarch") == 0 && i + 1 < argc)
+            verb = argv[++i];
+        else if (strcmp(argv[i], "--bios") == 0)
+            bios = true;
+        else if (strcmp(argv[i], "--progress") == 0 && i + 1 < argc)
+            progressFile = argv[++i];
+        else if (strcmp(argv[i], "--download") == 0 && i + 1 < argc)
+            download = argv[++i];
+        else if (strcmp(argv[i], "--repo") == 0 && i + 1 < argc)
+            repo = argv[++i];
+        else
+            return usage();
+    }
+    if ((verb != "install" && verb != "remove") || progressFile.empty())
+        return usage();
+    ableem::Log::initConsoleOnly();
+
+    RetroArchOptions options;
+    options.root = root;
+    if (!repo.empty())
+        options.repoUrl = repo;
+    options.aptBinary.clear();
+    // RetroArch's binary is not replaced under a running RetroArch (remove has its own rule in the runner)
+    if (verb == "install" && retroArchRunning()) {
+        const string message = "abupdate: RetroArch is running - nothing is installed";
+        cout << message << endl;
+        ProgressFile progress(progressFile);
+        progress.onLine(message);
+        return progress.finish(false, false, RetroArchRunner::errorCode(FailKind::Other));
+    }
+    return RetroArchRunner::run(verb, options, bios, progressFile, download);
+}
+
+bool hasFlag(int argc, char **argv, const char *flag) {
+    for (int i = 2; i < argc; i++)
+        if (strcmp(argv[i], flag) == 0)
+            return true;
+    return false;
 }
 
 } // namespace
@@ -108,6 +165,8 @@ int main(int argc, char **argv) {
     if (argc < 2)
         return usage();
     string root = InstallerJob::normalizeRoot(argv[1]);
+    if (hasFlag(argc, argv, "--retroarch"))
+        return retroarchMode(root, argc, argv);
     // abfetch next to this program (fails on an HTTP error, follows redirects, gives up on a stall), with
     // its cacert.pem beside it
     string download = "\"" + ownDir() + "abfetch\" --connect-timeout 20 --stall-timeout 60 -o \"%o\" \"%u\"";

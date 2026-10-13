@@ -18,6 +18,8 @@ using namespace std;
 void PsStateSelector::cleanSaveStateImages() {
     for (auto &i : slotImg)
         i = ableem::Texture();
+    emuBadgeAb = ableem::Texture();
+    emuBadgeRa = ableem::Texture();
 }
 
 //*******************************
@@ -35,13 +37,22 @@ void PsStateSelector::loadSaveStateImages(PsGamePtr &game, bool saving) {
     for (int i = 0; i < ResumeLayout::SlotCount; i++) {
         slotImg[i] = ableem::Texture();
         slotDate[i].clear();
+        slotEmu[i].clear();
         slotUsed[i] = resume.slotIsActive(*game, i);
         slotActive[i] = saving || slotUsed[i]; // a save may go to any slot
         if (slotUsed[i]) {
             slotImg[i] = ableem::Texture::loadFile(renderer, resume.pictureForSlot(*game, i));
             times[i] = resume.timeForSlot(*game, i);
             slotDate[i] = App::get().clock().displayTime(times[i], format);
+            // a PS1 game's slot resumes only in the emulator that wrote it (the owner, 2026-10-11): it says which
+            if (!game->foreign)
+                slotEmu[i] = resume.slotIsRetroArch(*game, i) ? "RA" : "AB";
         }
+    }
+    if (!game->foreign) {
+        const string dir = Env::getWorkingPath() + sep + "evoimg" + sep;
+        emuBadgeAb = ThemeAssets::loadImage(renderer, dir + "emu_ab.png");
+        emuBadgeRa = ThemeAssets::loadImage(renderer, dir + "emu_ra.png");
     }
     newest = ResumeLayout::newestSlot(times, slotUsed);
 }
@@ -168,6 +179,35 @@ void PsStateSelector::render() {
             gui->text().renderText_WithColor(
                 chipFont, word, chip.x + (narrow ? ResumeLayout::Narrow::ChipPadding : ResumeLayout::ChipPadding),
                 chip.y + (chip.h - chipFont.lineHeight()) / 2, textColor);
+        }
+
+        // the AB2 / RetroArch logo in the picture's top-right corner, inside the well's cut corner: which emulator
+        // the slot resumes in (the owner, 2026-10-11) - the letters on a chip when the image is missing
+        const ableem::Texture &emuBadge = slotEmu[i] == "RA" ? emuBadgeRa : emuBadgeAb;
+        if (!slotEmu[i].empty() && emuBadge.valid()) {
+            const ResumeLayout::Box pic = ResumeLayout::pictureBox(card, narrow);
+            const int inset = narrow ? ResumeLayout::Narrow::CutCorner : ResumeLayout::CutCorner;
+            const int side = narrow ? emuBadge.size().w * 3 / 4 : emuBadge.size().w;
+            const ableem::Rect badge(pic.x + pic.w - inset - side, pic.y + inset, side, side);
+            renderer.setBlendMode(ableem::BlendMode::Blend);
+            renderer.copy(emuBadge, nullptr, &badge);
+        } else if (!slotEmu[i].empty()) {
+            const ResumeLayout::Box pic = ResumeLayout::pictureBox(card, narrow);
+            const int pad = narrow ? ResumeLayout::Narrow::ChipPadding : ResumeLayout::ChipPadding;
+            const int inset = narrow ? ResumeLayout::Narrow::CutCorner : ResumeLayout::CutCorner;
+            const int w = gui->text().textWidth(chipFont, slotEmu[i]) + 2 * pad;
+            const int h = chipFont.lineHeight() + pad;
+            const ableem::Rect badge(pic.x + pic.w - inset - w, pic.y + inset, w, h);
+            if (!style.drawFrame(ctx, "chip", badge)) {
+                // over a picture: a dark ground keeps the letters readable
+                renderer.setBlendMode(ableem::BlendMode::Blend);
+                renderer.setDrawColor(ableem::Color(0, 0, 0, 170));
+                renderer.fillRect(badge);
+                renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 200));
+                renderer.drawRect(badge);
+            }
+            gui->text().renderText_WithColor(chipFont, slotEmu[i], badge.x + pad,
+                                             badge.y + (badge.h - chipFont.lineHeight()) / 2, textColor);
         }
 
         if (veiled)

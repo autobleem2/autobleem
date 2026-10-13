@@ -6,13 +6,16 @@
 //     mode = joystick          # joystick | keyboard | both | off
 //     virtual = x360           # the pad a joystick-mode app is shown
 //     players = 1
-//     hotkey = start+select    # held together, quits the app
+//     hotkey = start+select,guide  # either, held for two seconds, quits the app
 //     key.a = Left Ctrl        # keyboard mode: an element -> a key the app already understands
 //     key.dpup = Up
+//     key.leftx = Right        # an axis pushed positive (right, down)
+//     key.-leftx = Left        # ... and negative (left, up); "key.leftx-" works too
 //
 // Deliberately not an ableem IniFile: the shim links nothing (see the CMakeLists), and the format is
 // small enough that reading it here costs less than the dependency would.
 
+#include "core/hold.h"
 #include "core/mapping.h"
 #include "core/virtual_pad.h"
 
@@ -40,8 +43,11 @@ struct Profile {
     PadMode mode = PadMode::Joystick;
     VirtualPadKind virtualPad = VirtualPadKind::X360;
     int players = 1;
-    std::vector<Element> hotkey; // all held together; empty = no hotkey
+    // any one of these combos, each held together, for two seconds ends the App (core/hold.h); the owner's rule is
+    // Start+Select or Guide; empty (a profile with "hotkey =") = no hotkey
+    HotkeySet hotkey = parseHotkeySet(DefaultExitHotkeys);
     std::map<Element, std::string> keys;
+    std::map<Element, std::string> negativeKeys; // an axis pushed negative (left, up): key.-leftx = Left
     std::string logPath;
     // These machines have no mouse, so a cursor on screen is never wanted - but an app is free to
     // turn one on, and several do (SDLPoP shows one with its menu). Hidden unless a profile says
@@ -56,7 +62,7 @@ struct Profile {
     bool wantsJoystick() const { return mode == PadMode::Joystick || mode == PadMode::Both; }
     bool wantsKeyboard() const { return mode == PadMode::Keyboard || mode == PadMode::Both; }
     // the key an element is to be sent as, "" when the profile does not name one
-    std::string keyFor(Element element) const;
+    std::string keyFor(Element element, bool negative = false) const;
 
     void loadStream(std::istream &in); // applied over what is already there
     bool loadFile(const std::string &path);

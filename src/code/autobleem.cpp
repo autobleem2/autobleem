@@ -7,12 +7,16 @@
 #include <ctime>
 #include "evoui/screens/evoui_launcher.h"
 #include "launch_picture.h"
+#include "ra_glibc_check.h"
 #include "gui/screens/gui_keep_display.h"
+#include "gui/screens/gui_splash.h"
 
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
 #include <ableem/engine/log.h>
+#include <ableem/engine/game_library.h>
+#include <ableem/engine/startup_timer.h>
 #include <ableem/engine/update_catalog.h>
 #include "core/version.h"
 #include <ableem/engine/theme_spec.h>
@@ -91,9 +95,33 @@ bool AutoBleem::openLibrary() {
 }
 
 //*******************************
+// AutoBleem::retroArchRefused
+//*******************************
+// A RetroArch built on a newer system than the console's (a later build next to a stock RetroBoot 1.1 tree) asks
+// for GLIBC_2.xx the console's loader does not have, and exits at once with only a line in its own stderr: the
+// check is made on its binary before it is started (ra_glibc_check.h), and the player told what to do instead.
+bool AutoBleem::retroArchRefused() {
+    const string binary = LaunchService::retroArchExecutable();
+    if (binary.empty())
+        return false;
+    const GlibcVersion needed = highestGlibcNeededInFile(binary);
+    const GlibcVersion have = runningGlibc();
+    if (!needsNewerGlibc(needed, have))
+        return false;
+    PLOG_WARNING << binary << " needs GLIBC_" << needed.major << "." << needed.minor << ", the console has "
+                 << have.major << "." << have.minor << " - RetroArch is not started";
+    extensionRequests_.message = _("RetroArch needs a newer system library than this console has - use the RetroArch "
+                                   "that comes with AutoBleem");
+    return true;
+}
+
+//*******************************
 // AutoBleem::runOutside
 //*******************************
 void AutoBleem::runOutside(bool retroArch, const char *picture, const std::function<void()> &body) {
+    if (retroArch && retroArchRefused())
+        return;
+
     // the extensions first: they may hold textures, and their threads should leave the machine to the game
     extensions_.suspend();
     gui_->finish(); // fades the music out and closes the mixer
@@ -328,8 +356,25 @@ void AutoBleem::launchGame() {
     const PsGame *running = session_.runningGame.get();
     const char *picture =
         waitingPictureName(running && running->foreign, running && running->app, session_.emuMode != EmuMode::Pcsx);
-    runOutside(retroArch, picture, [this]() {
+    // the emulator owns the CD drive while it runs (launchDisc pauses the watcher itself; any other game here)
+    DriveWatcher *watcher = driveWatcher();
+    // the disc view's disc, when that is what was chosen (the shared library folder's game is another object)
+    std::shared_ptr<DiscGame> disc;
+    if (pendingDisc && session_.runningGame == pendingDisc->game)
+        disc = pendingDisc;
+    runOutside(retroArch, picture, [this, watcher, &disc]() {
+        if (disc) {
+            // a LibCrypt disc needs its .sbi in the save folder; offline or any error plays without
+            fetchSbiFor(disc->game->serial, disc->game->ssFolder);
+            if (!launcher_.launchDisc(*disc, session_.resumePoint, watcher))
+                PLOG_WARNING << "The disc could not be played";
+            return;
+        }
+        if (watcher)
+            watcher->pause();
         launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint, session_.package.get());
+        if (watcher)
+            watcher->resume();
     });
 
     bool reloadFavHist{false};
@@ -344,6 +389,13 @@ void AutoBleem::launchGame() {
 
     takeAppMessage();
 
+    if (disc) {
+        discSeenChanges = ~0u; // the launcher is back with the disc still in: its view opens again
+        lastDisc = disc;       // the resume screen is the disc's, whatever the carousel had selected
+    } else {
+        lastDisc.reset();
+    }
+    pendingDisc.reset();
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
     session_.package.reset();
     session_.startingGame = false;
@@ -390,25 +442,8 @@ void AutoBleem::runRetroArchMenu() {
 // the whole program from here on. main() only wraps this so a stray exception is logged instead of a silent abort.
 //*******************************
 int AutoBleem::run() {
-    if (!openLibrary()) {
-        return EXIT_FAILURE;
-    }
+    ableem::StartupTimer::milestone("run-entered");
     string pathToGamesDir = Env::getPathToGamesDir();
-
-    MemcardManager memcardOperation(pathToGamesDir);
-    memcardOperation.restoreAll(Env::getPathToSaveStatesDir());
-
-    // the same triggers the classic menu's forceScan prompt used to check, minus autobleem.prev (a
-    // GamesFingerprint now stands in for it - see ScanService); moving loose game files into their own
-    // sub-directories is ScanService's worker's job now, the first thing runScan() does.
-    bool fingerprintOnDiskMatches = ScanService::fingerprintsMatchDisk();
-    // RetroBoot's EmulationStation reads this list; without RetroBoot nobody does, and its absence must not
-    // cost a full scan on every boot (it did, on the Pi)
-    bool gamelistXmlExists =
-        !Env::hasRetroBoot() ||
-        DirEntry::exists(Env::getPathToRetroarchDir() + sep +
-                         "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
-    bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
 
     restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
 
@@ -418,8 +453,62 @@ int AutoBleem::run() {
     // (CRT 4:3 round 2: Crtmargin=0 still drew the 5 % margin), and before the keep-mode question, which is drawn in
     // it too
     applySafeMargin();
+
+    // The start-up work runs on the splash (GuiSplash::setWork: one step a frame once it has faded in, same thread,
+    // same order as before), so the screen is black only while the theme loads. All of it is done before display()
+    // returns - runPendingWork() does what no splash ran - so nothing below sees a half-opened library.
+    bool libraryOpen = false;
+    bool fingerprintOnDiskMatches = true;
+    bool gamelistXmlExists = true;
+    bool thereAreRawGameFilesInGamesDir = false;
+    GuiSplash::setWork({
+        [&]() {
+            ableem::StartupTimer timer("open-library");
+            libraryOpen = openLibrary();
+        },
+        [&]() {
+            if (!libraryOpen)
+                return;
+            // a game that crashed with a set or RetroArch's card copied in: its journal says which - no walk
+            ableem::StartupTimer timer("memcard-recover");
+            memcards().recoverAfterCrash();
+        },
+        [&]() {
+            if (!libraryOpen)
+                return;
+            ableem::StartupTimer timer("fingerprint-check");
+            // the same triggers the classic menu's forceScan prompt used to check, minus autobleem.prev (a
+            // GamesFingerprint now stands in for it - see ScanService); moving loose game files into their own
+            // sub-directories is ScanService's worker's job now, the first thing runScan() does.
+            fingerprintOnDiskMatches = ScanService::fingerprintsMatchDisk();
+            // RetroBoot's EmulationStation reads this list; without RetroBoot nobody does, and its absence must not
+            // cost a full scan on every boot (it did, on the Pi)
+            gamelistXmlExists =
+                !Env::hasRetroBoot() ||
+                DirEntry::exists(Env::getPathToRetroarchDir() + sep +
+                                 "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
+            thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
+        },
+        [&]() {
+            // RetroArch's core info and playlists, which the launcher's first screen asks for: read here, on the
+            // splash, instead of after it (RetroArchService reads once and keeps them)
+            if (!libraryOpen || !Env::retroArchInstalled())
+                return;
+            ableem::StartupTimer timer("retroarch-load");
+            retroArch().playlistNames();
+        },
+        [&]() {
+            ableem::StartupTimer timer("launcher-warm-up");
+            GuiLauncher::warmUpFirstFrame(*gui_);
+        },
+    });
     gui_->display(false);
+    GuiSplash::runPendingWork();
+    ableem::StartupTimer::milestone("splash-closed");
     unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
+    if (!libraryOpen) {
+        return EXIT_FAILURE;
+    }
 
     // Options -> Display on the console: rc/boot.sh has just restarted Weston in the mode to try - kept, or the
     // launcher leaves again at once for the old one. Elsewhere the mode is tried in-process, nothing is pending.
@@ -441,7 +530,8 @@ int AutoBleem::run() {
         useDefaultThemeFor(inUse);
     }
 
-    if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
+    // the files only, not the rdb's 13k records: the library's own lookup opens when something asks for it
+    if (!ableem::GameLibrary::metadataSourcesPresent()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
         // every game would otherwise scan in with no title/cover. RetroArch's "Sony - PlayStation.rdb"
         // is the other source, so a stick with that tree but no covers*.db is fine. After display(): the
@@ -470,9 +560,11 @@ int AutoBleem::run() {
         updates().startCheck(time(nullptr)); // once a day, and at every start - the launcher asks when it lands
 #endif
     scans().start();
+    startDriveWatcher();
     if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
         scans().requestScan();
     }
+    ableem::StartupTimer::milestone("scans-started");
 
     // the extensions (docs/extensions-plan.md): what is in Extensions/, the crash guard's verdict on the last
     // run - an extension that was running when the launcher died is disabled and the user told - and the
@@ -484,6 +576,7 @@ int AutoBleem::run() {
         extensionRequests_.message = (info ? info->title : crashed) + " " + _("stopped AutoBleem and was disabled");
     }
     extensions_.startBackground();
+    ableem::StartupTimer::milestone("extensions-started");
 
     // On the console a Quit event is never a window's close button: it is SDL giving up on the display -
     // seen on the PSC on 2026-09-20 coming back from RetroArch 1.22.2 (Doom): the GPU had not returned the
@@ -562,6 +655,12 @@ int AutoBleem::run() {
 #endif
         }
 
+        // the console leaves for rc/retroarch.sh to run RetroArch: not when the loader would refuse it
+        if (session_.menuOption == MENU_OPTION_RETRO && !Env::directLaunch() && retroArchRefused()) {
+            session_.menuOption = MENU_OPTION_IDLE;
+            continue;
+        }
+
         // for the rc scripts, when the process is about to leave - never for a game, which comes back here:
         // a selection left over from one would hide a later crash from them (autobleem-main's
         // docs/archive/quiet-stick-plan.md)
@@ -611,7 +710,7 @@ int AutoBleem::run() {
     if (session_.menuOption == MENU_OPTION_POWEROFF) {
         gui_->drawText(_("POWERING OFF... PLEASE WAIT")); // the standby follows within a second
     } else {
-        Gui::splash(_("Loading ... Please Wait ..."));
+        Gui::splash(_("Loading... Please wait..."));
     }
     gui_->finish();
 

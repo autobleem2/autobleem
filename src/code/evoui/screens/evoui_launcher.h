@@ -33,6 +33,9 @@
 #include <map>
 #include <set>
 #include "gui/gui.h"
+#include "disc_view_logic.h"
+#include "core/services/disc_game.h"
+#include "core/services/drive_watcher.h"
 
 enum class SystemMenuAction; // evoui_system_menu.h
 
@@ -74,6 +77,9 @@ public:
     void useFrameCanvas(); // the 4:3 layout's 640x480, else the 1280x720 one (also for a transition's picture of it)
                            // before each frame: the busy state ends, the state selector follows the menu
     void draw() override;  // the frame's picture: the stack clears before and presents after
+    // what the first launcher picture would otherwise open itself (~250 ms on the PSC): the details section's font
+    // sizes and icons, the hint bar's label sizes - a start-up step on the splash, which waits for its hold anyway
+    static void warmUpFirstFrame(Gui &gui);
 
     // these variables are used by the loop routines
     long motionStart = 0; // when the stick went left/right and stayed; 0 once it is centred again
@@ -304,6 +310,7 @@ public:
         std::string imagePath;
     };
     GameKey selectedGameKey() const;
+    void reloadGames(const GameKey &keep); // ... with the game to select given (the disc view's way back)
     // the set picker's (Select) row counts, kept between openings so Select opens at once (its tab icons are the
     // Context's); forgetSetCounts() whenever the library may have changed - a scan, an edit, a game played, a menu
     // action (Game Manager, the Store, an extension), the screen reloaded
@@ -493,4 +500,64 @@ public:
     void pollSettleLoads();
     // the snap and the resume picture belong to the game the row rests on: gone while it moves
     void hideSettlePictures();
+
+    // ---- the disc drive and the disc in it (docs/disc-drive-plan.md, pieces 5 and 8; evoui_disc_view.cpp) ----
+    // the watcher's answer, taken once a frame by pollDisc(); the chip at the top shows it
+    DriveWatcher::Status discStatus;
+    discview::Drive discDriveNow() const;
+    // a PS1 disc (discGame) or an audio CD (discPsGame alone) made ready for the view: the game it plays as, its cover
+    // bytes, the title the chip says; built when the watcher's identity changed (discBuiltFor)
+    std::shared_ptr<DiscGame> discGame;
+    PsGamePtr discPsGame;
+    std::vector<char> discArt;
+    std::string discTitle;
+    unsigned discBuiltFor = 0;
+    bool discBuilt = false;
+    // the disc view is up: the carousel holds the disc alone. discSavedKey is the game the carousel was on
+    bool discViewOpen = false;
+    bool discAudio = false; // ... and the disc is an audio CD
+    GameKey discSavedKey;
+    // the game the after-run resume screen (Save) is about: the disc that just played, else null = the carousel's
+    // selected game (discview::resumeGameFor). Set in loadAssets, used by loop_crossButtonPressed_STATE_RESUME.
+    PsGamePtr resumeGame;
+    // the crossfade between the carousel and the disc's cover (discview::fadeAlpha): the picture under the background
+    // swaps at the middle
+    bool discFading = false, discFadeEntering = false, discFadeSwapped = false;
+    long discFadeStart = 0;
+    // the screen is in a state the view may open from (the carousel, or an empty roster's resting state)
+    bool discViewCanOpenIn() const;
+    // once a frame: the watcher, the view opening/closing by itself, the fade's clock
+    void pollDisc();
+    // makes discGame/discPsGame/discArt/discTitle from discStatus
+    void buildDisc();
+    // box art was fetched into the thumbnails tree: a PS1 disc still on default.png takes it
+    void discBoxArtArrived();
+    // enterDiscView / leaveDiscView through the crossfade
+    void startDiscFade(bool entering);
+    // the carousel <-> the disc, at the fade's middle
+    void swapDiscView(bool entering);
+    // the launcher is built anew after a disc game: the disc view stands again with that disc (no fade), before the
+    // resume screen is made
+    void reenterDiscViewAfterRun(const std::shared_ptr<DiscGame> &disc);
+    // after a reload of the assets (Options, an extension's settings): the disc view that was up stands again
+    void restoreDiscView(bool wasOpen);
+    // Circle / a disc becoming ready: false when it cannot be shown now
+    bool enterDiscView();
+    // Circle / the disc taken out
+    bool leaveDiscView();
+    // the drive chip, centred at the top
+    void renderDiscChip();
+    // over the carousel, under the details
+    void renderDiscFade();
+    // Cross on an audio CD
+    void openCdPlayer();
+    // the meta section's disc mode, after its texts were set
+    void applyDiscMeta();
+    // Square in the disc view of a PS1 disc the databases know: copy the disc to Games as a CHD (evoui_disc_view.cpp)
+    bool copyDiscOffered() const;
+    void copyDiscToGames();
+    // the folder of the game just copied: once the rescan is done the game is selected (selectRippedGame, each frame)
+    std::string ripSelectFolder;
+    bool ripScanFinished = false;
+    void selectRippedGame();
 };

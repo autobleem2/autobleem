@@ -14,6 +14,7 @@
 #include "core/services/environment.h"
 #include <ab_gui/context.h>
 #include <ab_gui/style.h>
+#include <ableem/engine/startup_timer.h>
 
 using namespace std;
 
@@ -41,13 +42,14 @@ void PsMeta::updateTexts(const string &gameNameTxt, const string &publisherTxt, 
     this->last_played = last_played;
     coreName = "";
     playersKnown = false;
+    discMode = DiscMode::None;
     textColor = _textColor;
     textColor.a = 255; // if you're rendering with a different color you need this or it will be transparent
 
     if (foreign) {
         trim(publisher);
         if (publisher == "DETECT")
-            publisher = _("Unknown Core (AutoDetect)");
+            publisher = _("Unknown core (AutoDetect)");
     }
 }
 
@@ -89,7 +91,7 @@ void PsMeta::updateTexts(PsGamePtr &psGame, ableem::Color _textColor) {
             coreName = psGame->core_name;
             trim(coreName);
             if (coreName == "DETECT")
-                coreName = _("Unknown Core (AutoDetect)");
+                coreName = _("Unknown core (AutoDetect)");
             playersKnown = psGame->players > 0;
         }
     }
@@ -113,6 +115,15 @@ void PsMeta::render() {
     }
 
     if (visible) {
+        // the process's first details section, timed in parts ("startup: at meta-*")
+        static bool firstTimed = false;
+        const bool timeParts = !firstTimed;
+        firstTimed = true;
+        auto mark = [timeParts](const char *name) {
+            if (timeParts)
+                ableem::StartupTimer::milestone(name);
+        };
+        mark("meta-start");
         const MetaLayout::Metrics &m = metrics;
         // the row's own icons at their size on the 1280x720 section, at the section's icon size on another (4:3)
         const int ownIcon = m.iconSize == MetaLayout::IconSize ? 0 : m.iconSize;
@@ -148,10 +159,13 @@ void PsMeta::render() {
         // the title - a name too long for the space up to screenRight is drawn in the largest size that fits, and
         // elided there when even the smallest does not
         auto nameFont = fixed.boldAtSize(m.titleSize);
+        mark("meta-title-font");
         if (x + nameFont.width(gameName) > screenRight)
             nameFont = text.fittingFont(FONT_BOLD, m.titleSize, m.titleMinSize, gameName, screenRight - x);
+        mark("meta-title-fitted");
         text.renderText_WithColor(nameFont, text.elide(nameFont, gameName, screenRight - x), x, y, style.text,
                                   XALIGN_LEFT);
+        mark("meta-title-drawn");
 
         // the rule under it: the `edge` role at 78 %
         renderer.setBlendMode(ableem::BlendMode::Blend);
@@ -171,8 +185,15 @@ void PsMeta::render() {
             !foreign ? MetaLayout::Kind::Ps1 : (app ? MetaLayout::Kind::App : MetaLayout::Kind::RetroArch);
         const ableem::Font &valueFont = fixed.atSize(FONT_MED, m.valueSize);
         int rowY = y + m.gridY;
-        for (const MetaLayout::Fact &fact :
-             MetaLayout::facts(kind, publisher, year, serial, region, last_played, coreName, canShowLastPlayed)) {
+        vector<MetaLayout::Fact> rows;
+        if (discMode == DiscMode::Audio) {
+            rows.push_back({"TRACKS", to_string(audioTracks)});
+            if (!audioTime.empty())
+                rows.push_back({"TOTAL TIME", audioTime});
+        } else {
+            rows = MetaLayout::facts(kind, publisher, year, serial, region, last_played, coreName, canShowLastPlayed);
+        }
+        for (const MetaLayout::Fact &fact : rows) {
             if (fact.wrapped) {
                 // a description: no label, wrapped to the area, the last line elided when it still does not fit
                 vector<string> lines =
@@ -192,13 +213,16 @@ void PsMeta::render() {
                                       style.text, XALIGN_LEFT);
             rowY += m.rowPitch;
         }
+        mark("meta-facts-drawn");
 
         // the icon row: text centred on the icons' height
         const ableem::Font &rowFont = m.infoSize == 15 ? fonts[FONT_15_BOLD] : fixed.boldAtSize(m.infoSize);
         const int iconY = y + m.iconRowY;
         const int textY = iconY + (m.iconSize - rowFont.lineHeight()) / 2;
         vector<string> badges;
-        if (kind == MetaLayout::Kind::Ps1) {
+        if (discMode == DiscMode::Audio) {
+            // nothing but the source tag
+        } else if (kind == MetaLayout::Kind::Ps1) {
             text.renderText_WithColor(rowFont, players, x + m.playersTextX, textY, style.text, XALIGN_LEFT);
             drawIcon("players", x, iconY, ownIcon);
             drawIcon("disc", x + m.discX, iconY, ownIcon);
@@ -208,16 +232,18 @@ void PsMeta::render() {
                 locked = true;
                 hd = false;
             }
-            badges.push_back(internal ? "internal" : "usb");
-            badges.push_back(hd ? "hd" : "sd");
-            badges.push_back(locked ? "lock" : "unlock");
-            if (favorite)
-                badges.push_back("favorite");
-            if (play_using_ra)
-                badges.push_back("retroarch");
-            if (lightgun) {
-                bool onePlayer = players.rfind("1 ", 0) == 0;
-                badges.push_back(onePlayer ? "lightgun" : "lightgun2");
+            if (discMode == DiscMode::None) {
+                badges.push_back(internal ? "internal" : "usb");
+                badges.push_back(hd ? "hd" : "sd");
+                badges.push_back(locked ? "lock" : "unlock");
+                if (favorite)
+                    badges.push_back("favorite");
+                if (play_using_ra)
+                    badges.push_back("retroarch");
+                if (lightgun) {
+                    bool onePlayer = players.rfind("1 ", 0) == 0;
+                    badges.push_back(onePlayer ? "lightgun" : "lightgun2");
+                }
             }
         } else if (kind == MetaLayout::Kind::RetroArch) {
             // the players when the database knows, then the RA icon (and the light gun) as badges
@@ -229,9 +255,16 @@ void PsMeta::render() {
             if (lightgun)
                 badges.push_back("lightgun");
         }
+        if (discMode != DiscMode::None) {
+            // the source tag: "DISC", right-aligned where the badges end
+            const string tag = _("DISC");
+            text.renderText_WithColor(rowFont, tag, x + m.badgesRight - rowFont.width(tag), textY, style.text,
+                                      XALIGN_LEFT);
+        }
         const int count = static_cast<int>(badges.size());
         for (int i = 0; i < count; i++)
             drawIcon(badges[i], x + m.badgeX(count, i), iconY, m.iconSize);
+        mark("meta-icons-drawn");
     }
 }
 

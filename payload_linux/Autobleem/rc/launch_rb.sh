@@ -5,9 +5,11 @@
 #
 # LaunchService::launchRetroArch passes:
 #   $1 the file to run
-#   $2 the core. For AutoBleem's own PS1 games that is "NEON" or "PEOPS" (the two pcsx GPU plugins, both of
-#      which are pcsx_rearmed here); for a game that came out of a RetroArch playlist it is the core path the
-#      playlist named - RetroArchService resolves it to RetroArch/cores/<name>.so from the core info files.
+#   $2 the core. For AutoBleem's own PS1 games that is the core picked for "PlayStation 1 Games" in the
+#      RetroArch cores window (pcsx_rearmed unless picked otherwise on a Pi, SwanStation on a PC stick), or
+#      "PEOPS" / "NEON" from a resume slot an older build wrote (both pcsx_rearmed here); for a game that came out of a
+#      RetroArch playlist it is the core path the playlist named - RetroArchService resolves it to
+#      RetroArch/cores/<name>.so from the core info files.
 set -uo pipefail
 
 # glibc 2.41 will not dlopen a core marked as needing an executable stack (libretro's buildbot cores are)
@@ -45,9 +47,11 @@ core_path() {
     fi
 
     case "$name" in
-        NEON|PEOPS|"") name=pcsx_rearmed ;;     # both pcsx GPU plugins are the one libretro core here
+        NEON|PEOPS|"") name=pcsx_rearmed ;;     # old resume slots: both are the one libretro core here
     esac
-    name="${name%_libretro.so}"
+    # a path that is not there (the platform's PS1 core in RetroArch/cores, which the distribution's
+    # RetroArch keeps elsewhere): the same core by its name
+    name="$(basename "${name%_libretro.so}")"
 
     # the cores the installer downloaded from libretro's buildbot first, then the distribution's under its
     # multiarch dir (whichever architecture this is)
@@ -64,4 +68,9 @@ if ! CORE_SO="$(core_path "$CORE")"; then
 fi
 
 echo "Using core: $CORE_SO"
+# The way out: hold Start+Select or Home for two seconds = SIGTERM (RetroArch saves its SRAM and quits), SIGKILL 3 s
+# later. The watcher is given this shell's pid, which RetroArch keeps when it is exec'd over it, and ends by itself
+# when RetroArch does (rc/ab_exitwatch.sh).
+. "$RC_DIR/ab_exitwatch.sh"
+ab_exitwatch_start "$DATA_MOUNT" $$ --no-reset
 exec retroarch --config "$RA_CONFIG" "${RA_APPEND[@]}" -L "$CORE_SO" "$GAME_FILE"

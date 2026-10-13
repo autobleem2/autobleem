@@ -16,10 +16,12 @@
 //********************
 // GuiRaCores
 //********************
-// One row per system (sorted by name) with the core in use: Left/Right cycle that system's cores, the platform
+// The "PlayStation 1 Games" row first - every installed core that plays PS1, greyed when there is just the one -
+// then one row per system (sorted by name) with the core in use: Left/Right cycle that system's cores, the platform
 // file's own pick first and marked "(default)", any other marked "(changed)"; Up/Down move, L1/R1 jump to the
 // first/last row, L2/R2 page. Circle leaves and saves (RetroArchService::saveCorePicks): the choices go into the
-// user's file, and the playlist entries still on the system's old core move to the new one.
+// user's file, and the playlist entries still on the system's old core move to the new one (the PS1 pick moves
+// the exported PS1 playlist's entries instead).
 class GuiRaCores : public GuiScreen {
 public:
     App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
@@ -34,6 +36,8 @@ public:
     // the row's value as drawn: the short name of the core, then "(default)" on the platform's own pick, else
     // "(changed)"
     static std::string valueText(const RACorePlatform &row, int choice);
+    // the row's name: the system's database name, "PlayStation 1 Games" (translated) for the PS1 row
+    static std::string labelFor(const RACorePlatform &row);
 
 private:
     void change(int step, bool repeat = false); // the core on the row (a press wraps, a repeat stops)

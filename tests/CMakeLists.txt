@@ -2,6 +2,14 @@
 # tests/ through the same AB_BUILD_TESTS switch; both use its harness (doctest, EnvFixture, TempDir).
 include(${CMAKE_SOURCE_DIR}/autobleem-core/tests/harness.cmake)
 
+# every language file through the Rust text engine: no empty boxes, the lines that got wider listed
+# (autobleem-core lib_ableem/rust/ab_text). Native and pcusb run it; the MinGW build (its SDL through pkg-config,
+# its tests never run) leaves it out
+if (ABLEEM_TEXT_RUST AND NOT WIN32)
+    ab_add_test(test_text_languages screens/test_text_languages.cpp LIBS ableem ab_text SDL2_ttf SDL2)
+    target_compile_definitions(test_text_languages PRIVATE AB_LAUNCHER_RESOURCES="${CMAKE_SOURCE_DIR}/src/resources")
+endif()
+
 # abpad, the virtual gamepad for Apps (apps/abpad)
 ab_add_test(test_abpad_core apps/test_abpad_core.cpp LIBS abpad_core)
 
@@ -26,6 +34,13 @@ target_compile_definitions(test_app_resolve PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DI
 # abfetch, the console's own downloader (src/tools/abfetch - built for psc and the dev hosts)
 if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
     ab_add_test(test_abfetch tools/test_abfetch.cpp LIBS abfetch_core)
+endif()
+
+# abupdate (src/tools/abupdate.cpp), the built program: the --retroarch mode's arguments and progress file, the old mode
+if (NOT AB_TARGET STREQUAL "win" AND NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    ab_add_test(test_abupdate tools/test_abupdate.cpp)
+    add_dependencies(test_abupdate abupdate)
+    target_compile_definitions(test_abupdate PRIVATE AB_ABUPDATE_PATH="$<TARGET_FILE:abupdate>")
 endif()
 
 # ab_gui G5o3: the launcher's state change on tweens - the menu row, its option move and zoom, the meta panel and the
@@ -71,6 +86,22 @@ target_include_directories(test_memcard_counter PRIVATE ${CMAKE_SOURCE_DIR}/src/
 ab_add_test(test_set_picker_tabs screens/test_set_picker_tabs.cpp)
 target_include_directories(test_set_picker_tabs PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
 
+# The CD player screen's pure rules (evoui/screens/cd_player_logic.h): times, grid cursor, bar segments, repeat cycle
+ab_add_test(test_cd_player_logic screens/test_cd_player_logic.cpp)
+target_include_directories(test_cd_player_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+# The Repeat and Shuffle glyphs' per-row geometry (evoui/screens/cd_glyphs.h)
+ab_add_test(test_cd_glyphs screens/test_cd_glyphs.cpp)
+target_include_directories(test_cd_glyphs PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
+# The disc view's pure rules (evoui/screens/disc_view_logic.h): the drive chip, R1 footer rule, crossfade
+ab_add_test(test_disc_view_logic screens/test_disc_view_logic.cpp)
+target_include_directories(test_disc_view_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
+# Copying the disc in the drive to Games as a CHD (evoui/screens/disc_rip_logic.h): who is offered the copy, the names
+# of the CHD / .sbi / .m3u, the LibCrypt .sbi choice, the refusals before the rip, the popup's numbers
+ab_add_test(test_disc_rip_logic screens/test_disc_rip_logic.cpp)
+target_include_directories(test_disc_rip_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
 # The RetroArch-installed gates (evoui/screens/ra_gates.h, pure): a PS1 game's emulator, the Lightgun set
 ab_add_test(test_ra_gates screens/test_ra_gates.cpp)
 target_include_directories(test_ra_gates PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
@@ -110,3 +141,12 @@ target_include_directories(test_package_picker PRIVATE ${CMAKE_SOURCE_DIR}/src/c
 # game or another emulator, AutoBleem's for a PS1 game and for an App (which is a foreign entry too)
 ab_add_test(test_launch_picture screens/test_launch_picture.cpp)
 target_include_directories(test_launch_picture PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
+
+# Whether the RetroArch program needs a newer glibc than the console's (ra_glibc_check.h, pure): the GLIBC_x.y names
+# in its binary against the running libc
+ab_add_test(test_ra_glibc_check screens/test_ra_glibc_check.cpp)
+target_include_directories(test_ra_glibc_check PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
+
+# AUTOBLEEM-22: the game editor's rows greyed for a disc in the drive (gui/menus/game_editor_options.h, pure)
+ab_add_test(test_game_editor_options screens/test_game_editor_options.cpp)
+target_include_directories(test_game_editor_options PRIVATE ${CMAKE_SOURCE_DIR}/src/code/gui/menus)

@@ -1,0 +1,104 @@
+--- a/src/check.c
++++ b/src/check.c
+@@ -512,6 +512,7 @@
+     for (curr = FSTART(file, fs) ? FSTART(file, fs) :
+ 	 -1; curr != -1; curr = next_cluster(fs, curr)) {
+ 	FAT_ENTRY curEntry;
++	ab_progress_tick();
+ 	get_fat(&curEntry, fs->fat, curr, fs);
+ 
+ 	if (!curEntry.value || bad_cluster(fs, curr)) {
+--- a/src/fsck.fat.c
++++ b/src/fsck.fat.c
+@@ -96,6 +96,55 @@
+     exit(exitval);
+ }
+ 
++/* AutoBleem: with AB_FSCK_PROGRESS=FILE in the environment, FILE holds the check's progress in percent (one
++ * number, replaced whole by a rename): 2 at the start, 5 once the FAT is read, 5..95 while the files' clusters
++ * are walked (walked / used in the FAT), 95 after the walk. A console's boot screen draws its bar from it. */
++static const char *ab_progress_file;
++static uint32_t ab_progress_used, ab_progress_done;
++static int ab_progress_last = -1;
++
++void ab_progress_set(int percent)
++{
++    char tmp[4096];
++    FILE *f;
++
++    if (!ab_progress_file || percent == ab_progress_last)
++	return;
++    ab_progress_last = percent;
++    snprintf(tmp, sizeof(tmp), "%s.tmp", ab_progress_file);
++    f = fopen(tmp, "w");
++    if (!f)
++	return;
++    fprintf(f, "%d\n", percent);
++    fclose(f);
++    rename(tmp, ab_progress_file);
++}
++
++void ab_progress_start(DOS_FS * fs)
++{
++    uint32_t i;
++    FAT_ENTRY entry;
++
++    ab_progress_used = ab_progress_done = 0;
++    if (!ab_progress_file)
++	return;
++    for (i = 2; i < fs->data_clusters + 2; i++) {
++	get_fat(&entry, fs->fat, i, fs);
++	if (entry.value)
++	    ab_progress_used++;
++    }
++    ab_progress_set(5);
++}
++
++void ab_progress_tick(void)
++{
++    if (!ab_progress_file || !ab_progress_used)
++	return;
++    if (ab_progress_done < ab_progress_used)
++	ab_progress_done++;
++    ab_progress_set(5 + (int)((uint64_t)ab_progress_done * 90 / ab_progress_used));
++}
++
+ int main(int argc, char **argv)
+ {
+     DOS_FS fs;
+@@ -120,6 +169,9 @@
+     }
+ 
+     memset(&fs, 0, sizeof(fs));
++    ab_progress_file = getenv("AB_FSCK_PROGRESS");
++    if (ab_progress_file && !*ab_progress_file)
++	ab_progress_file = NULL;
+     salvage_files = verify = 0;
+     rw = interactive = 1;
+     check_atari();
+@@ -237,8 +289,10 @@
+ 
+     if (verify)
+ 	printf("Starting check/repair pass.\n");
+-    while (read_fat(&fs, 2), scan_root(&fs))
++    ab_progress_set(2);
++    while (read_fat(&fs, 2), ab_progress_start(&fs), scan_root(&fs))
+ 	qfree(&mem_queue);
++    ab_progress_set(95);
+     check_label(&fs);
+     if (test)
+ 	fix_bad(&fs);
+--- a/src/fsck.fat.h
++++ b/src/fsck.fat.h
+@@ -181,6 +181,11 @@
+ extern unsigned n_files;
+ extern void *mem_queue;
+ 
++/* AutoBleem: the check pass's progress for a progress bar (fsck.fat.c) */
++void ab_progress_start(DOS_FS * fs);
++void ab_progress_tick(void);
++void ab_progress_set(int percent);
++
+ /* value to use as end-of-file marker */
+ #define FAT_EOF(fs)	((atari_format ? 0xfff : 0xff8) | FAT_EXTD(fs))
+ #define FAT_IS_EOF(fs,v) ((uint32_t)(v) >= (0xff8|FAT_EXTD(fs)))

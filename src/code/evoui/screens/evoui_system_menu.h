@@ -24,6 +24,7 @@ enum class SystemMenuAction {
     MemoryCards,
     GameManager,
     HardwareInfo,
+    PadDaemon, // the pads the virtual gamepad daemon sees (GuiPadDaemon)
     Options,
     Extensions,     // the Extensions list (docs/extensions-plan.md), on every target
     Processors,     // the scanner processors' sequences (autobleem-main's docs/archive/scanner-processors-plan.md)
@@ -68,6 +69,8 @@ public:
     std::string networkUnavailable;
 
     SystemMenuAction result = SystemMenuAction::None;
+    // the row the cursor starts on (the page the player just came back from); None: the first row
+    SystemMenuAction startOn = SystemMenuAction::None;
 
     // a compact panel over the launcher: it pops in and back out (UIREV-48)
     explicit GuiSystemMenu(ableem::GuiBase &g) : GuiScreen(g) {

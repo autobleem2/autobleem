@@ -12,6 +12,7 @@
 #include "gui/screens/gui_confirm.h"
 #include "gui/screens/gui_about.h"
 #include "gui/screens/gui_hardware_info.h"
+#include "../../gui/screens/gui_pad_daemon.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
 #include "gui/menus/gui_app_settings_menu.h"
 #include "gui/menus/gui_game_editor_ra_menu.h"
@@ -178,6 +179,12 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
         return;
     }
 
+    // an audio CD in the disc view: the CD player on the drive; nothing starts
+    if (discViewOpen && discAudio) {
+        openCdPlayer();
+        return;
+    }
+
     app.session().startingGame = true;
     if (carousel.selectedIsValid()) {
         app.session().runningGame = carousel.games[carousel.selected];
@@ -186,12 +193,36 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     rememberSelection();
     menuVisible = false;
 
+    // the PS1 disc in the disc view: pcsx-abnxt on the drive (AutoBleem::launchGame sees App::pendingDisc), with the
+    // shared folder's resume point like any game. LaunchService::launchDisc counts the play as the library game's.
+    if (discViewOpen) {
+        app.session().emuMode = EmuMode::Pcsx;
+        const PsGame &game = *app.session().runningGame;
+        const int slot = app.resumePoints().slotForPlay(game, GameSettingsService::resumeModeOf(game));
+        app.session().resumePoint = slot >= 0 && !app.resumePoints().slotIsRetroArch(game, slot) ? slot : -1;
+        forgetSetCounts(); // Game History changes
+        return;
+    }
+
     if (selectedIsPs1()) {
         app.gameCatalog().recordGamePlayed(app.session().runningGame);
         forgetSetCounts(); // Game History changed
     }
 
     app.session().emuMode = EmuMode::Pcsx;
+
+    // the game editor's Resume row "Last slot" (EMU-26): Play continues from the newest slot, in the emulator that
+    // wrote it, whatever the game's RetroArch setting says (a slot RetroArch wrote, without RetroArch: from the start)
+    if (selectedIsPs1() && !app.session().runningGame->foreign) {
+        const PsGame &game = *app.session().runningGame;
+        const int slot = app.resumePoints().slotForPlay(game, GameSettingsService::resumeModeOf(game));
+        const bool raSlot = slot >= 0 && app.resumePoints().slotIsRetroArch(game, slot);
+        if (slot >= 0 && (!raSlot || Env::retroArchInstalled())) {
+            app.session().resumePoint = slot;
+            app.session().emuMode = raSlot ? EmuMode::RetroArch : EmuMode::Pcsx;
+            return;
+        }
+    }
 
     // if it's a PS1 game see if the user wants to play it in RetroArch instead
     // (without the RetroArch program none of this applies: the game starts in PCSX, the flags stay saved - ra_gates.h)
@@ -265,6 +296,7 @@ void GuiLauncher::loop_openOptions() {
     int lastUSBGameDirIndex = selection.usbGameDirIndex;
     int lastRAPlaylistIndex = selection.raPlaylistIndex;
     const GameKey lastGame = selectedGameKey(); // by id: setGames puts the row back on its first game
+    const bool wasDiscView = discViewOpen;      // put back after the reload (BUG-7): the reload is the library's
     GuiOptions option(*gui);
     BackdropScope backdrop(*this); // Options and what it opens draw over the launcher's snapshot
     // a language or font change: the snapshot is of the old language and font - taken again (the scope still owns it)
@@ -333,6 +365,8 @@ void GuiLauncher::loop_openOptions() {
             meta->gameName = "";
             menu->setResumePic("");
         }
+
+        restoreDiscView(wasDiscView);
 
         // the state is loadAssets()'s: Games, or Set with the row open when the set is empty
         gui->endBusy();
@@ -530,39 +564,50 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
 // GuiLauncher::loop_crossButtonPressed_STATE_RESUME
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
-    if (carousel.selectedIsValid()) {
-        auto game = carousel.games[carousel.selected];
+    // after a run (Save) the screen is about the game that ran - the disc, with the carousel holding it alone; never
+    // the carousel's old selection (discview::resumeGameFor). Load from the menu is about the selected game as ever.
+    const PsGamePtr carouselGame = carousel.selectedIsValid() ? carousel.games[carousel.selected] : PsGamePtr();
+    PsGamePtr game = sselector->operation == OP_SAVE ? discview::resumeGameFor(resumeGame, carouselGame) : carouselGame;
+    if (game) {
         int slot = sselector->selSlot;
 
         if (sselector->operation == OP_LOAD) {
             if (refuseLicenceProtected()) {
                 return;
             }
-            if (app.resumePoints().slotIsActive(*game, slot)) {
+            // a disc plays in pcsx-abnxt alone: a slot RetroArch wrote cannot be resumed from the drive
+            if (discViewOpen && app.resumePoints().slotIsRetroArch(*game, slot)) {
+                app.audio().cancel.play();
+            } else if (app.resumePoints().slotIsActive(*game, slot)) {
                 app.audio().cursor.play();
                 app.session().startingGame = true;
-                app.session().runningGame = carousel.games[carousel.selected];
+                app.session().runningGame = game;
                 app.session().resumePoint = slot;
                 rememberSelection();
                 sselector->cleanSaveStateImages();
-                // a RetroArch game resumes in RetroArch (the launch puts the slot where RetroArch loads it)
-                app.session().emuMode = game->foreign ? EmuMode::RetroArch : EmuMode::Pcsx;
+                // a slot resumes in the emulator that wrote it: a RetroArch game's, and one of our PS1 games' kept
+                // from a run in RetroArch, in RetroArch (the launch puts the slot where RetroArch loads it)
+                app.session().emuMode =
+                    app.resumePoints().slotIsRetroArch(*game, slot) ? EmuMode::RetroArch : EmuMode::Pcsx;
                 menuVisible = false;
             } else {
                 app.audio().cancel.play();
             }
         } else {
             // app.audio().cursor.play();
-            app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot);
-            app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
+            // the run that just ended: PCSX's, or RetroArch's (one of our PS1 games played in it)
+            const bool retroArch = app.session().emuMode == EmuMode::RetroArch;
+            app.resumePoints().saveAfterLaunch(*game, sselector->selSlot, retroArch);
+            if (!retroArch)
+                app.resumePoints().storePictureForSlot(*game, sselector->selSlot);
             sselector->visible = false;
             arrow->visible =
                 sselector->operation == OP_LOAD; // only back in the menu (Set) - not in Games after the emulator
             app.audio().resume.play();
             showInfo(_("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1));
 
-            menu->setResumePic(
-                app.resumePoints().pictureForSlot(*carousel.games[carousel.selected], sselector->selSlot));
+            menu->setResumePic(app.resumePoints().pictureForSlot(*game, sselector->selSlot));
+            resumeGame.reset();
             showOptions(); // the game has a slot now: the Resume icon is no longer greyed
 
             if (sselector->operation == OP_LOAD) {
@@ -595,25 +640,33 @@ void GuiLauncher::loop_openSystemMenu() {
 
     // the menu and whatever it opens (runMenuAction below) draw over one snapshot of the launcher (G5r5)
     BackdropScope backdrop(*this);
-    SystemMenuAction action;
-    {
-        GuiSystemMenu systemMenu(*gui);
-        systemMenu.retroArchLabel = retroArchLabel;
-        systemMenu.retroArchInstalled = retroArchInstalledCached();
-        systemMenu.scanInProgress = app.scans().scanning();
-        systemMenu.networkUnavailable = networkUnavailable();
-        systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
+    SystemMenuAction startOn = SystemMenuAction::None;
+    for (;;) {
+        SystemMenuAction action;
+        {
+            GuiSystemMenu systemMenu(*gui);
+            systemMenu.retroArchLabel = retroArchLabel;
+            systemMenu.retroArchInstalled = retroArchInstalledCached();
+            systemMenu.scanInProgress = app.scans().scanning();
+            systemMenu.networkUnavailable = networkUnavailable();
+            systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
 #ifdef AB_ONLINE_UPDATE
-        systemMenu.updateAvailable = app.updates().status().info.any();
+            systemMenu.updateAvailable = app.updates().status().info.any();
 #endif
-        systemMenu.show();
-        action = systemMenu.result;
+            systemMenu.startOn = startOn;
+            systemMenu.show();
+            action = systemMenu.result;
+        }
+        // reached with L2 held: its release (and R2's) went to the menu, and the sub-screens below run their own
+        // loops too - without this the launcher came back with the L2 shift still on, and every button behaved
+        // as if L2 were down until it was pressed and released again
+        forgetHeldModifiers();
+        runMenuAction(action);
+        // these pages are only looked at: Circle goes back to the menu, on the row it came from
+        if (action != SystemMenuAction::PadDaemon && action != SystemMenuAction::HardwareInfo)
+            break;
+        startOn = action;
     }
-    // reached with L2 held: its release (and R2's) went to the menu, and the sub-screens below run their own
-    // loops too - without this the launcher came back with the L2 shift still on, and every button behaved
-    // as if L2 were down until it was pressed and released again
-    forgetHeldModifiers();
-    runMenuAction(action);
 }
 
 //*******************************
@@ -739,6 +792,12 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
         // Network & Controllers now, and its facts page is this one's
         GuiHardwareInfo infoScreen(*gui);
         infoScreen.show();
+        break;
+    }
+
+    case SystemMenuAction::PadDaemon: {
+        GuiPadDaemon padScreen(*gui);
+        padScreen.show();
         break;
     }
 
@@ -940,10 +999,12 @@ void GuiLauncher::applyExtensionRequests() {
 #ifdef AB_ONLINE_UPDATE
         app.applyUpdateSetting();
 #endif
+        const bool wasDiscView = discViewOpen;
         freeAssets();
         loadAssets();
         switchSet(selection.set, false);
         showSetName();
+        restoreDiscView(wasDiscView);
     } else if (r.reloadApps && selection.set == GameSet::Apps && !carousel.scrolling) {
         reloadGames();
     }

@@ -211,6 +211,8 @@ add_library(ab_ui STATIC
         src/code/gui/screens/gui_select_memcard.h
         src/code/gui/screens/gui_keep_display.cpp
         src/code/gui/screens/gui_keep_display.h
+        src/code/gui/screens/gui_pad_daemon.cpp
+        src/code/gui/screens/gui_pad_daemon.h
         src/code/gui/game_detail_pane.cpp
         src/code/gui/game_detail_pane.h
         src/code/gui/menus/gui_game_editor_menu.cpp
@@ -228,7 +230,7 @@ add_library(ab_ui STATIC
         src/code/gui/menus/gui_options_menu_base.cpp
         src/code/gui/menus/gui_options_menu_base.h
 )
-target_link_libraries(ab_ui ab_classic)
+target_link_libraries(ab_ui ab_classic abpad_core)
 target_include_directories(ab_ui PUBLIC src/code)
 
 # ab_evoui: the EvolutionUI launcher (src/code/evoui/) - the screen, the carousel, the launcher's own
@@ -286,6 +288,15 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/package_picker_logic.h
         src/code/evoui/screens/evoui_processors.cpp
         src/code/evoui/screens/evoui_processors.h
+        src/code/evoui/screens/evoui_cd_player.cpp
+        src/code/evoui/screens/evoui_disc_view.cpp
+        src/code/evoui/screens/evoui_disc_rip.cpp
+        src/code/evoui/screens/evoui_disc_rip.h
+        src/code/evoui/screens/disc_rip_logic.h
+        src/code/evoui/screens/disc_view_logic.h
+        src/code/evoui/screens/evoui_cd_player.h
+        src/code/evoui/screens/cd_player_logic.h
+        src/code/evoui/screens/cd_glyphs.h
         src/code/evoui/screens/evoui_set_picker.cpp
         src/code/evoui/screens/evoui_set_picker.h
         src/code/evoui/screens/evoui_system_menu.h
@@ -335,7 +346,13 @@ if (MINGW)
     target_link_options(autobleem-gui PRIVATE -Wl,--export-all-symbols)
     # but not the GCC runtime linked in statically (-static-libgcc -static-libstdc++): an extension carries
     # its own copy (the toolchain file), and _Unwind_Resume from both was a duplicate definition
-    target_link_options(autobleem-gui PRIVATE -Wl,--exclude-libs=libgcc.a:libgcc_eh.a:libstdc++.a:libsupc++.a)
+    # (nor the text engine's Rust std, libab_text.a: Font's methods are the SDK, its internals are not)
+    target_link_options(autobleem-gui PRIVATE
+            -Wl,--exclude-libs=libgcc.a:libgcc_eh.a:libstdc++.a:libsupc++.a:libab_text.a)
+elseif (ABLEEM_TEXT_RUST)
+    # -rdynamic would put every global symbol of the Rust archive (std and the text engine's crates, long mangled
+    # names by the thousand) into the dynamic symbol table - megabytes no plugin needs
+    target_link_options(autobleem-gui PRIVATE -Wl,--exclude-libs=libab_text.a)
 endif()
 # ...and all of the SDK, not just what the launcher itself calls: from a static library the linker takes only
 # the objects something references, so a plugin using a part of the SDK the launcher does not (the Store's

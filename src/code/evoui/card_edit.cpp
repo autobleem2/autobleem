@@ -69,9 +69,9 @@ string CardEdit::title(int slot) const {
         return "(" + image_.title(slot) + ")";
     switch (image_.blockType(slot)) {
     case MemcardImage::BlockType::Link:
-        return _("Link Block");
+        return _("Link block");
     case MemcardImage::BlockType::LinkEnd:
-        return _("Link end Block");
+        return _("Link end block");
     default:
         return image_.title(slot);
     }

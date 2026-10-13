@@ -100,6 +100,7 @@ void GuiSystemMenu::init() {
         addNetwork();
         addItem(SystemMenuAction::HardwareInfo, "Hardware Information", _("Hardware Information"),
                 _("Controller and system information"));
+        addItem(SystemMenuAction::PadDaemon, "Virtual gamepad", _("Virtual gamepad"), _("The pads Apps are given"));
 #ifdef AB_ONLINE_UPDATE
         addItem(SystemMenuAction::SoftwareUpdate, "Software Update", _("Software Update"),
                 _("Check the download site for a newer version"), updateAvailable ? _("Update available") : "");
@@ -114,6 +115,15 @@ void GuiSystemMenu::init() {
 
     selected = 0;
     firstVisible = 0;
+    if (startOn != SystemMenuAction::None) {
+        for (int i = 0; i < static_cast<int>(rows.size()); i++) {
+            if (!rows[i].heading && rows[i].action == startOn) {
+                selected = i;
+                break;
+            }
+        }
+        keepSelectedVisible();
+    }
     result = SystemMenuAction::None;
     style = gui->panelStyle();
     publishItems();

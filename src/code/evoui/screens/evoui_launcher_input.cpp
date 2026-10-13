@@ -6,6 +6,7 @@
 #include "gui/gui.h"
 #include "gui/screens/gui_confirm.h"
 #include "evoui_btn_guide.h"
+#include "evoui_cd_player.h"
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
 
@@ -17,6 +18,7 @@
 #include <iostream>
 #include <sstream>
 #include <ableem/engine/log.h>
+#include <ableem/engine/startup_timer.h>
 
 using namespace std;
 
@@ -26,13 +28,19 @@ using namespace std;
 //*******************************
 void GuiLauncher::loop() {
     PLOG_DEBUG << "Main Loop";
-    powerOffShift = false; // L2 shift used for power off and selecting game sub dir or RA playlist
+    runCdPlayerDevEntry(*gui); // AB_CD_PLAYER_IMAGE: the CD player on an image, once, for the dev and the VM
+    powerOffShift = false;     // L2 shift used for power off and selecting game sub dir or RA playlist
 
     menuVisible = true;
     motionStart = 0;
     motionDir = 0;
     queuedScroll = 0;
 
+    static bool loopEnteredLogged = false;
+    if (!loopEnteredLogged) {
+        loopEnteredLogged = true;
+        ableem::StartupTimer::milestone("menu-loop-entered");
+    }
     while (menuVisible) {
         retranslateMenu(); // Options may have changed the language on the way back into this loop
 
@@ -53,6 +61,8 @@ void GuiLauncher::loop() {
             finishSettleLoads();
         pollSettleLoads();
         applyScanUpdate(app.scans().poll());
+        pollDisc();
+        selectRippedGame();
         app.extensions().poll();
         applyExtensionRequests();
         pollPadBattery();
@@ -67,8 +77,22 @@ void GuiLauncher::loop() {
         // what the tweens running ask for on top: the ambient loops ask Ambient, the state-change transitions
         // hold Active until they end
         gui->uiContext().stack().tweens().applyFrameNeed(gui->input());
-        if (gui->input().frameDue())
+        if (gui->input().frameDue()) {
+            // the process's first menu frame and the first frame with the row's covers all up, once each
+            static bool firstFrameLogged = false;
+            static bool coversLogged = false;
+            if (!firstFrameLogged)
+                ableem::StartupTimer::milestone("menu-first-render-start");
             render();
+            if (!firstFrameLogged) {
+                firstFrameLogged = true;
+                ableem::StartupTimer::milestone("menu-first-frame");
+            }
+            if (!coversLogged && carousel.shownCoversDone()) {
+                coversLogged = true;
+                ableem::StartupTimer::milestone("covers-shown");
+            }
+        }
 
         // CONSOLE-13: a held direction's release can be read by a screen opened over this one (Options, and
         // the busy job that ends it) and never reach this loop; Input's own d-pad state is the truth - it is
@@ -252,6 +276,8 @@ bool GuiLauncher::benchSkips(const string &part) {
 // GuiLauncher::somethingMoves
 //*******************************
 bool GuiLauncher::somethingMoves() const {
+    if (discFading || discStatus.state == DriveWatcher::State::Reading)
+        return true;
     return carousel.animating() || settleLoadsPending || motionStart != 0 || queuedScroll != 0 ||
            L1_isPressedForFastForward || R1_isPressedForFastForward || fadeAlpha > 0 ||
            gui->uiContext().stack().tweens().busy() || notificationLines.animating() || scanBubble.animating() ||
@@ -362,7 +388,7 @@ void GuiLauncher::loop_joyMoveUp() {
 // GuiLauncher::loop_joyMoveDown
 //*******************************
 void GuiLauncher::loop_joyMoveDown() {
-    if (carousel.scrolling) {
+    if (carousel.scrolling || (discViewOpen && discAudio)) { // an audio CD has no game menu
         return;
     }
     if (state == LauncherScreenState::Games) {
@@ -486,6 +512,9 @@ void GuiLauncher::loop_joyButton_Pressed() {
         return;
     }
 
+    if (discFading)
+        return; // the crossfade runs: no button until it ends
+
     if (e.button == Button::Select) {
         loop_selectButton_Pressed();
     };
@@ -498,10 +527,14 @@ void GuiLauncher::loop_joyButton_Pressed() {
         return; // none of the following buttons should work if L2 is pressed
 
     if (e.button == Button::L1) {
+        if (discViewOpen)
+            return; // one cover alone: nothing to jump to
         L1_isPressedForFastForward = true;
         loop_prevGameFirstLetter();
 
     } else if (e.button == Button::R1) {
+        if (discViewOpen)
+            return;
         R1_isPressedForFastForward = true;
         loop_nextGameFirstLetter();
 
@@ -607,6 +640,8 @@ void GuiLauncher::loop_nextGameFirstLetter() {
 // GuiLauncher::loop_selectButtonPressed
 //*******************************
 void GuiLauncher::loop_selectButton_Pressed() {
+    if (discViewOpen)
+        return; // the set picker is for the carousel
     // with the game menu's icon row open, Select (and L2+Select) still change the set: the row closes
     // first, the way Up closes it, and the switch goes on from the Games state
     if (state == LauncherScreenState::Set) {
@@ -627,6 +662,8 @@ void GuiLauncher::loop_selectButton_Pressed() {
 // pick a random game
 //*******************************
 void GuiLauncher::loop_startButton_Pressed() {
+    if (discViewOpen)
+        return; // one cover: nothing to pick at random
     app.audio().cursor.play();
 
     if (state == LauncherScreenState::Games) {
@@ -648,6 +685,10 @@ void GuiLauncher::loop_startButton_Pressed() {
 // GuiLauncher::loop_circleButtonPressed
 //*******************************
 void GuiLauncher::loop_circleButton_Pressed() {
+    // Circle "Disc" while a disc is ready and the carousel (or an empty roster) shows: its view comes back (the footer
+    // says so); Circle had nothing to do there
+    if (discViewCanOpenIn() && discview::circleShowsDisc(discDriveNow(), discViewOpen) && enterDiscView())
+        return;
     if (state == LauncherScreenState::Set) {
         if (carousel.games.empty()) {
             app.audio().cancel.play(); // the row stays open on an empty set (settleEmptyRoster)
@@ -658,6 +699,8 @@ void GuiLauncher::loop_circleButton_Pressed() {
             switchState(LauncherScreenState::Games, time);
             motionStart = 0;
         }
+    } else if (state == LauncherScreenState::Games && discViewOpen) {
+        leaveDiscView(); // back to the carousel; the disc stays, the chip lit, Circle brings the view back
     } else if (state == LauncherScreenState::Games) {
         // there is no classic menu to fall back to any more (the background-scan work's step 3) - Circle here
         // used to close the launcher; R2 (the system menu) is where Power Off and everything else now lives
@@ -726,6 +769,11 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 // GuiLauncher::loop_squareButtonPressed
 //*******************************
 void GuiLauncher::loop_squareButton_Pressed() {
+    if (discViewOpen) { // a physical disc plays in pcsx-abnxt alone; Square copies a known PS1 disc to Games
+        if (copyDiscOffered())
+            copyDiscToGames();
+        return;
+    }
 
     if (Env::retroArchInstalled()) {
 
