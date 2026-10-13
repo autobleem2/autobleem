@@ -407,7 +407,7 @@ void GuiEditor::draw() {
     if (!gameIni.values["players"].empty() && gameIni.values["players"] != "0")
         pane.facts.emplace_back(_("Players:"), gameIni.values["players"]);
     pane.facts.emplace_back(_("Folder:"), internal ? gameData->folder : gameIni.entry);
-    pane.facts.emplace_back(_("Memory Card:"), gameIni.values["memcard"] == "SONY"
+    pane.facts.emplace_back(_("Memory card:"), gameIni.values["memcard"] == "SONY"
                                                    ? string(_("Internal"))
                                                    : gameIni.values["memcard"] + " (" + _("Custom") + ")");
     pane.render(*gui);

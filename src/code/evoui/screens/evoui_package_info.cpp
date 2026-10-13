@@ -65,7 +65,7 @@ vector<abgui::FactsSection> GuiPackageInfo::build() const {
     if (!package.version.empty())
         facts.rows.push_back({_("Version"), package.version});
     if (!package.licence.empty())
-        facts.rows.push_back({_("Licence"), packageLicenceLabel(package.licence)});
+        facts.rows.push_back({_("License"), packageLicenceLabel(package.licence)});
     facts.rows.push_back({_("Source"), packageSourceLabel(package.source, package.inApp)});
     facts.rows.push_back({_("Location"), locationOf(package.root)});
     out.push_back(facts);
@@ -74,7 +74,7 @@ vector<abgui::FactsSection> GuiPackageInfo::build() const {
     contents.title = _("Contents");
     if (package.unknown || package.games.empty()) {
         contents.rows.push_back({_("Unknown data"), ""});
-        contents.rows.push_back({"", _("Not recognised. If this is a game, see the manual: Your own games.")});
+        contents.rows.push_back({"", _("Not recognized. If this is a game, see the manual: Your own games.")});
     }
     for (const PackageGame &game : package.games)
         contents.rows.push_back(

@@ -710,7 +710,7 @@ int AutoBleem::run() {
     if (session_.menuOption == MENU_OPTION_POWEROFF) {
         gui_->drawText(_("POWERING OFF... PLEASE WAIT")); // the standby follows within a second
     } else {
-        Gui::splash(_("Loading ... Please Wait ..."));
+        Gui::splash(_("Loading... Please wait..."));
     }
     gui_->finish();
 

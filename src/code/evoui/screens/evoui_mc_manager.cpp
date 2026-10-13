@@ -101,7 +101,7 @@ void GuiMcManager::renderPencil(int memcard, int col, int row) {
 void GuiMcManager::trySave() {
     if (changes) {
         GuiConfirm confirm(*gui);
-        confirm.label = _("Do you want to save memcards data ?");
+        confirm.label = _("Do you want to save memory card data?");
         confirm.show();
         if (confirm.result) {
             memcard1->save(card1path);
@@ -116,7 +116,7 @@ void GuiMcManager::renderStatic() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
     gui->renderTextBar();
-    gui->renderHeader(_("Memory Card Manager"));
+    gui->renderHeader(_("Memory card manager"));
     gui->renderStatus("|@Start| " + _("Select right card") + " | |@Select| " + _("Defragment card") + "   | " +
                       "|@X| " + _("Reload cards") + "   | " + "|@T| " + _("Delete") + " | " + "|@S| " + _("Copy") +
                       " | " + "|@O| " + _("Back") + "|");

@@ -49,7 +49,7 @@ void PsMeta::updateTexts(const string &gameNameTxt, const string &publisherTxt, 
     if (foreign) {
         trim(publisher);
         if (publisher == "DETECT")
-            publisher = _("Unknown Core (AutoDetect)");
+            publisher = _("Unknown core (AutoDetect)");
     }
 }
 
@@ -91,7 +91,7 @@ void PsMeta::updateTexts(PsGamePtr &psGame, ableem::Color _textColor) {
             coreName = psGame->core_name;
             trim(coreName);
             if (coreName == "DETECT")
-                coreName = _("Unknown Core (AutoDetect)");
+                coreName = _("Unknown core (AutoDetect)");
             playersKnown = psGame->players > 0;
         }
     }
