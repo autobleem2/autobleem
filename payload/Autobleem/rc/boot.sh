@@ -28,6 +28,20 @@ copy_pictures() {
         cp -f /media/Autobleem/bin/autobleem/splash/$pic-4x3.jpg /tmp/$pic-4x3.jpg 2>/dev/null
     done
 }
+# AUTOBLEEM-28/29: the insert-stick and check-stick pictures in the launcher's language (config.ini's language: the
+# language file's name, Polski ...; English when there is none for it) on tmpfs as insert-stick.jpg / check-stick.jpg
+# with their 4:3 twins - they are shown when the stick is gone or being checked, so they must already be in RAM.
+# Taken again every round: the language may have changed in Options.
+copy_stick_pictures() {
+    sp_lang=$(ab_config_get language)
+    sp_dir=/media/Autobleem/bin/autobleem/splash
+    for pic in insert-stick check-stick; do
+        l=$sp_lang
+        [ -n "$l" ] && [ -f "$sp_dir/$pic/$l.jpg" ] || l=English
+        cp -f "$sp_dir/$pic/$l.jpg" /tmp/$pic.jpg 2>/dev/null
+        cp -f "$sp_dir/$pic/$l-4x3.jpg" /tmp/$pic-4x3.jpg 2>/dev/null
+    done
+}
 SPLASH_PID=/tmp/.absplash.pid
 show_splash() {
     # already up (the wake's or the return's picture): nothing to start - one on the screen at a time
@@ -169,7 +183,13 @@ boot_once() {
     $RC/killsony.sh now
     $RC/backup.sh
     bt "backup.sh done"
-    # the stick's dirty flag, before anything of ours writes to it
+    # AUTOBLEEM-29: the filesystem check (rc/ab_fsck.sh) and its tools on tmpfs, with the pictures - checkstick.sh
+    # unmounts the stick for a check, and selection.sh checks a stick that comes back after a pull
+    cp -f $RC/ab_fsck.sh /tmp/ab_fsck.sh && (. /tmp/ab_fsck.sh && ab_fsck_copy)
+    copy_stick_pictures
+    # the stick's dirty flag (and its check), before anything of ours writes to it - with this shell's cwd on tmpfs:
+    # it is the one thing of Sony's that holds /media (see the top), and a check needs the stick unmounted
+    cd /tmp
     $RC/checkstick.sh
     bt "checkstick.sh done"
     # the AutoBleem kernel's SSH key from the stick, if any (C10) - a no-op on the stock kernel
@@ -270,6 +290,13 @@ while true; do
     # CONSOLE-15 evidence: the watch log (RAM, one line per 30 s - see ab_watch.sh); it runs from a tmpfs copy
     # and is stopped by selection.sh before the stick is unmounted, so it is started again every time round
     sh $RC/ab_watch.sh start
+    # AUTOBLEEM-28: what the round needs when the stick is pulled in the middle of it, on tmpfs before it starts -
+    # selection.sh and its ab_log.sh (taken again after the launcher, below, when the stick is still there), the
+    # pictures - and the stick's watch, which stops and kills everything below this shell when the stick goes
+    cp -f $RC/selection.sh /tmp/selection.sh
+    cp -f $RC/ab_log.sh /tmp/ab_log.sh
+    copy_stick_pictures
+    sh $RC/ab_stickwatch.sh start $$
     rm -f "$AB_RUNTIME_DIR/autobleem_exit"
     bt "starting autobleem.sh"
     fix_exec_bits # an update during the last round may have brought files without the bit
@@ -278,11 +305,16 @@ while true; do
     bt "autobleem.sh ended (status $ab_sh_rc)"
     # autobleem.sh writes the launcher's own status; if it was killed itself, its status is the next best
     [ -f "$AB_RUNTIME_DIR/autobleem_exit" ] || echo $ab_sh_rc > "$AB_RUNTIME_DIR/autobleem_exit"
-    cp -f $RC/selection.sh /tmp/selection.sh
-    cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
-    copy_pictures autobleem updating poweroff
+    # (the stick pulled: these copies fail and the ones taken before the round stay)
+    cp -f $RC/selection.sh /tmp/selection.sh 2>/dev/null
+    cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash 2>/dev/null && chmod +x /tmp/absplash
+    copy_pictures autobleem updating poweroff 2>/dev/null
     cd /tmp
-    sh /tmp/selection.sh || break
+    sh /tmp/selection.sh && continue
+    # AUTOBLEEM-28: the stick was pulled while selection.sh's own work ran (RetroArch, an update) - the watch killed
+    # it and left the no-stick selection (9): selection.sh again, from its tmpfs copy, waits for the stick
+    [ -f /tmp/.abnostick ] && sh /tmp/selection.sh && continue
+    break
 done
 sync
 systemctl reboot   # systemd's: a busybox reboot over it only signals init and returns

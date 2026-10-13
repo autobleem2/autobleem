@@ -958,6 +958,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Copyright (C) 1999-2022 Free Software Foundation, Inc. Distributed as an unmodified shared library; the source is at https://www.gnu.org/software/libiconv/ and the licence text at https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
 ```
 
+## dosfstools, exfatprogs, e2fsprogs
+
+*payload/Autobleem/bin/fsck/ - fsck.fat, fsck.exfat and e2fsck, static console builds (the stick's check at boot), in
+the console package as separate programs* - **GPL-3.0-or-later** (dosfstools), **GPL-2.0-or-later** (exfatprogs),
+**GPL-2.0** (e2fsprogs)
+
+```
+fsck.fat: dosfstools 4.2, copyright the dosfstools authors - with one patch
+(tools/fsck_psc/dosfstools-4.2-ab-progress.patch).
+fsck.exfat: exfatprogs 1.4.3, copyright the exfatprogs authors.
+e2fsck: e2fsprogs 1.47.4, copyright Theodore Ts'o and the e2fsprogs authors.
+The licence texts are in payload/Autobleem/bin/fsck/licenses/; the sources are the upstream release tarballs named in
+payload/Autobleem/bin/fsck/README.md, built by tools/fsck_psc/build_fsck.sh.
+```
+
 ## doctest
 
 *tests/third_party/doctest - the unit tests only, in no package* - **MIT**

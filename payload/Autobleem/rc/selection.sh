@@ -11,6 +11,8 @@
 #   7  power off: the standby below, then the launcher again when the power button wakes the console
 #   8  a new display mode (Options -> Display): straight back to boot.sh, which restarts Weston in it and
 #      starts the launcher again - no reboot
+#   9  no stick (AUTOBLEEM-28): not the launcher's - rc/ab_stickwatch.sh writes it when the stick was pulled while
+#      the launcher, a game or this script's own work ran; the insert-stick picture until it is back (nostick below)
 # After a crash, or a first boot where it never ran, the file is not there - then there is no selection
 # and the reboot is what happens. The file is removed once read, so a crash after a standby is not
 # taken for another power off.
@@ -19,9 +21,15 @@ SEL_RETROARCH=4
 SEL_UPDATE=6
 SEL_POWEROFF=7
 SEL_DISPLAY=8
+SEL_NOSTICK=9
 
 RC=/media/Autobleem/rc
-. $RC/ab_log.sh
+# the stick's own, or (no stick: selection 9) the tmpfs copy boot.sh takes before every launcher start
+if [ -f $RC/ab_log.sh ]; then
+    . $RC/ab_log.sh
+else
+    . /tmp/ab_log.sh
+fi
 # ab_timeout comes from ab_log.sh; a stick whose ab_log.sh is older lacks it (the Wi-Fi calls below then never ran:
 # "ab_timeout: command not found", CONSOLE-15 P2 repro 3) - a bounded call here either way
 if ! type ab_timeout > /dev/null 2>&1; then
@@ -38,9 +46,11 @@ fi
 LOG=$AB_LOG_DIR/standby.log
 FAILLOG=/media/System/Logs/standby.log
 
-# the watch log's helper (ab_watch.sh) runs from a tmpfs copy; this ends it before the stick is unmounted
+# the watch log's helper (ab_watch.sh) and the stick's watch (ab_stickwatch.sh) run from tmpfs copies; this ends
+# them before the stick is unmounted
 ab_watch_stop() {
     [ -f /tmp/ab_watch_run.sh ] && sh /tmp/ab_watch_run.sh stop
+    [ -f /tmp/ab_stickwatch_run.sh ] && sh /tmp/ab_stickwatch_run.sh stop
 }
 
 # CONSOLE-15 P2: the Power Off path writes one numbered line per step, so a reset leaves the last step done as its
@@ -118,7 +128,7 @@ echo Selection: $AB_SELECTION
 
 # the emulator the launch script execs; a fresh copy on tmpfs every boot
 echo Custom PCSX
-cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
+cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx 2> /dev/null
 [ -f /tmp/pcsx ] && chmod +x /tmp/pcsx
 
 # The power LED while the launcher loads after a wake (the owner's report, 2026-10-02: at a first boot it blinks
@@ -335,41 +345,10 @@ rear_wake() {
     rm -f /tmp/.abrearwake
 }
 
-# The console's "power off", the way Sony's own power_manage does it - suspend to RAM, the power button
-# wakes it - but with the stick unmounted first, so it can be pulled while the console is "off" without
-# coming back dirty (Windows' "scan and fix"). The orange LED (red + green) is the AutoBleem standby; the USB bus is
-# reset by the resume and the stick comes back a few seconds later (the same name as before, or the
-# other one), and is mounted again exactly as usb_watch mounted it. Nothing here touches the console's
-# own storage. Returns 0 with the stick mounted again, 1 when it is not back within 60 s (30 s, then 30 s more).
-standby() {
-    ab_watch_stop # the watch log (CONSOLE-15) must not touch /media or run through the suspend
-    # the last wake's background part (rear_wake) still running - a power off right after a wake - ends first
-    w=0
-    while [ -f /tmp/.abrearwake ] && [ $w -lt 25 ]; do
-        w=$((w + 1))
-        sleep 1
-    done
-    rm -f /tmp/.abrearwake
-    DEV=$(awk '$2 == "/media" { print $1 }' /proc/mounts | head -1)
-    SLOG=/tmp/standby.log
-    echo "$(date) standby: dev=$DEV" > $SLOG
-    # the launcher has left and Weston shows its bare desktop - black with the mouse cursor - until the suspend
-    # blanks the screen. A full-screen absplash with the power-off picture covers it (the owner, 2026-10-01: "please
-    # wait - powering off", not black; the wake picture if it is missing, black if both are), from here until the
-    # wake; the wake picture below goes over it and the flag is removed there. RAM only, the stick is not touched.
-    if [ -x /tmp/absplash ]; then
-        touch /tmp/.abdown
-        DOWNPIC=/tmp/poweroff.jpg; [ -f $DOWNPIC ] || DOWNPIC=/tmp/autobleem.jpg
-        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash $DOWNPIC --until-gone /tmp/.abdown --timeout 300 > /dev/null 2>&1 &
-    fi
-    rm -f /media/System/.session # the session ended cleanly - checkstick.sh may clear the flag next boot
-    sync
-    # CONSOLE-15 P2: the state BEFORE the dangerous step, on the stick (the umount below is the last time it can be
-    # written; a reset in the suspend leaves no other trace). Read-only on /sys and /proc; the marker is read and
-    # deleted by boot.sh at the next start. Only a power off writes this - the quiet-stick rule holds.
-    # whether anything is plugged in at the rear (micro-USB, OTG) port now: only the AutoBleem kernel runs it as a
-    # host, and a device there may not come back after the resume (see below)
-    # (the bus is found by its controller, musb-hdrc.0.auto - the front ports are musbfsh - not by its number)
+# whether anything is plugged in at the rear (micro-USB, OTG) port now: only the AutoBleem kernel runs it as a
+# host, and a device there may not come back after the resume (see below)
+# (the bus is found by its controller, musb-hdrc.0.auto - the front ports are musbfsh - not by its number)
+rear_detect() {
     REAR_HAD=0
     REAR_DEV=""
     for u in /sys/bus/usb/devices/usb*; do
@@ -385,6 +364,197 @@ standby() {
     REAR_MODE=/sys/devices/platform/mt_usb/swmode
     REAR_KIDS=0
     [ "$REAR_HAD" = 1 ] && REAR_KIDS=$(rear_kids)
+}
+
+# CONSOLE-15 P2: a hub with a Wi-Fi dongle on the rear port keeps its root port from suspending, and the kernel
+# then refuses the suspend (see rear_quiesce above): the rear devices are made idle first (the stick still mounted at
+# the first standby, so that the markers go straight to it). A real suspend is tried either way; poweroff_instead only
+# after it failed. Bluetooth stopped for the suspend and started again by rear_wake once its adapter is back (see
+# there). The kernel overlay's start script binds its key store over /var/lib/bluetooth again on every start - the
+# same directory, so the extra layer changes nothing and is left alone (the pairings live there)
+quiesce_for_suspend() {
+    BT_UNITS=""
+    for u in bluetooth abbtagent; do
+        systemctl -q is-active $u.service 2>/dev/null && BT_UNITS="$BT_UNITS $u.service"
+    done
+    if [ -n "$BT_UNITS" ]; then
+        ab_timeout systemctl stop $BT_UNITS > /dev/null 2>&1
+        mark "Bluetooth stopped for the suspend:$BT_UNITS"
+    fi
+    if [ "$REAR_HAD" = 1 ]; then
+        mark "rear USB: $REAR_KIDS device(s) below the hub: $(rear_state) - quiescing"
+        rear_quiesce
+    fi
+}
+
+# the AutoBleem picture from the wake until the launcher's window is up (it removes /tmp/.abload itself, as after
+# RetroArch) - the seconds of the bus, the mount and the launcher's start were black - and the LED blinking as at a
+# first boot meanwhile (see led_blink_start; only with the picture up - without absplash nothing holds .abload)
+wake_picture() {
+    if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
+        touch /tmp/.abload
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --anim sweep --until-gone /tmp/.abload --timeout 40 > /tmp/absplash.log 2>&1 &
+        echo $! > /tmp/.absplash.pid # boot.sh shows no second picture over this one
+    else
+        echo "no absplash on tmpfs" >> $SLOG
+    fi
+    [ -f /tmp/.abload ] && led_blink_start
+}
+
+# the "please wait - powering off" picture over Weston's bare desktop until the suspend blanks the screen (the owner,
+# 2026-10-01: not black); removed by the wake (suspend_wake). RAM only.
+down_picture() {
+    if [ -x /tmp/absplash ]; then
+        touch /tmp/.abdown
+        DOWNPIC=/tmp/poweroff.jpg; [ -f $DOWNPIC ] || DOWNPIC=/tmp/autobleem.jpg
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash $DOWNPIC --until-gone /tmp/.abdown --timeout 300 > /dev/null 2>&1 &
+    fi
+}
+
+# the stick: any sd?1 with the SONY label, not only sda1/sdb1 as usb_watch looks - a stick pulled during the standby
+# and plugged back can come back under a new name while the kernel still holds the old one, and the wake then found
+# nothing and rebooted (2026-09-25)
+find_stick() {
+    blkid | grep "^/dev/sd[a-z]1:" | grep -E "LABEL=\"SONY.{0,4}\"" | awk -F: '{print $1}' | head -1
+}
+
+# AUTOBLEEM-28: no stick - the insert-stick picture (the UI language's, boot.sh's tmpfs copy) until a stick is in
+# any port, polled every second, for at most NOSTICK_WAIT s; POWER on the picture (absplash --power-file) ends the
+# wait at once. $1 = check: the stick was pulled while mounted, so it is checked before the mount (rc/ab_fsck.sh -
+# the check-stick picture with its bar goes over this one). Returns 0 with the stick mounted on /media, 1 when the
+# console should sleep (the time is up, or POWER).
+NOSTICK_WAIT=300
+wait_for_stick() {
+    want_check=$1
+    rm -f /tmp/.abpower
+    touch /tmp/.abnostick
+    if [ -x /tmp/absplash ] && [ -f /tmp/insert-stick.jpg ]; then
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/insert-stick.jpg --until-gone /tmp/.abnostick \
+            --timeout $((NOSTICK_WAIT + 60)) --power-file /tmp/.abpower > /tmp/absplash-nostick.log 2>&1 &
+    fi
+    echo "$(date) no stick - the insert-stick picture, waiting up to $NOSTICK_WAIT s (check: ${want_check:-no})" >> $SLOG
+    w=0
+    tried=""
+    while [ $w -lt $NOSTICK_WAIT ] && [ ! -f /tmp/.abpower ]; do
+        DEV=$(find_stick)
+        if [ -n "$DEV" ] && [ "$DEV" != "$tried" ]; then
+            tried=$DEV
+            sleep 1 # its partitions settle
+            if [ "$want_check" = check ] && [ -f /tmp/ab_fsck.sh ]; then
+                . /tmp/ab_fsck.sh
+                rm -f $ABFSCK_LOG
+                # a FAT is checked only when its flag says it was left mounted (the pull); exFAT/ext always
+                if [ -x /tmp/abfatflag ] && /tmp/abfatflag "$DEV" 2> /dev/null | grep -q '^clean'; then
+                    echo "$(date) $DEV is clean - no check" >> $ABFSCK_LOG
+                else
+                    ab_fsck "$DEV"
+                fi
+            fi
+            if mount "$DEV" /media; then
+                rm -f /tmp/.abnostick
+                echo "$(date) stick $DEV mounted after $w s" >> $SLOG
+                if [ "$want_check" = check ] && [ -f /tmp/abfsck.log ]; then
+                    mkdir -p /media/System/Logs
+                    cat /tmp/abfsck.log >> /media/System/Logs/fsck.log
+                fi
+                return 0
+            fi
+            echo "$(date) $DEV did not mount - still waiting" >> $SLOG
+        fi
+        w=$((w + 1))
+        sleep 1
+    done
+    rm -f /tmp/.abnostick
+    if [ -f /tmp/.abpower ]; then
+        echo "$(date) POWER on the insert-stick picture after $w s - the standby" >> $SLOG
+    else
+        echo "$(date) no stick within $NOSTICK_WAIT s - the standby" >> $SLOG
+    fi
+    rm -f /tmp/.abpower
+    return 1
+}
+
+# the stick is mounted again after a wake or a wait: the kernel owns its flag (clean at mount, or not ours), the
+# session marker is back, and a later boot is not 'after a power-off request'
+stick_mounted() {
+    rm -f /tmp/ab_stick_owned
+    touch /media/System/.session
+    rm -f /media/System/Logs/poweroff_reason
+    { cat $SLOG; [ -f /tmp/absplash.log ] && sed 's/^/  absplash: /' /tmp/absplash.log; } >> $LOG
+}
+
+# the suspend once more with no stick in (AUTOBLEEM-28: nobody put one in, or POWER on the insert-stick picture):
+# the last wake's background part ends first, then the rear port and Bluetooth go idle as for the first suspend
+sleep_again() {
+    w=0
+    while [ -f /tmp/.abrearwake ] && [ $w -lt 25 ]; do
+        w=$((w + 1))
+        sleep 1
+    done
+    rm -f /tmp/.abrearwake
+    led_blink_stop
+    rm -f /tmp/.abload
+    down_picture
+    rear_detect
+    mark "the standby again with no stick (rear_had=$REAR_HAD)"
+    quiesce_for_suspend
+}
+
+# after a wake: the stick within 5 s (the wake picture up meanwhile), else the insert-stick wait. 0 = mounted.
+stick_after_wake() {
+    i=0
+    while [ $i -lt 5 ]; do
+        DEV=$(find_stick)
+        [ $i = 0 ] && { echo "$(date) after the wake:"; blkid | grep '^/dev/sd' | sed 's/^/  /'; } >> $SLOG
+        if [ -n "$DEV" ] && mount "$DEV" /media; then
+            echo "$(date) mounted $DEV after $i s" >> $SLOG
+            return 0
+        fi
+        DEV=""
+        i=$((i + 1))
+        sleep 1
+    done
+    # not back: the wake picture and its blink end, the insert-stick picture takes over
+    led_blink_stop
+    echo 1 > /sys/class/leds/green/brightness
+    echo 0 > /sys/class/leds/red/brightness
+    rm -f /tmp/.abload
+    wait_for_stick || return 1
+    wake_picture
+    return 0
+}
+
+# The console's "power off", the way Sony's own power_manage does it - suspend to RAM, the power button
+# wakes it - but with the stick unmounted first, so it can be pulled while the console is "off" without
+# coming back dirty (Windows' "scan and fix"). The orange LED (red + green) is the AutoBleem standby; the USB bus is
+# reset by the resume and the stick comes back a few seconds later (the same name as before, or the
+# other one), and is mounted again exactly as usb_watch mounted it. Nothing here touches the console's
+# own storage. A wake with no stick (AUTOBLEEM-28) shows the insert-stick picture and sleeps again after 5 minutes,
+# or at once on POWER (stick_after_wake, sleep_again). Returns 0 with the stick mounted again, 1 only when /media
+# could not be unmounted (the reboot follows).
+standby() {
+    ab_watch_stop # the watch log (CONSOLE-15) must not touch /media or run through the suspend
+    # the last wake's background part (rear_wake) still running - a power off right after a wake - ends first
+    w=0
+    while [ -f /tmp/.abrearwake ] && [ $w -lt 25 ]; do
+        w=$((w + 1))
+        sleep 1
+    done
+    rm -f /tmp/.abrearwake
+    DEV=$(awk '$2 == "/media" { print $1 }' /proc/mounts | head -1)
+    SLOG=/tmp/standby.log
+    echo "$(date) standby: dev=$DEV" > $SLOG
+    # the launcher has left and Weston shows its bare desktop - black with the mouse cursor - until the suspend
+    # blanks the screen. A full-screen absplash with the power-off picture covers it (the owner, 2026-10-01: "please
+    # wait - powering off", not black; the wake picture if it is missing, black if both are), from here until the
+    # wake; the wake picture goes over it and the flag is removed there. RAM only, the stick is not touched.
+    down_picture
+    rm -f /media/System/.session # the session ended cleanly - checkstick.sh may clear the flag next boot
+    sync
+    # CONSOLE-15 P2: the state BEFORE the dangerous step, on the stick (the umount below is the last time it can be
+    # written; a reset in the suspend leaves no other trace). Read-only on /sys and /proc; the marker is read and
+    # deleted by boot.sh at the next start. Only a power off writes this - the quiet-stick rule holds.
+    rear_detect
     mkdir -p /media/System/Logs
     {
         echo "$(date) power-off requested: uptime=$(cut -d' ' -f1 /proc/uptime) rtc=$(cat /sys/class/rtc/rtc0/since_epoch 2>/dev/null) rear_dev=${REAR_DEV:-none} rear_had=$REAR_HAD wakelocks=[$(cat /sys/power/wake_lock 2>/dev/null)]"
@@ -398,24 +568,7 @@ standby() {
     state_dump >> $FAILLOG
     sync
     mark "state before the first step saved (watchdog, usb, power supplies, boot reason)"
-    # CONSOLE-15 P2: a hub with a Wi-Fi dongle on the rear port keeps its root port from suspending, and the kernel
-    # then refuses the suspend (see rear_quiesce above): the rear devices are made idle first, the stick still mounted
-    # so that the markers go straight to it. A real suspend is tried either way; poweroff_instead only after it failed.
-    # Bluetooth stopped for the suspend and started again by rear_wake once its adapter is back (see there). The
-    # kernel overlay's start script binds its key store over /var/lib/bluetooth again on every start - the same
-    # directory, so the extra layer changes nothing and is left alone (the pairings live there)
-    BT_UNITS=""
-    for u in bluetooth abbtagent; do
-        systemctl -q is-active $u.service 2>/dev/null && BT_UNITS="$BT_UNITS $u.service"
-    done
-    if [ -n "$BT_UNITS" ]; then
-        ab_timeout systemctl stop $BT_UNITS > /dev/null 2>&1
-        mark "Bluetooth stopped for the suspend:$BT_UNITS"
-    fi
-    if [ "$REAR_HAD" = 1 ]; then
-        mark "rear USB: $REAR_KIDS device(s) below the hub: $(rear_state) - quiescing"
-        rear_quiesce
-    fi
+    quiesce_for_suspend
     mark "umount /media next"
     n=0
     until umount /media; do
@@ -439,6 +592,18 @@ standby() {
     fi
     mark "/media unmounted, fat flag cleared"
 
+    # AUTOBLEEM-28: asleep until the stick is back - a wake with no stick in shows the insert-stick picture (5 minutes;
+    # POWER on it = at once) and sleeps again, where it used to reboot after 60 s
+    until suspend_wake && stick_after_wake; do
+        sleep_again
+    done
+    stick_mounted
+    return 0
+}
+
+# One suspend to RAM and the wake from it (the stick is not mounted: standby() unmounted it, or it is not there),
+# up to the moment the stick may be looked for. Always returns 0 - a refused suspend ends in poweroff_instead.
+suspend_wake() {
     # The AutoBleem kernel's overlay starts a USB network (RNDIS, /etc/autobleem/rndis) on the power port at
     # boot. While that gadget is up the port keeps the system awake, so suspend-to-RAM was refused at once -
     # the write returned straight away, which read as a wake here and started the launcher over. Off for the
@@ -486,20 +651,9 @@ standby() {
         echo "$(date) USB gadget (RNDIS) back on" >> $SLOG
     fi
 
-    # the AutoBleem picture from now until the launcher's window is up (it removes /tmp/.abload itself,
-    # as after RetroArch) - the ten seconds of the bus, the mount and the launcher's start were black
     echo "$(date) resumed" >> $SLOG
-    if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
-        touch /tmp/.abload
-        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --anim sweep --until-gone /tmp/.abload --timeout 40 > /tmp/absplash.log 2>&1 &
-        echo $! > /tmp/.absplash.pid # boot.sh shows no second picture over this one
-    else
-        echo "no absplash on tmpfs" >> $SLOG
-    fi
-    rm -f /tmp/.abdown # the black cover of the power down is done (the picture above is on top of it)
-    # the LED blinks as at a first boot until the launcher removes /tmp/.abload (see led_blink_start); only with the
-    # picture up - without absplash nothing holds .abload and the LED stays the solid green set above
-    [ -f /tmp/.abload ] && led_blink_start
+    wake_picture
+    rm -f /tmp/.abdown # the black cover of the power down is done (the wake picture is on top of it)
 
     # The rear (OTG) port on the AutoBleem kernel: MediaTek's musb driver does not restart its host session after
     # a resume, so a hub or dongle there stays gone - WiFi and Bluetooth dead after every wake (2026-09-26: the
@@ -516,40 +670,26 @@ standby() {
     fi
 
     sleep 3 # the USB bus re-enumerates after the resume
+    return 0
+}
 
-    i=0
-    while [ $i -lt 60 ]; do
-        [ $i = 30 ] && echo "$(date) no stick after 30 s - retrying for another 30 s" >> $SLOG
-        # any sd?1, not only sda1/sdb1 as usb_watch looks: a stick pulled during the standby and plugged back
-        # can come back under a new name while the kernel still holds the old one, and the wake then found
-        # nothing and rebooted (2026-09-25)
-        DEV="$(blkid | grep "^/dev/sd[a-z]1:" | grep -E "LABEL=\"SONY.{0,4}\"" | awk -F: '{print $1}' | head -1)"
-        [ $i = 0 ] && { echo "$(date) after the wake:"; blkid | grep '^/dev/sd' | sed 's/^/  /'; } >> $SLOG
-        [ -n "$DEV" ] && mount "$DEV" /media && break
-        DEV=""
-        i=$((i + 1))
-        sleep 1
-    done
-    if [ -z "$DEV" ]; then
-        led_blink_stop
-        echo 1 > /sys/class/leds/green/brightness # solid green again: the reboot follows
-        echo 0 > /sys/class/leds/red/brightness
-        rm -f /tmp/.abload
-        echo "$(date) no stick within 60 s after the wake - rebooting" >> $SLOG
-        blkid | sed 's/^/  blkid: /' >> $SLOG
-        # the stick is the one place this log belongs and it is missing: to the kernel log and the journal, where
-        # it is still readable after the reboot if the system keeps them
-        while IFS= read -r l; do
-            echo "ab_standby: $l" > /dev/kmsg 2>/dev/null
-            command -v logger > /dev/null 2>&1 && logger -t ab_standby -- "$l"
-        done < $SLOG
-        return 1
+# AUTOBLEEM-28: the stick was pulled while the launcher, a game or this script's own work ran - ab_stickwatch.sh
+# stopped and killed all of it, let the dead mount go and left selection 9. The insert-stick picture until the stick
+# is back in any port; it is checked (pulled while mounted), mounted, and boot.sh's loop starts the launcher again.
+# Nobody within 5 minutes, or POWER: the standby, the same wait after every wake.
+nostick() {
+    SLOG=/tmp/standby.log
+    echo "$(date) no stick: pulled while mounted (stickwatch: $(tail -1 $AB_RUNTIME_DIR/stickwatch.log 2>/dev/null))" > $SLOG
+    DEV=""
+    led_blink_stop
+    if ! wait_for_stick check; then
+        sleep_again
+        until suspend_wake && stick_after_wake; do
+            sleep_again
+        done
     fi
-    rm -f /tmp/ab_stick_owned # a fresh mount: the kernel owns the flag again (clean at mount, or not ours)
-    touch /media/System/.session
-    rm -f /media/System/Logs/poweroff_reason # the power-off worked: a later boot is not 'after a power-off request'
-    echo "$(date) mounted $DEV after $i s" >> $SLOG
-    { cat $SLOG; [ -f /tmp/absplash.log ] && sed 's/^/  absplash: /' /tmp/absplash.log; } >> $LOG
+    stick_mounted
+    [ -f /tmp/.abload ] || wake_picture
     return 0
 }
 
@@ -605,7 +745,11 @@ case "$AB_SELECTION" in
     if standby; then
         exit 0
     fi
-    # /media busy, or no stick after the wake: the reboot brings whatever is plugged in back up
+    # /media busy: the reboot brings whatever is plugged in back up
+    ;;
+"$SEL_NOSTICK")
+    nostick
+    exit 0
     ;;
 *)
     # no selection (or none the launcher leaves with): it did not leave the way it does - a crash, killed.
