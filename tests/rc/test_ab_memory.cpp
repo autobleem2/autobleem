@@ -56,9 +56,10 @@ struct MemWorld {
                       "#!/bin/sh\necho \"swapon $*\" >> \"$FAKE_LOG\"\n"
                       "for last; do :; done\n"
                       "echo \"$last partition 256000 0 100\" >> \"$AB_MEM_PROC/swaps\"\n");
-        System::execUnixCommand(("chmod +x \"" + slashes(tmp.at("bin/mkswap")) + "\" \"" +
-                                 slashes(tmp.at("bin/swapon")) + "\"")
-                                    .c_str());
+        const string mkswap = slashes(tmp.at("bin/mkswap"));
+        const string swapon = slashes(tmp.at("bin/swapon"));
+        const string chmod = "chmod +x \"" + mkswap + "\" \"" + swapon + "\"";
+        System::execUnixCommand(chmod.c_str());
     }
 
     vector<string> run(int times) {
