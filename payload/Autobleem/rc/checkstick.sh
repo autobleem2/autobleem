@@ -27,7 +27,7 @@ mkdir -p /media/System/Logs 2> /dev/null
 stick_needs_check() {
     grep -q " /media [^ ]* ro[, ]" /proc/mounts && return 0
     [ -f /media/System/.session ] || return 1
-    case "$(blkid "$DEV" 2> /dev/null | sed -n 's/.* TYPE="\([^"]*\)".*/\1/p')" in
+    case "$(ab_fsck_type "$DEV")" in
     vfat | msdos | fat)
         # read with the stick read-only: mounted rw the kernel has set the flag itself (see below)
         [ -x /tmp/abfatflag ] || return 1
@@ -40,8 +40,8 @@ stick_needs_check() {
     esac
     return 0 # exFAT / ext: their checkers are quick on a clean filesystem
 }
+[ -f /tmp/ab_fsck.sh ] && . /tmp/ab_fsck.sh
 if [ -n "$DEV" ] && [ -f /tmp/ab_fsck.sh ] && stick_needs_check; then
-    . /tmp/ab_fsck.sh
     rm -f $ABFSCK_LOG
     sync
     n=0
@@ -51,7 +51,15 @@ if [ -n "$DEV" ] && [ -f /tmp/ab_fsck.sh ] && stick_needs_check; then
         sleep 1
     done
     if grep -q ' /media ' /proc/mounts; then
-        echo "$(date) boot: $DEV needs a check but /media is busy - not checked" >> $ABFSCK_LOG
+        {
+            echo "$(date) boot: $DEV needs a check but /media is busy - not checked; holders:"
+            for d in /proc/[0-9]*; do
+                case "$(readlink $d/cwd 2> /dev/null)" in /media*) echo "  ${d#/proc/} cwd $(tr '\0' ' ' < $d/cmdline)" ;; esac
+                ls -l $d/fd 2> /dev/null | grep -q /media && echo "  ${d#/proc/} fd $(tr '\0' ' ' < $d/cmdline)"
+            done
+        } >> $ABFSCK_LOG
+        # read-only for the flag's reading (stick_needs_check): rw again, the launcher writes to it
+        mount -o remount,rw /media
     else
         ab_fsck "$DEV"
         mount "$DEV" /media || echo "$(date) boot: $DEV did not mount again after the check" >> $ABFSCK_LOG

@@ -26,9 +26,22 @@ ab_fsck_copy() {
     done
 }
 
-# the filesystem type blkid reports for DEV (vfat, exfat, ext4 ...)
+# DEV's filesystem (vfat, exfat, ext4 ...): blkid's TYPE - the console's busybox blkid prints none for a FAT - else the
+# signature on the device itself: "EXFAT" at byte 3, "FAT32"/"FAT1" in the boot sector, the ext magic 53 EF at 1080
 ab_fsck_type() {
-    blkid "$1" 2> /dev/null | sed -n 's/.* TYPE="\([^"]*\)".*/\1/p' | head -1
+    t=$(blkid "$1" 2> /dev/null | sed -n 's/.* TYPE="\([^"]*\)".*/\1/p' | head -1)
+    if [ -z "$t" ]; then
+        case "$(dd if="$1" bs=1 skip=3 count=5 2> /dev/null)" in EXFAT) t=exfat ;; esac
+    fi
+    if [ -z "$t" ]; then
+        case "$(dd if="$1" bs=1 skip=82 count=5 2> /dev/null)$(dd if="$1" bs=1 skip=54 count=4 2> /dev/null)" in
+        *FAT*) t=vfat ;;
+        esac
+    fi
+    if [ -z "$t" ] && [ "$(dd if="$1" bs=1 skip=1080 count=2 2> /dev/null | od -An -tx1 | tr -d ' \n')" = 53ef ]; then
+        t=ext4 # e2fsck tells ext2/3/4 apart itself
+    fi
+    echo "$t"
 }
 
 # the bar for a tool that reports nothing (fsck.exfat): from 5 towards 90 % over time, in the background
