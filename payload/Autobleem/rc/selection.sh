@@ -319,6 +319,7 @@ rear_wake() {
             rear_restore
         fi
     fi
+    rm -f /tmp/.abrearusb # the rear USB devices are back (or not coming): a stick on the hub is there by now
     if [ -n "$BT_UNITS" ]; then
         w=0
         while [ ! -e /sys/class/bluetooth/hci0 ] && [ $w -lt 8 ]; do
@@ -507,12 +508,12 @@ sleep_again() {
 }
 
 # after a wake: the stick within 5 s (the wake picture up meanwhile) - or, when it was on the rear hub before the
-# standby (STICK_REAR), while the rear port is being brought back (rear_wake, up to 25 s: the stick returns only with
-# it) - else the insert-stick wait. 0 = mounted.
+# standby (STICK_REAR), until the rear port's USB devices are back (rear_wake's first part, .abrearusb - not its
+# Wi-Fi and Bluetooth; at most 15 s: the stick returns only with the port) - else the insert-stick wait. 0 = mounted.
 STICK_REAR=0
 stick_after_wake() {
     i=0
-    while [ $i -lt 5 ] || { [ "$STICK_REAR" = 1 ] && [ -f /tmp/.abrearwake ] && [ $i -lt 25 ]; }; do
+    while [ $i -lt 5 ] || { [ "$STICK_REAR" = 1 ] && [ -f /tmp/.abrearusb ] && [ $i -lt 15 ]; }; do
         DEV=$(find_stick)
         [ $i = 0 ] && { echo "$(date) after the wake:"; blkid | grep '^/dev/sd' | sed 's/^/  /'; } >> $SLOG
         if [ -n "$DEV" ] && mount "$DEV" /media; then
@@ -679,7 +680,7 @@ suspend_wake() {
     # wake it is authorized again and its children enumerate afresh; when the bus is dead the host restart comes first.
     # All of it, Bluetooth and Wi-Fi with it, in the background (rear_wake) - the stick and the launcher do not wait.
     if [ "$REAR_HAD" = 1 ] || [ -n "$BT_UNITS" ]; then
-        touch /tmp/.abrearwake
+        touch /tmp/.abrearwake /tmp/.abrearusb
         ( rear_wake ) < /dev/null > /dev/null 2>&1 &
     fi
 
