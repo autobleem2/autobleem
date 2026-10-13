@@ -793,6 +793,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
     // carousel has covers to pick up (reloadGames() re-creates its textures)
     if (update.boxArtFetched > 0) {
         app.thumbnails().clearCache();
+        discBoxArtArrived();
         if (selection.set == GameSet::RetroArch)
             scanRosterChangedSinceReload = true;
     }

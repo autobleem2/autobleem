@@ -76,7 +76,7 @@ void GuiLauncher::buildDisc() {
         discTitle = game->title;
         discArt = bytesOf(audioCdCaseFile());
     } else if (id.kind == DiscIdentity::Kind::Ps1Game) {
-        DiscGameService service(app.library(), app.library().metadata());
+        DiscGameService service(app.library(), app.library().metadata(), &app.thumbnails());
         discGame = make_shared<DiscGame>(service.make(id.serial, id.region, id.volumeLabel, discStatus.sgIndex));
         discPsGame = discGame->game;
         if (!discPsGame) {
@@ -85,14 +85,38 @@ void GuiLauncher::buildDisc() {
         }
         discTitle = discPsGame->title;
         discArt = discGame->cover;
-        if (discArt.empty())
+        if (discArt.empty()) {
             discArt = bytesOf(Env::getWorkingPath() + sep + "default.png");
+            // online: the worker fetches the box art into the thumbnails tree; the view picks it up when it lands
+            // (discBoxArtArrived), the UI never waits
+            if (discGame->inDatabase)
+                app.scans().requestDiscBoxArt(discPsGame->recordName.empty() ? discPsGame->title
+                                                                             : discPsGame->recordName);
+        }
     } else {
         return;
     }
     discAudio = id.kind == DiscIdentity::Kind::AudioCd;
     discBuiltFor = discStatus.changes;
     discBuilt = true;
+}
+
+//*******************************
+// GuiLauncher::discBoxArtArrived
+//*******************************
+void GuiLauncher::discBoxArtArrived() {
+    if (!discBuilt || discAudio || !discGame || !discPsGame || !discGame->cover.empty())
+        return;
+    DiscGameService service(app.library(), app.library().metadata(), &app.thumbnails());
+    vector<char> art = service.thumbnailCover(discPsGame->title, discPsGame->recordName);
+    if (art.empty())
+        return;
+    discGame->cover = art;
+    discArt = std::move(art);
+    if (discViewOpen) {
+        carousel.setSolo(discPsGame, discArt);
+        carousel.snapMainCover(state == LauncherScreenState::Games);
+    }
 }
 
 //*******************************
