@@ -1784,6 +1784,31 @@ TEST_CASE("pad list: what is not a pad line is left out") {
     CHECK(parsePadList({}).empty()); // no pads: the daemon prints nothing
 }
 
+TEST_CASE("pad list: a DualShock 4 with its motion sensors and touchpad nodes is one pad") {
+    const char *names[] = {"Wireless Controller", "Wireless Controller Motion Sensors", "Wireless Controller Touchpad",
+                           "Xbox 360 Controller"};
+    vector<PadListEntry> seen;
+    for (int i = 0; i < 4; ++i) {
+        PadListEntry entry;
+        entry.index = i;
+        entry.connected = true;
+        entry.name = names[i];
+        seen.push_back(entry);
+    }
+
+    vector<PadListEntry> pads = withoutSensorNodes(seen);
+    REQUIRE(pads.size() == 2);
+    CHECK(pads[0].name == "Wireless Controller");
+    CHECK(pads[0].index == 0);
+    CHECK(pads[1].name == "Xbox 360 Controller");
+    CHECK(pads[1].index == 1); // numbered without the sensor nodes
+
+    CHECK(isPadSensorName("Sony Interactive Entertainment Wireless Controller Motion Sensors"));
+    CHECK(isPadSensorName("PS4 Controller TOUCHPAD"));
+    CHECK_FALSE(isPadSensorName("Wireless Controller"));
+    CHECK_FALSE(isPadSensorName("Touchpad")); // a bare name is a device of its own, not a pad's node
+}
+
 TEST_CASE("keyboard mode: a profile file that is missing changes nothing") {
     Profile profile;
     CHECK_FALSE(profile.loadFile("/nonexistent-dir/pad.ini"));
