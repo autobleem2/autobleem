@@ -401,6 +401,11 @@ void addPad(Slot *slots, int deviceIndex) {
         return;
     }
 #endif
+    const char *deviceName = SDL_JoystickNameForIndex(deviceIndex);
+    if (deviceName && isPadSensorName(deviceName)) {
+        chatter("abpadd: device %d (%s) is a pad's sensor node, not a pad", deviceIndex, deviceName);
+        return;
+    }
     if (!ensureMapping(deviceIndex)) {
         chatter("abpadd: device %d is not a pad we can use", deviceIndex);
         return;
@@ -781,6 +786,7 @@ int probe() {
 // to be read and closed again; the daemon's own state block is neither touched nor needed.
 int listPads(int settleMilliseconds) {
     settle(settleMilliseconds);
+    vector<PadListEntry> entries;
     for (int i = 0; i < SDL_NumJoysticks(); ++i) {
         PadListEntry entry;
         entry.index = i;
@@ -791,7 +797,7 @@ int listPads(int settleMilliseconds) {
             entry.guid = guidOf(SDL_JoystickGetDeviceGUID(i));
             entry.driver = driverOf(entry.guid);
             entry.mapping = "guessed";
-            printf("%s\n", formatPadListLine(entry).c_str());
+            entries.push_back(entry);
             continue;
         }
         const char *name = SDL_JoystickName(joystick);
@@ -808,6 +814,10 @@ int listPads(int settleMilliseconds) {
             SDL_free(mapping);
         }
         SDL_JoystickClose(joystick);
+        entries.push_back(entry);
+    }
+    // a DualShock's motion sensors and touchpad are joysticks to SDL, but one controller to the page and the Apps
+    for (const PadListEntry &entry : withoutSensorNodes(entries)) {
         printf("%s\n", formatPadListLine(entry).c_str());
     }
     fflush(stdout);

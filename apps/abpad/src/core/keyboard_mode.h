@@ -25,18 +25,22 @@ struct KeyChange {
 
 class KeyboardMode {
 public:
-    // the key an element is sent as; an invalid key unbinds it
-    void bind(Element element, const KeyCode &key);
+    // the key an element is sent as; an invalid key unbinds it. negative: the key of an axis pushed the other
+    // way (left, up) - an axis has two directions and each may have its own key
+    void bind(Element element, const KeyCode &key, bool negative = false);
 
     // The pad's state now; appends the key events its change since the last call is worth. A pad that is not there
     // is passed as a neutral state, which lifts every key it held.
     void update(int pad, const ControllerState &state, std::vector<KeyChange> &out);
 
 private:
-    bool heldElsewhere(int pad, int element) const;
+    // a slot per element, then one per axis for its negative direction
+    static constexpr int SlotCount = ElementCount + AxisElementCount;
 
-    KeyCode keys_[ElementCount];
-    bool held_[MaxPads][ElementCount] = {};
+    bool heldElsewhere(int pad, int slot) const;
+
+    KeyCode keys_[SlotCount];
+    bool held_[MaxPads][SlotCount] = {};
 };
 
 } // namespace abpad

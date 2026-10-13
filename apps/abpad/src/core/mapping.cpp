@@ -254,6 +254,10 @@ bool ControllerState::held(Element element) const {
     return isAxis(element) ? axis(element) >= AxisButtonThreshold : button(element);
 }
 
+bool ControllerState::heldNegative(Element element) const {
+    return isAxis(element) && axis(element) <= -AxisButtonThreshold;
+}
+
 void ControllerState::set(Element element, bool pressed) {
     int index = static_cast<int>(element);
     if (index >= 0 && index < FirstAxisElement) {
