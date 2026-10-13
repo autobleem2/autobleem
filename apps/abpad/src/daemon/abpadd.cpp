@@ -1051,7 +1051,8 @@ int main(int argc, char *argv[]) {
         loadMappings(dbPaths);
     }
 
-    // the exit hotkey: --quit-hotkey, else the App's pad.ini over the defaults - the files the shim reads - else the rule
+    // the exit hotkey: --quit-hotkey, else the App's pad.ini over the defaults - the files the shim reads - else the
+    // rule
     HotkeySet hotkey;
     if (!quitHotkey.empty()) {
         hotkey = parseHotkeySet(quitHotkey);

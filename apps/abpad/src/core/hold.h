@@ -21,8 +21,8 @@ constexpr int64_t ExitGraceMs = 3000; // how long after SIGTERM before SIGKILL
 // the combos that mean "leave", as pad.ini spells them: either of them held, each a "+"-joined list
 extern const char *const DefaultExitHotkeys;
 
-using Hotkey = std::vector<Element>;     // all held together
-using HotkeySet = std::vector<Hotkey>;   // any one of these
+using Hotkey = std::vector<Element>;   // all held together
+using HotkeySet = std::vector<Hotkey>; // any one of these
 
 // "start+select, guide" (a comma or a bar between alternatives) -> two hotkeys. Empty text = no hotkey at all; an
 // alternative whose names are all unknown is dropped.
