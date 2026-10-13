@@ -214,7 +214,7 @@ bool GuiLauncher::refuseLicenceProtected() {
     if (!selectedIsPs1() || !carousel.games[carousel.selected]->licenceProtected)
         return false;
     app.audio().cancel.play();
-    notificationLines[1].setText(_("This game is protected by its PSN licence and cannot be started"),
+    notificationLines[1].setText(_("This game is protected by its PSN license and cannot be started"),
                                  2 * DefaultShowingTimeout);
     return true;
 }
@@ -430,7 +430,7 @@ void GuiLauncher::scanStatusText(const ScanUpdate &update, string &title, string
         detail = DirEntry::getFileNameFromPath(update.detail);
         break;
     case ScanStage::MovingFile:
-        title = _("Moving :");
+        title = _("Moving:");
         break;
     case ScanStage::MergingDiscs:
         title = _("Merging discs:");
@@ -1720,13 +1720,13 @@ void GuiLauncher::renderWelcomeCard() {
     // where the games go depends on the platform: the Pi reads its SD card, Windows the AutoBleem folder, the
     // console and the PC stick a USB stick
 #if defined(AB_PLATFORM_RPI)
-    const string body = _("Everything's set up - now drop some games into Games on your SD card, hit Re-Scan Games, "
+    const string body = _("Everything's set up - now drop some games into Games on your SD card, hit Re-scan games, "
                           "and you've got yourself a great console.");
 #elif defined(AB_PLATFORM_WIN)
-    const string body = _("Everything's set up - now drop some games into Games in your AutoBleem folder, hit Re-Scan "
-                          "Games, and you've got yourself a great console.");
+    const string body = _("Everything's set up - now drop some games into Games in your AutoBleem folder, hit Re-scan "
+                          "games, and you've got yourself a great console.");
 #else
-    const string body = _("Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and "
+    const string body = _("Everything's set up - now drop some games into Games on your stick, hit Re-scan games, and "
                           "you've got yourself a great console.");
 #endif
     const vector<string> lines = gui->text().wrapLines(bodyFont, body, boxW - 2 * pad);
