@@ -434,13 +434,18 @@ wait_for_stick() {
     fi
     echo "$(date) no stick - the insert-stick picture, waiting up to $NOSTICK_WAIT s (check: ${want_check:-no})" >> $SLOG
     w=0
-    tried=""
+    seen=""    # the device found last time round (a new one gets a second to settle)
+    checked="" # the device checked already (a mount that fails is tried again every second, its check once)
     while [ $w -lt $NOSTICK_WAIT ] && [ ! -f /tmp/.abpower ]; do
         DEV=$(find_stick)
-        if [ -n "$DEV" ] && [ "$DEV" != "$tried" ]; then
-            tried=$DEV
-            sleep 1 # its partitions settle
-            if [ "$want_check" = check ] && [ -f /tmp/ab_fsck.sh ]; then
+        [ -z "$DEV" ] && { seen=""; checked=""; }
+        if [ -n "$DEV" ]; then
+            if [ "$DEV" != "$seen" ]; then
+                seen=$DEV
+                sleep 1
+            fi
+            if [ "$want_check" = check ] && [ -f /tmp/ab_fsck.sh ] && [ "$DEV" != "$checked" ]; then
+                checked=$DEV
                 . /tmp/ab_fsck.sh
                 rm -f $ABFSCK_LOG
                 # a FAT is checked only when its flag says it was left mounted (the pull); exFAT/ext always
@@ -459,7 +464,8 @@ wait_for_stick() {
                 fi
                 return 0
             fi
-            echo "$(date) $DEV did not mount - still waiting" >> $SLOG
+            [ "$DEV" = "$unmountable" ] || echo "$(date) $DEV did not mount - still waiting" >> $SLOG
+            unmountable=$DEV
         fi
         w=$((w + 1))
         sleep 1
