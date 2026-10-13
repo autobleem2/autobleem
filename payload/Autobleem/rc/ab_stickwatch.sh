@@ -78,12 +78,11 @@ log() {
 }
 log "$DEV pulled while mounted - stopping everything below the loop (pid $LOOP)"
 
-# every process below the loop's shell (but this watch), and anything else running from the stick (a daemon that
-# left its parent): stopped at once, then killed
-ppids=$(for s in /proc/[0-9]*/stat; do
-    p=${s#/proc/}
-    echo "${p%/stat} $(sed 's/.*) [A-Za-z] \([0-9]*\).*/\1/' "$s" 2> /dev/null)"
-done)
+# every process below the loop's shell (but this watch) is stopped at once - one awk over every /proc/<pid>/stat for
+# the "pid ppid" pairs (a sed per process took 1.5 s on the console) - then anything else running from the stick
+# (a daemon that left its parent) too, and all of them are killed
+ppids=$(awk '{ s = $0; sub(/.*\) /, "", s); split(s, f, " "); p = substr(FILENAME, 7); sub(/\/.*/, "", p); print p, f[2] }' \
+    /proc/[0-9]*/stat 2> /dev/null)
 victims=
 frontier=$LOOP
 while [ -n "$frontier" ]; do
@@ -97,6 +96,7 @@ while [ -n "$frontier" ]; do
     victims="$victims$next"
     frontier=$next
 done
+[ -n "$victims" ] && kill -STOP $victims 2> /dev/null
 for d in /proc/[0-9]*; do
     p=${d#/proc/}
     [ "$p" = 1 ] || [ "$p" = $$ ] || [ "$p" = "$LOOP" ] && continue
