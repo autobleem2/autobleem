@@ -501,15 +501,18 @@ sleep_again() {
     rm -f /tmp/.abload
     down_picture
     rear_detect
+    STICK_REAR=0 # no stick in: the insert-stick picture after 5 s
     mark "the standby again with no stick (rear_had=$REAR_HAD)"
     quiesce_for_suspend
 }
 
-# after a wake: the stick within 5 s (the wake picture up meanwhile) - or while the rear port is being brought back
-# (rear_wake, up to 25 s: a stick on the rear hub returns only with it) - else the insert-stick wait. 0 = mounted.
+# after a wake: the stick within 5 s (the wake picture up meanwhile) - or, when it was on the rear hub before the
+# standby (STICK_REAR), while the rear port is being brought back (rear_wake, up to 25 s: the stick returns only with
+# it) - else the insert-stick wait. 0 = mounted.
+STICK_REAR=0
 stick_after_wake() {
     i=0
-    while [ $i -lt 5 ] || { [ -f /tmp/.abrearwake ] && [ $i -lt 25 ]; }; do
+    while [ $i -lt 5 ] || { [ "$STICK_REAR" = 1 ] && [ -f /tmp/.abrearwake ] && [ $i -lt 25 ]; }; do
         DEV=$(find_stick)
         [ $i = 0 ] && { echo "$(date) after the wake:"; blkid | grep '^/dev/sd' | sed 's/^/  /'; } >> $SLOG
         if [ -n "$DEV" ] && mount "$DEV" /media; then
@@ -561,6 +564,8 @@ standby() {
     # written; a reset in the suspend leaves no other trace). Read-only on /sys and /proc; the marker is read and
     # deleted by boot.sh at the next start. Only a power off writes this - the quiet-stick rule holds.
     rear_detect
+    # the stick itself on the rear (OTG) port's hub: after the wake it comes back only with that port (stick_after_wake)
+    case "$(readlink -f /sys/class/block/${DEV##*/} 2>/dev/null)" in */musb-hdrc.0.auto/*) STICK_REAR=1 ;; esac
     mkdir -p /media/System/Logs
     {
         echo "$(date) power-off requested: uptime=$(cut -d' ' -f1 /proc/uptime) rtc=$(cat /sys/class/rtc/rtc0/since_epoch 2>/dev/null) rear_dev=${REAR_DEV:-none} rear_had=$REAR_HAD wakelocks=[$(cat /sys/power/wake_lock 2>/dev/null)]"
