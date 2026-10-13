@@ -48,7 +48,7 @@ ab_fsck() {
     echo 0 > $ABFSCK_PCT
     touch $ABFSCK_FLAG
     if [ -x /tmp/absplash ] && [ -f /tmp/check-stick.jpg ]; then
-        # the bar's box in the picture's own pixels (Kasia's bar.json: 1920x1080 and the 720x480 twin)
+        # the bar's box in the picture's own pixels (the design's: 1920x1080 and the 720x480 twin)
         LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/check-stick.jpg --until-gone $ABFSCK_FLAG --timeout 3600 \
             --progress-file $ABFSCK_PCT --bar 484,824,952,14 --bar-4x3 124,366,471,8 --bar-color 36D9E0 \
             > /tmp/absplash-fsck.log 2>&1 &
