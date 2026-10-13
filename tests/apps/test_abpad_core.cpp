@@ -1512,9 +1512,11 @@ KeyboardMode keyboardFrom(const string &profileText) {
     profile.loadStream(text);
     KeyboardMode keyboard;
     for (int i = 0; i < ElementCount; ++i) {
-        string name = profile.keyFor(static_cast<Element>(i));
-        if (!name.empty()) {
-            keyboard.bind(static_cast<Element>(i), keyCodeFromName(name));
+        for (int negative = 0; negative < 2; ++negative) {
+            string name = profile.keyFor(static_cast<Element>(i), negative != 0);
+            if (!name.empty()) {
+                keyboard.bind(static_cast<Element>(i), keyCodeFromName(name), negative != 0);
+            }
         }
     }
     return keyboard;
