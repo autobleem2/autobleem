@@ -33,8 +33,8 @@ from the console's own /gaadata and /data at the next boot (see payload/Autoblee
 GAMES NOTES - the 'games' stage leaves each game folder under Games/ with nothing but its disc images
 (.cue/.bin/.img/.chd/.pbp/.ecm/.m3u/.ccd/.sub/.iso/.mds/.mdf/.toc), so AutoBleem2's first scan builds
 everything else afresh: Game.ini and pcsx.cfg (the old versions' keys and paths are not AutoBleem2's),
-the .lic files of the removed stock-SonyUI path, cover .png files the old scan copied next to the image
-(--keep-covers keeps them - a .png you put there yourself is honoured as the game's cover), readme files
+the .lic files of the removed stock-SonyUI path, cover .png/.jpg files the old scan copied next to the image
+(--keep-covers keeps them - a .png or .jpg you put there yourself is honoured as the game's cover), readme files
 and other strays. Sub-directories of games (Games/RPG/<game>/) are walked the same way. Games/!MemCards
 (your memory card sets) and Games/!SaveStates (save states, per-game settings) are yours and are kept;
 --purge-saves removes them too for a truly clean slate. --keep-game-metadata skips the stage in 'all'.
@@ -591,7 +591,7 @@ def stage_games(root: Path, opts, dry_run: bool):
 
     keep_exts = set(DISC_IMAGE_EXTS)
     if opts.keep_covers:
-        keep_exts.add('.png')
+        keep_exts.update(('.png', '.jpg', '.jpeg'))
 
     def clean_tree(d: Path, depth: int):
         try:
@@ -1077,7 +1077,7 @@ def parse_args(argv):
     p.add_argument('--yes', action='store_true', help='skip the "are you sure" confirmation (still needs --execute)')
     p.add_argument('--stage', choices=['analyze', 'clean', 'games', 'layout', 'install', 'all'], default='all')
     p.add_argument('--keep-game-metadata', action='store_true', help="skip the 'games' stage in 'all' (leave Game.ini, pcsx.cfg, covers... in the game folders)")
-    p.add_argument('--keep-covers', action='store_true', help="the 'games' stage keeps .png files next to the images (your own covers)")
+    p.add_argument('--keep-covers', action='store_true', help="the 'games' stage keeps .png/.jpg files next to the images (your own covers)")
     p.add_argument('--purge-saves', action='store_true', help="the 'games' stage also removes Games/!SaveStates and Games/!MemCards (save states, memory cards)")
 
     p.add_argument('--keep-apps', action='store_true', help='leave all of Apps/ as-is, including pscbios/abflashkit')

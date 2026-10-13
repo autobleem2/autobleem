@@ -124,9 +124,9 @@ void GuiManager::renderPreview() {
         const PsGame &game = *psGames[selected];
         previewCover = ableem::Texture();
         previewSnap = ableem::Texture();
-        // the same chain as the carousel's: the PNG next to the game, the cached thumbnail, a fresh look
-        string cover = game.folder + sep + game.base + ".png";
-        if (!DirEntry::exists(cover))
+        // the same chain as the carousel's: the cover next to the game, the cached thumbnail, a fresh look
+        string cover = ableem::findGameCover(game.folder, game.base);
+        if (cover.empty())
             cover = game.coverPath;
         if (cover.empty() || !DirEntry::exists(cover))
             cover =

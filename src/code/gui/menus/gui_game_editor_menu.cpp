@@ -365,7 +365,7 @@ void GuiEditor::init() {
 
     bool pngLoaded = false;
     for (const DirEntry &entry : DirEntry::diru(gameData->folder)) {
-        if (DirEntry::matchExtension(entry.name, EXT_PNG)) {
+        if (ableem::isCoverImageName(entry.name)) {
             cover = ableem::Texture::loadFile(renderer, gameData->folder + sep + entry.name);
             pngLoaded = true;
         }
