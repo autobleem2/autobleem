@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 585
+# Untranslated: 1 / Total: 587
 
 %1 needs game data it can run: %2.=%1 richiede dati di gioco che sa eseguire: %2.
 %1 sectors could not be read and were written as zeros.=Non è stato possibile leggere %1 settori, scritti come zeri.
@@ -152,6 +152,7 @@ EmulationStation=EmulationStation
 Emulator=Emulatore
 Emulator config menu=Menu di configurazione emulatore
 Emulator screen scaling:=Scala schermo emulatore:
+Hold Select+Start or Home for 2 seconds: back to AutoBleem=Tieni premuto Select+Start o Home per 2 secondi: torna ad AutoBleem
 no card yet=ancora nessuna card
 Not available for a disc in the drive=Non disponibile per un disco nell'unità
 Not enough room in Games: the copy needs %1, %2 is free.=Spazio insufficiente in Games: la copia richiede %1, liberi %2.
@@ -431,6 +432,7 @@ Shareware=Shareware
 Sharp=Nitido
 Sharp (simple)=Nitido (semplice)
 Shift=Maiusc
+Short press of Select+Start or Home: the emulator's menu=Pressione breve di Select+Start o Home: il menu dell'emulatore
 Show internal games:=Mostra giochi interni:
 Show performance:=Mostra prestazioni:
 Showing: All games=Sto mostrando: Tutti i giochi

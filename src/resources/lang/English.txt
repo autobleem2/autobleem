@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 585
+# Untranslated: 0 / Total: 587
 
 %1 needs game data it can run: %2.=%1 needs game data it can run: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors could not be read and were written as zeros.
@@ -152,6 +152,7 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Emulator config menu
 Emulator screen scaling:=Emulator screen scaling:
+Hold Select+Start or Home for 2 seconds: back to AutoBleem=Hold Select+Start or Home for 2 seconds: back to AutoBleem
 no card yet=no card yet
 Not available for a disc in the drive=Not available for a disc in the drive
 Not enough room in Games: the copy needs %1, %2 is free.=Not enough room in Games: the copy needs %1, %2 is free.
@@ -431,6 +432,7 @@ Shareware=Shareware
 Sharp=Sharp
 Sharp (simple)=Sharp (simple)
 Shift=Shift
+Short press of Select+Start or Home: the emulator's menu=Short press of Select+Start or Home: the emulator's menu
 Show internal games:=Show internal games:
 Show performance:=Show performance:
 Showing: All games=Showing: All games

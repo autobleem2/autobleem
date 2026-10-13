@@ -162,8 +162,8 @@ on the way past.
 *Keyboard mode* - the same virtual pad, but each element is pushed as a key event, so a keyboard-only
 game is playable. The key names are the app's business and live in its `pad.ini`.
 
-*Either mode* - a **hotkey** (Start+Select by default) pushes `SDL_QUIT`, because several of these
-apps have no way out.
+*Either mode* - a **hotkey** (Start+Select or Home/Guide, held for 2 seconds; a short press does nothing)
+pushes `SDL_QUIT`, because several of these apps have no way out.
 
 `SDL_Init`/`SDL_InitSubSystem` are intercepted too: the shim needs no subsystem from the app's SDL,
 but a keyboard-only app must not be able to leave the joystick machinery switched off.
@@ -175,7 +175,7 @@ but a keyboard-only app must not be able to leave the joystick machinery switche
 mode = keyboard          # joystick | keyboard | both | off
 virtual = x360           # x360 | ps3 | psc  - the pad a joystick-mode app is shown
 players = 1
-hotkey = start+select    # quit the app
+hotkey = start+select,guide    # quit the app: held for 2 seconds
 key.a = Left Ctrl        # keyboard mode: a virtual-pad element -> an SDL key name
 key.dpup = Up
 ```
