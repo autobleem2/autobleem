@@ -90,7 +90,7 @@ bool writeSdl1(const ShimEvent &event, sdl1::Event *out) {
         out->key.type = static_cast<Uint8>(event.kind == ShimEvent::Kind::KeyDown ? sdl1::KeyDown : sdl1::KeyUp);
         out->key.state = static_cast<Uint8>(event.kind == ShimEvent::Kind::KeyDown ? 1 : 0);
         out->key.keysym.sym = event.key.sdl1Sym;
-        out->key.keysym.scancode = static_cast<Uint8>(event.key.sdl2Scancode);
+        out->key.keysym.scancode = static_cast<Uint8>(event.key.sdl1Scancode());
         // a game that reads .unicode wants the character, and only for a key that has one
         out->key.keysym.unicode = (event.kind == ShimEvent::Kind::KeyDown && event.key.sdl1Sym < 128)
                                       ? static_cast<Uint16>(event.key.sdl1Sym)

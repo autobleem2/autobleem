@@ -25,4 +25,8 @@ echo "AUTOBLEEM: starting RetroArch"
 # "Persist RetroArch config") and a game's own settings - in RAM (LaunchService::prepareRaAppend)
 RA_APPEND=()
 [ -f "${AB_RUNTIME_DIR:-/tmp/autobleem}/ra-append.cfg" ] && RA_APPEND=(--appendconfig "${AB_RUNTIME_DIR:-/tmp/autobleem}/ra-append.cfg")
+# the way out: hold Start+Select or Home for two seconds (rc/ab_exitwatch.sh); the watcher is given this shell's pid,
+# which RetroArch keeps when it is exec'd over it
+. "$RC_DIR/ab_exitwatch.sh"
+ab_exitwatch_start "$DATA_MOUNT" $$ --no-reset
 exec retroarch --config "$RA_CONFIG" "${RA_APPEND[@]}" --menu

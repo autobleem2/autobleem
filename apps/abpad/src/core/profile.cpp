@@ -144,9 +144,10 @@ bool hotkeyHeld(const vector<Element> &hotkey, const ControllerState &state) {
 //*******************************
 // Profile::keyFor
 //*******************************
-string Profile::keyFor(Element element) const {
-    map<Element, string>::const_iterator found = keys.find(element);
-    return (found == keys.end()) ? string() : found->second;
+string Profile::keyFor(Element element, bool negative) const {
+    const map<Element, string> &source = negative ? negativeKeys : keys;
+    map<Element, string>::const_iterator found = source.find(element);
+    return (found == source.end()) ? string() : found->second;
 }
 
 //*******************************
@@ -178,7 +179,7 @@ void Profile::loadStream(istream &in) {
             int count = atoi(value.c_str());
             players = (count < 1) ? 1 : (count > MaxPads ? MaxPads : count);
         } else if (key == "hotkey") {
-            hotkey = parseHotkey(lowered(value));
+            hotkey = parseHotkeySet(lowered(value));
         } else if (key == "movement" || key == "dpad") {
             movement = movementAidFromName(lowered(value));
         } else if (key == "cursor") {
@@ -187,12 +188,23 @@ void Profile::loadStream(istream &in) {
         } else if (key == "log") {
             logPath = value;
         } else if (key.compare(0, 4, "key.") == 0) {
-            Element element = elementFromProfileName(key.substr(4));
-            if (element != Element::Count) {
+            // "key.-leftx" (or "key.leftx-") is the key of the stick pushed the negative way: left, up
+            string name = trimmed(key.substr(4));
+            bool negative = false;
+            if (!name.empty() && name[0] == '-') {
+                negative = true;
+                name = name.substr(1);
+            } else if (!name.empty() && name[name.size() - 1] == '-') {
+                negative = true;
+                name.erase(name.size() - 1);
+            }
+            Element element = elementFromProfileName(name);
+            if (element != Element::Count && (!negative || isAxis(element))) {
+                map<Element, string> &target = negative ? negativeKeys : keys;
                 if (value.empty()) {
-                    keys.erase(element);
+                    target.erase(element);
                 } else {
-                    keys[element] = value;
+                    target[element] = value;
                 }
             }
         }

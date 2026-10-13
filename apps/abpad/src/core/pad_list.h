@@ -38,6 +38,13 @@ bool parsePadListLine(const std::string &line, PadListEntry &out);
 // every pad line of the lines, in order
 std::vector<PadListEntry> parsePadList(const std::vector<std::string> &lines);
 
+// True for the extra joystick SDL makes of a pad's motion sensors or touchpad ("Wireless Controller Motion Sensors",
+// "... Touchpad"): the same nodes the daemon holds from the App (padPointerNodes), seen by name because SDL does not
+// say which evdev node a joystick is. Those are part of a controller, not a pad of their own.
+bool isPadSensorName(const std::string &name);
+// the entries without the sensor and touchpad nodes, the rest numbered 0, 1, ... in order
+std::vector<PadListEntry> withoutSensorNodes(const std::vector<PadListEntry> &entries);
+
 } // namespace abpad
 
 #endif

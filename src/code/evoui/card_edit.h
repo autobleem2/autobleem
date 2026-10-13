@@ -14,7 +14,7 @@
 //******************
 // The card itself is ableem::MemcardImage, portable and in the engine. This adds what the screen needs:
 // the forty-five icon frames as textures, kept in step with the image after every edit, the translated
-// "Free" / "Link Block" placeholders in the title column, and where the blank template card and the
+// "Free" / "Link block" placeholders in the title column, and where the blank template card and the
 // Shift-JIS table are (the working path). Reads go straight to image(); edits go through here so the
 // textures follow.
 class CardEdit {

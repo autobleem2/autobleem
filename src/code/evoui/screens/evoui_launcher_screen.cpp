@@ -214,7 +214,7 @@ bool GuiLauncher::refuseLicenceProtected() {
     if (!selectedIsPs1() || !carousel.games[carousel.selected]->licenceProtected)
         return false;
     app.audio().cancel.play();
-    notificationLines[1].setText(_("This game is protected by its PSN licence and cannot be started"),
+    notificationLines[1].setText(_("This game is protected by its PSN license and cannot be started"),
                                  2 * DefaultShowingTimeout);
     return true;
 }
@@ -430,7 +430,7 @@ void GuiLauncher::scanStatusText(const ScanUpdate &update, string &title, string
         detail = DirEntry::getFileNameFromPath(update.detail);
         break;
     case ScanStage::MovingFile:
-        title = _("Moving :");
+        title = _("Moving:");
         break;
     case ScanStage::MergingDiscs:
         title = _("Merging discs:");
@@ -762,6 +762,8 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
         scanRosterChangedSinceReload = true;
 
     if (update.finished) {
+        if (!ripSelectFolder.empty())
+            ripScanFinished = true; // the copied disc is in the scan: selectRippedGame() can pick it
         string text = pluralGames(static_cast<size_t>(update.finishedGameCount));
         if (update.finishedFailedCount > 0)
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
@@ -791,6 +793,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
     // carousel has covers to pick up (reloadGames() re-creates its textures)
     if (update.boxArtFetched > 0) {
         app.thumbnails().clearCache();
+        discBoxArtArrived();
         if (selection.set == GameSet::RetroArch)
             scanRosterChangedSinceReload = true;
     }
@@ -1219,9 +1222,20 @@ void GuiLauncher::loadAssets() {
 
     if (app.session().resumingGui) {
         PLOG_INFO << "Restoring GUI state";
-        PsGamePtr &game = carousel.games[carousel.selected];
+        // a disc game that just played: the launcher goes straight back into the disc view (the carousel holds the disc
+        // alone, App::pendingDisc is the disc again) so nothing below can reach the carousel's old selection
+        resumeGame.reset();
+        if (app.lastDisc && app.lastDisc->game) {
+            reenterDiscViewAfterRun(app.lastDisc);
+            app.lastDisc.reset();
+        }
+        const PsGamePtr carouselGame = carousel.selectedIsValid() ? carousel.games[carousel.selected] : PsGamePtr();
+        PsGamePtr game = discview::resumeGameFor(discViewOpen ? discPsGame : PsGamePtr(), carouselGame);
+        resumeGame = discViewOpen ? game : PsGamePtr();
 
-        if (app.session().emuMode == EmuMode::Pcsx) {
+        if (!game) {
+            // nothing to be about
+        } else if (app.session().emuMode == EmuMode::Pcsx) {
             if (app.resumePoints().exitedCleanly(*game)) {
                 if (GameSettingsService::resumeModeOf(*game) == ResumePointService::Never) {
                     // the game editor's Resume row "Never" (EMU-26): the state the emulator wrote is not offered
@@ -1376,8 +1390,10 @@ string GuiLauncher::hintSignature() const {
         sig += retroArchInstalledCached() ? "|ra" : "";
         if (discViewOpen)
             sig += discAudio ? "|dvA" : "|dvG";
-        else if (discview::r1ShowsDisc(discDriveNow(), discViewOpen))
-            sig += "|r1";
+        else if (discview::circleShowsDisc(discDriveNow(), discViewOpen))
+            sig += "|disc";
+        if (copyDiscOffered())
+            sig += "|cp";
     }
     return sig;
 }
@@ -1410,6 +1426,8 @@ static string hintLabel(HintSlots::Item item) {
         return _("Random");
     case Item::Disc:
         return _("Disc");
+    case Item::CopyDisc:
+        return _("Copy disc");
     case Item::GameMenu:
         return _("Game menu");
     case Item::Choose:
@@ -1446,8 +1464,8 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
     if (state == LauncherScreenState::Set) {
         slots.screen = HintSlots::Screen::GameMenu;
         slots.emptyRoster = carousel.games.empty();
-        // an empty roster rests here, and R1 brings the disc view back from it
-        slots.discReady = discViewCanOpenIn() && discview::r1ShowsDisc(discDriveNow(), discViewOpen);
+        // an empty roster rests here, and Circle brings the disc view back from it
+        slots.discReady = discViewCanOpenIn() && discview::circleShowsDisc(discDriveNow(), discViewOpen);
     } else if (state == LauncherScreenState::Resume && sselector != nullptr) {
         slots.screen = sselector->operation == OP_LOAD ? HintSlots::Screen::ResumeLoad : HintSlots::Screen::ResumeSave;
         slots.slotUsed = sselector->slotActive[sselector->selSlot];
@@ -1456,7 +1474,8 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
         const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
         slots.app = game != nullptr && game->app;
         slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached() && !discViewOpen;
-        slots.discReady = discview::r1ShowsDisc(discDriveNow(), discViewOpen);
+        slots.discReady = discview::circleShowsDisc(discDriveNow(), discViewOpen);
+        slots.copyDisc = copyDiscOffered();
         slots.noMenu = discViewOpen && discAudio;
     }
     const HintSlots::Grid grid = HintSlots::gridFor(slots);
@@ -1702,13 +1721,13 @@ void GuiLauncher::renderWelcomeCard() {
     // where the games go depends on the platform: the Pi reads its SD card, Windows the AutoBleem folder, the
     // console and the PC stick a USB stick
 #if defined(AB_PLATFORM_RPI)
-    const string body = _("Everything's set up - now drop some games into Games on your SD card, hit Re-Scan Games, "
+    const string body = _("Everything's set up - now drop some games into Games on your SD card, hit Re-scan games, "
                           "and you've got yourself a great console.");
 #elif defined(AB_PLATFORM_WIN)
-    const string body = _("Everything's set up - now drop some games into Games in your AutoBleem folder, hit Re-Scan "
-                          "Games, and you've got yourself a great console.");
+    const string body = _("Everything's set up - now drop some games into Games in your AutoBleem folder, hit Re-scan "
+                          "games, and you've got yourself a great console.");
 #else
-    const string body = _("Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and "
+    const string body = _("Everything's set up - now drop some games into Games on your stick, hit Re-scan games, and "
                           "you've got yourself a great console.");
 #endif
     const vector<string> lines = gui->text().wrapLines(bodyFont, body, boxW - 2 * pad);

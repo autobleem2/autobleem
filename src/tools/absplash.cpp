@@ -22,6 +22,14 @@
 //                 the boot and wake pictures use it so the screen is seen to be alive while the launcher loads.
 //   --anim-at X0,Y,X1,H   where the rule is, in thousandths of the picture (the defaults fit autobleem.jpg:
 //                 207,513,785,13 = left end, vertical centre, right end, thickness)
+//   --progress-file FILE  a progress bar: FILE holds a percent (0-100, re-read every frame; missing = 0), drawn
+//                 into the bar's box of the picture - the stick check's screen (rc/ab_fsck.sh)
+//   --bar X,Y,W,H the bar's box in the picture's own pixels (check-stick.jpg 1920x1080: 484,824,952,14)
+//   --bar-4x3 X,Y,W,H     the same in the 4:3 twin (check-stick-4x3.jpg 720x480: 124,366,471,8)
+//   --bar-color RRGGBB    the bar's fill (default 36D9E0)
+//   --power-file FILE     the POWER button (the key the launcher powers off with) creates FILE and ends the
+//                 picture - the insert-stick screen's "sleep now" (rc/selection.sh); a press within the first
+//                 1.5 s is ignored (the press that woke the console, delivered late)
 #include <ab_gui/busy.h>
 #include <ab_gui/spinner.h>
 #include <ab_gui/style.h>
@@ -91,8 +99,39 @@ int crtMarginFromConfig() {
 
 int usage() {
     PLOG_ERROR << "usage: absplash IMAGE (--until-exists FILE | --until-gone FILE | --seconds S) [--timeout S] "
-                  "[--theme DIR] [--anim sweep] [--anim-at X0,Y,X1,H]";
+                  "[--theme DIR] [--anim sweep] [--anim-at X0,Y,X1,H] [--progress-file FILE --bar X,Y,W,H "
+                  "[--bar-4x3 X,Y,W,H] [--bar-color RRGGBB]] [--power-file FILE]";
     return 2;
+}
+
+// the percent in a progress file: its first number, clamped to 0..100; 0 when it cannot be read
+int readPercent(const std::string &path) {
+    std::ifstream in(path);
+    int percent = 0;
+    if (!(in >> percent))
+        return 0;
+    return std::max(0, std::min(100, percent));
+}
+
+// the progress bar's fill over its box, the box in the picture's pixels mapped onto where the picture is drawn
+void drawBar(Renderer &r, const Rect &pic, const Size &picSize, const Rect &bar, const Color &fill, int percent) {
+    if (picSize.w <= 0 || picSize.h <= 0 || bar.w <= 0 || percent <= 0)
+        return;
+    const double sx = static_cast<double>(pic.w) / picSize.w;
+    const double sy = static_cast<double>(pic.h) / picSize.h;
+    const int x = pic.x + static_cast<int>(std::lround(bar.x * sx));
+    const int y = pic.y + static_cast<int>(std::lround(bar.y * sy));
+    const int w = static_cast<int>(std::lround(bar.w * sx * percent / 100.0));
+    const int h = std::max(1, static_cast<int>(std::lround(bar.h * sy)));
+    if (w <= 0)
+        return;
+    r.setBlendMode(BlendMode::None);
+    r.setDrawColor(fill);
+    r.fillRect(Rect(x, y, w, h));
+}
+
+bool parseRect(const std::string &val, Rect &out) {
+    return sscanf(val.c_str(), "%d,%d,%d,%d", &out.x, &out.y, &out.w, &out.h) == 4;
 }
 
 // the rule under the logo in the picture, in thousandths of its width/height (autobleem.jpg, 1920x1080:
@@ -215,9 +254,11 @@ int main(int argc, char **argv) {
     if (argc < 2)
         return usage();
     std::string image = argv[1];
-    std::string untilExists, untilGone, themeDir, anim;
+    std::string untilExists, untilGone, themeDir, anim, progressFile, powerFile;
     AnimRule rule;
     bool ruleGiven = false;
+    Rect bar(0, 0, 0, 0), bar43(0, 0, 0, 0);
+    Color barFill(0x36, 0xD9, 0xE0, 255);
     double seconds = 0, timeout = 30;
     for (int i = 2; i + 1 < argc; i += 2) {
         std::string opt = argv[i], val = argv[i + 1];
@@ -237,7 +278,23 @@ int main(int argc, char **argv) {
             if (sscanf(val.c_str(), "%d,%d,%d,%d", &rule.x0, &rule.y, &rule.x1, &rule.h) != 4)
                 return usage();
             ruleGiven = true;
-        } else
+        } else if (opt == "--progress-file")
+            progressFile = val;
+        else if (opt == "--bar") {
+            if (!parseRect(val, bar))
+                return usage();
+        } else if (opt == "--bar-4x3") {
+            if (!parseRect(val, bar43))
+                return usage();
+        } else if (opt == "--bar-color") {
+            unsigned int rgb = 0;
+            if (sscanf(val.c_str(), "%6x", &rgb) != 1)
+                return usage();
+            barFill = Color(static_cast<uint8_t>(rgb >> 16), static_cast<uint8_t>(rgb >> 8),
+                            static_cast<uint8_t>(rgb), 255);
+        } else if (opt == "--power-file")
+            powerFile = val;
+        else
             return usage();
     }
     if (!anim.empty() && anim != "sweep")
@@ -257,7 +314,9 @@ int main(int argc, char **argv) {
     const bool fullscreen = std::getenv("AB_WINDOWED") == nullptr;
 #endif
     GuiBase gui("absplash", GuiBase::ScreenWidth, GuiBase::ScreenHeight, 1.0f, 0, fullscreen);
-    gui.platform().setPowerOffHandler([]() {}); // the console's front buttons are not ours to act on
+    // the console's front buttons are not ours to act on - but the insert-stick screen's POWER (--power-file)
+    bool powerPressed = false;
+    gui.platform().setPowerOffHandler([&powerPressed]() { powerPressed = true; });
     Renderer &r = gui.renderer();
     // a 4:3 output (720x480, 640x480, 1024x768 ...): the picture's 4:3 twin, <name>-4x3.<ext> next to it, when there is one -
     // one place for every splash of the launcher, the emulator and App hand-overs, the update and the power-off
@@ -336,9 +395,17 @@ int main(int argc, char **argv) {
         }
         if (sweep)
             drawSweep(r, dst, rule, gui.platform().ticks() - startedMs);
+        if (!progressFile.empty() && tex.valid())
+            drawBar(r, dst, tex.size(), useTwin ? bar43 : bar, barFill, readPercent(progressFile));
         r.present();
 
         const double elapsed = static_cast<double>(gui.platform().ticks()) / 1000.0 - started;
+        if (powerPressed && !powerFile.empty() && elapsed >= 1.5) {
+            PLOG_INFO << "absplash: POWER pressed - " << powerFile;
+            std::ofstream(powerFile) << "power\n";
+            break;
+        }
+        powerPressed = false;
         if (elapsed >= timeout)
             break;
         if (!untilExists.empty() && fileExists(untilExists))

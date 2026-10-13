@@ -106,4 +106,39 @@ vector<PadListEntry> parsePadList(const vector<string> &lines) {
     return pads;
 }
 
+//*******************************
+// isPadSensorName
+//*******************************
+bool isPadSensorName(const string &name) {
+    static const char *const suffixes[] = {" motion sensors", " touchpad"};
+    string lower = name;
+    for (char &c : lower) {
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+    for (const char *suffix : suffixes) {
+        string tail = suffix;
+        if (lower.size() > tail.size() && lower.compare(lower.size() - tail.size(), tail.size(), tail) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//*******************************
+// withoutSensorNodes
+//*******************************
+vector<PadListEntry> withoutSensorNodes(const vector<PadListEntry> &entries) {
+    vector<PadListEntry> pads;
+    for (const PadListEntry &entry : entries) {
+        if (isPadSensorName(entry.name)) {
+            continue;
+        }
+        pads.push_back(entry);
+        pads.back().index = static_cast<int>(pads.size()) - 1;
+    }
+    return pads;
+}
+
 } // namespace abpad

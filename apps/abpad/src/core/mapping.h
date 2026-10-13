@@ -115,6 +115,8 @@ struct ControllerState {
     // true for a button, and for an axis pulled past the threshold - what a hotkey and keyboard mode
     // both want to ask
     bool held(Element element) const;
+    // true for an axis pushed past the threshold the other way (left, up); false for a button
+    bool heldNegative(Element element) const;
     void set(Element element, bool pressed);
     void set(Element element, int16_t value);
     bool operator==(const ControllerState &other) const;

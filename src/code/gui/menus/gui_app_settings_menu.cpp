@@ -99,7 +99,7 @@ void GuiAppSettings::stepPadMode(int step, bool repeat) {
 // GuiAppSettings::flagLabel / flagValue / stepFlag
 //*******************************
 string GuiAppSettings::flagLabel(int row) const {
-    return row == OptDpad2Analog ? _("D-pad as stick:") : _("Stick as d-pad:");
+    return row == OptDpad2Analog ? _("D-pad as stick:") : _("Stick as D-pad:");
 }
 
 string GuiAppSettings::flagValue(const FlagRow &flag) const {

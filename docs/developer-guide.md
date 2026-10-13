@@ -45,6 +45,16 @@ through the GameController API, publishes state in shared memory) and `libabpad.
 App, answers its SDL with a pad it understands) exist to fix that. Full design, the daemon/shim/padtest
 layout and the Pi 400 verification story -> autobleem-main `docs/history/launcher-virtual-gamepad.md`.
 
+**One way out of every pad (the owner's rule, 2026-10-07):** on every pad, **hold Start+Select, or hold Home (the
+Guide button), for 2 seconds = back to AutoBleem**; the console's front Reset exits too. A short press of
+Start+Select or Home is the emulator's menu (RetroArch: `input_menu_toggle_gamepad_combo = "4"`; pcsx-abnxt's own
+menu); in an App only the hold exits, a short press does nothing extra. The hold is `core/hold.*` in abpad (the
+`hotkey` of `pad.default.ini`: `start+select,guide`); it ends the program with SIGTERM and SIGKILL 3 s later. Beside
+RetroArch and an App with `VirtualPad=false`, `abpadd --exit-only --pads` (`rc/ab_exitwatch.sh`) reads the pads
+without grabbing them: on the console `launch_rb.sh` backgrounds RetroArch, starts the watcher with `--no-reset`
+(Reset stays RetroArch's own), waits and stops it - a hold exit is a clean return, no red LED; on the Pi and the PC
+the watcher gets the shell's pid and RetroArch is exec'd over it.
+
 **Every App can be left with the console's Reset button** (the owner's rule, 2026-09-25: every game
 needs a way out through Reset on the console and from the controller). The Reset button is an input
 device's `KEY_PLAYPAUSE` - what SDL 2.0.14 maps to `SDL_SCANCODE_AUDIOPLAY`, the key pcsx-ab
@@ -53,8 +63,8 @@ device's `KEY_PLAYPAUSE` - what SDL 2.0.14 maps to `SDL_SCANCODE_AUDIOPLAY`, the
 `ResetWatch` reads every `/dev/input/event*` that can send it: a press bumps `SharedState::quitRequests`
 (was `reserved[0]` - the block keeps its size and version, an older shim ignores it), the shim turns a
 new count into a quit event at once, and the daemon sends SIGTERM at 1.5 s and SIGKILL at 3 s. An App
-with `VirtualPad=false` (the terminal) gets `abpadd --exit-only` on the console (`[ -d /usr/sony ]` in
-`app_env.sh`): no SDL, no shim, SIGTERM on the press. **Windows** has no abpad: an App there is left
+with `VirtualPad=false` (the terminal) gets `abpadd --exit-only --pads` on every platform (`app_env.sh`): no shim;
+on the console SIGTERM on the Reset press, everywhere SIGTERM after the 2 s hold of Start+Select or Home. **Windows** has no abpad: an App there is left
 through its own menu, which each port's readme names (the owner's choice).
 
 `abpadd --list` opens each pad once, prints one tab-separated line per pad (index, connected, SDL driver,
@@ -109,6 +119,13 @@ launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-mai
   must be rebuilt. The core test `test_sdk_layout` (table: `tests/classic/sdk_layout_table.h`) now fails on any such change.
   **`tools/lang_tools.py extract`** also scans autobleem-core's `ab_gui/` for `translate("...")` (the widgets hand
   their English to `_()` that way), so `update --remove-obsolete` keeps those keys.
+  **Adding strings: `tools/lang_tools.py add "English text" ["Deutsch=Übersetzung" ...]`** (or `add --from FILE`, lines
+  `key<TAB>Language=value`) inserts just that key into all 17 files in the sorted place and moves only the
+  "Untranslated/Total" header line; a language without a value gets `Key=` (shown in English) and is listed. A key
+  already there is left as it is. Do not add strings with `extract` + `update`: the files have drifted from a fresh
+  extract, so they rewrite thousands of lines - both now compute the result first, print the changed lines per file and
+  stop with exit 2 when a file would change by more than 20 lines (`--force` writes anyway, `--dry-run` prints only).
+  Tests: `python3 -m unittest tools.test_lang_tools`.
 
 ## Scanner processors (2026-09-24, autobleem-main `docs/archive/scanner-processors-plan.md`, `docs/history/scanner-processors.md` and `docs/history/launcher-scanner-processors.md`)
 
@@ -563,7 +580,7 @@ Quit, so the stack of screens unwinds and `AutoBleem::run()` leaves cleanly (dat
 joined), "POWERING OFF... PLEASE WAIT" on the screen.
 
 **Never read `/sys/power/wakeup_count` in these scripts**: it
-blocks while a wakeup event is in progress, which hung a diagnostic build on the red LED.
+blocks while a wakeup event is in progress, which hung a diagnostic build on the standby LED (orange now, red until ab-1).
 
 Unbinding/rebinding the driver is
 **not** a way: its probe cannot run twice (IRQ never freed, `probe ... failed with error -16`) and the port stays

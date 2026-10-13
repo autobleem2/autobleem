@@ -166,9 +166,10 @@ else
 fi
 
 # git's directory keepers have no business on a stick; the executable bit does not survive a zip made on
-# Windows, which is why rc/autobleem.sh chmods what it runs, but from here it can be right
+# Windows (rc/boot.sh repairs the bits on the stick at every boot, but from here they can be right to begin with)
 find "$STAGE" -type f -name placeholder -delete
 chmod +x "$APP/autobleem-gui" "$APP/absplash" "$APP/abfatflag" "$APP/abupdate" "$APP/abfetch" "$APP/abdialog" \
+         "$APP/run.sh" "$STAGE"/Autobleem/bin/abpad/abpadd "$STAGE"/Autobleem/rc/pe/sdl_* \
          "$STAGE"/Autobleem/*.sh "$STAGE"/Autobleem/rc/*.sh "$STAGE"/Apps/*/*.sh 2>/dev/null || true
 
 echo "==> $ZIP"

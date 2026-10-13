@@ -28,6 +28,20 @@ copy_pictures() {
         cp -f /media/Autobleem/bin/autobleem/splash/$pic-4x3.jpg /tmp/$pic-4x3.jpg 2>/dev/null
     done
 }
+# AUTOBLEEM-28/29: the insert-stick and check-stick pictures in the launcher's language (config.ini's language: the
+# language file's name, Polski ...; English when there is none for it) on tmpfs as insert-stick.jpg / check-stick.jpg
+# with their 4:3 twins - they are shown when the stick is gone or being checked, so they must already be in RAM.
+# Taken again every round: the language may have changed in Options.
+copy_stick_pictures() {
+    sp_lang=$(ab_config_get language)
+    sp_dir=/media/Autobleem/bin/autobleem/splash
+    for pic in insert-stick check-stick; do
+        l=$sp_lang
+        [ -n "$l" ] && [ -f "$sp_dir/$pic/$l.jpg" ] || l=English
+        cp -f "$sp_dir/$pic/$l.jpg" /tmp/$pic.jpg 2>/dev/null
+        cp -f "$sp_dir/$pic/$l-4x3.jpg" /tmp/$pic-4x3.jpg 2>/dev/null
+    done
+}
 SPLASH_PID=/tmp/.absplash.pid
 show_splash() {
     # already up (the wake's or the return's picture): nothing to start - one on the screen at a time
@@ -41,9 +55,29 @@ show_splash() {
     bt "absplash started (pid $!)"
 }
 
+# Self-repair of the exec bits: this file is sourced, so it runs without +x, but everything below it is executed
+# directly. A stick whose filesystem keeps the Unix mode (ext4) and was unpacked by an older updater has lost
+# them, and the console would sit in a boot loop. Only files on the stick (/media) that exist and are not
+# executable are touched; the console's own storage is never written.
+fix_exec_bits() {
+    for f in /media/Autobleem/rc/*.sh /media/Autobleem/*.sh \
+        /media/Autobleem/bin/autobleem/autobleem-gui /media/Autobleem/bin/autobleem/run.sh \
+        /media/Autobleem/bin/autobleem/abfetch /media/Autobleem/bin/autobleem/abupdate \
+        /media/Autobleem/bin/autobleem/absplash /media/Autobleem/bin/autobleem/abdialog \
+        /media/Autobleem/bin/autobleem/abfatflag /media/Autobleem/bin/emu*/pcsx-ab \
+        /media/Autobleem/bin/abpad/abpadd; do
+        [ -f "$f" ] && [ ! -x "$f" ] && chmod +x "$f" 2> /dev/null
+    done
+    return 0
+}
+
 # The one-time setup of a boot. Not done again when this run is the restart of the loop after an update: the
 # console is already set up (udev rules, the pad seat, the modules, the picture on the screen).
 boot_once() {
+    # off the stick from the first step: everything started from here (the boot picture's absplash first) inherits
+    # this cwd, and the stick check below (checkstick.sh) unmounts the stick - Sony's start.sh left us in rc/
+    cd /tmp
+    fix_exec_bits
     # Sony's UI first, at once (the stock logo held the screen until killsony.sh, far below), and again after a
     # second for the late forks (killsony.sh without "now" sleeps one) - in the background, the boot goes on
     $RC/killsony.sh now
@@ -116,12 +150,51 @@ boot_once() {
     done
     bt "kernel modules done"
 
+    # a USB CD/DVD drive (the disc drive: a PS1 disc played from it) - the AutoBleem kernel's cdrom, sr_mod and sg:
+    # its own (psc-kernel-payload builds them into the payload's /lib/modules since 2026-10-13: modprobe), else
+    # the stick's Autobleem/lib/modules/cd/*.ko for a kernel flashed before that (insmod, cdrom first: sr_mod
+    # needs it). Only into the AutoBleem kernel, whose rootfs carries the /autobleem marker - never into Sony's
+    # own. udev must not read the disc's filesystem: blkid's 2048-byte reads of a PS1 disc (Mode 2) time out after
+    # 30 s each and the emulator's raw reads wait behind them (minutes on the Pi). udev 229 has no flag for that,
+    # so its 60-persistent-storage.rules goes to /run (tmpfs, the same name overrides /lib's) without the two sr
+    # blocks - harmless with no drive.
+    if [ -e /autobleem ]; then
+        for name in cdrom sr_mod sg; do
+            grep -qs "^$name " /proc/modules && continue
+            grep -qs "/$name.ko" "$KMODDIR/modules.builtin" && continue
+            if grep -qs "/$name.ko" "$KMODDIR/modules.dep"; then
+                modprobe "$name" && continue
+                echo "boot: modprobe $name failed"
+            fi
+            kmod=/media/Autobleem/lib/modules/cd/$name.ko
+            if [ -f "$kmod" ]; then
+                insmod "$kmod" || echo "boot: $name.ko refused"
+            else
+                echo "boot: no $name for this kernel"
+            fi
+        done
+        if [ ! -f /run/udev/rules.d/60-persistent-storage.rules ] && [ -f /lib/udev/rules.d/60-persistent-storage.rules ]; then
+            mkdir -p /run/udev/rules.d
+            sed '/^KERNEL=="sr\*", ENV{DISK_EJECT_REQUEST}!=/,/IMPORT{builtin}="blkid/d' \
+                /lib/udev/rules.d/60-persistent-storage.rules > /run/udev/rules.d/60-persistent-storage.rules
+            udevadm control --reload-rules
+        fi
+        bt "CD drive modules done"
+    fi
+
     # a third time, the udev work and the modules gave Sony's late starters time to come up (no sleep this time)
     $RC/killsony.sh now
     $RC/backup.sh
     bt "backup.sh done"
-    # the stick's dirty flag, before anything of ours writes to it
-    $RC/checkstick.sh
+    # AUTOBLEEM-29: the filesystem check (rc/ab_fsck.sh) and its tools on tmpfs, with the pictures - checkstick.sh
+    # unmounts the stick for a check, and selection.sh checks a stick that comes back after a pull
+    cp -f $RC/ab_fsck.sh /tmp/ab_fsck.sh && (. /tmp/ab_fsck.sh && ab_fsck_copy)
+    copy_stick_pictures
+    # the stick's dirty flag (and its check), before anything of ours writes to it - from a tmpfs copy, with this
+    # shell's cwd on tmpfs (the top of boot_once): a script run from the stick holds it open, and a check needs the
+    # stick unmounted
+    cp -f $RC/checkstick.sh /tmp/checkstick.sh
+    sh /tmp/checkstick.sh
     bt "checkstick.sh done"
     # the AutoBleem kernel's SSH key from the stick, if any (C10) - a no-op on the stock kernel
     $RC/ssh_keys.sh
@@ -221,18 +294,31 @@ while true; do
     # CONSOLE-15 evidence: the watch log (RAM, one line per 30 s - see ab_watch.sh); it runs from a tmpfs copy
     # and is stopped by selection.sh before the stick is unmounted, so it is started again every time round
     sh $RC/ab_watch.sh start
+    # AUTOBLEEM-28: what the round needs when the stick is pulled in the middle of it, on tmpfs before it starts -
+    # selection.sh and its ab_log.sh (taken again after the launcher, below, when the stick is still there), the
+    # pictures - and the stick's watch, which stops and kills everything below this shell when the stick goes
+    cp -f $RC/selection.sh /tmp/selection.sh
+    cp -f $RC/ab_log.sh /tmp/ab_log.sh
+    copy_stick_pictures
+    sh $RC/ab_stickwatch.sh start $$
     rm -f "$AB_RUNTIME_DIR/autobleem_exit"
     bt "starting autobleem.sh"
+    fix_exec_bits # an update during the last round may have brought files without the bit
     ./autobleem.sh
     ab_sh_rc=$?
     bt "autobleem.sh ended (status $ab_sh_rc)"
     # autobleem.sh writes the launcher's own status; if it was killed itself, its status is the next best
     [ -f "$AB_RUNTIME_DIR/autobleem_exit" ] || echo $ab_sh_rc > "$AB_RUNTIME_DIR/autobleem_exit"
-    cp -f $RC/selection.sh /tmp/selection.sh
-    cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
-    copy_pictures autobleem updating poweroff
+    # (the stick pulled: these copies fail and the ones taken before the round stay)
+    cp -f $RC/selection.sh /tmp/selection.sh 2>/dev/null
+    cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash 2>/dev/null && chmod +x /tmp/absplash
+    copy_pictures autobleem updating poweroff 2>/dev/null
     cd /tmp
-    sh /tmp/selection.sh || break
+    sh /tmp/selection.sh && continue
+    # AUTOBLEEM-28: the stick was pulled while selection.sh's own work ran (RetroArch, an update) - the watch killed
+    # it and left the no-stick selection (9): selection.sh again, from its tmpfs copy, waits for the stick
+    [ -f /tmp/.abnostick ] && sh /tmp/selection.sh && continue
+    break
 done
 sync
 systemctl reboot   # systemd's: a busybox reboot over it only signals init and returns

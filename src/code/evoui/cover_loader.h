@@ -16,7 +16,7 @@
 //******************
 // CoverLoader
 //******************
-// A PNG decode is 10-40 ms on the console or a Pi - a frame or two lost every time a scroll brought a new
+// A PNG or JPEG decode is 10-40 ms on the console or a Pi - a frame or two lost every time a scroll brought a new
 // cover in, when it ran on the render thread. This decodes the image files the carousel is about to need
 // on a background thread (at the lowest priority), into ableem::Images; the carousel uploads a finished one
 // on the render thread, which is cheap. Only the decode is here: the files' paths are worked out, and the

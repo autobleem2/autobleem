@@ -90,7 +90,7 @@ inline int chipAlpha(ChipLook look, long ms) {
 
 // Does the disc view open now? When a disc becomes ready (the watcher's change counter moved since the view last
 // looked, and the disc is ready) and the view is not already open. After Circle the disc stays and the view stays
-// closed until R1: the counter has not moved.
+// closed until Circle: the counter has not moved.
 inline bool opensByItself(Drive drive, unsigned changes, unsigned seenChanges, bool viewOpen) {
     return isReady(drive) && changes != seenChanges && !viewOpen;
 }
@@ -100,8 +100,8 @@ inline bool closesByItself(Drive drive, bool viewOpen) {
     return viewOpen && !isReady(drive);
 }
 
-// R1 on the carousel brings the disc view back, and is in the footer only while a disc is ready
-inline bool r1ShowsDisc(Drive drive, bool viewOpen) {
+// Circle on the carousel brings the disc view back, and "Disc" is in the footer only while a disc is ready
+inline bool circleShowsDisc(Drive drive, bool viewOpen) {
     return isReady(drive) && !viewOpen;
 }
 
@@ -124,6 +124,13 @@ inline bool fadeSwapDue(long ms, bool alreadySwapped, int halfMs = FadeHalfMs) {
 
 inline bool fadeDone(long ms, int halfMs = FadeHalfMs) {
     return ms >= 2L * halfMs;
+}
+
+// The game the resume screen after a run is about, and whose save folder the chosen slot is written to: the disc that
+// just played when there is one (the carousel was left on another game while the disc view held the disc alone), else
+// the carousel's selected game. A null pointer type (shared_ptr, raw) means "none".
+template <typename Ptr> Ptr resumeGameFor(const Ptr &lastDisc, const Ptr &carouselSelected) {
+    return lastDisc ? lastDisc : carouselSelected;
 }
 
 // "47:12" - the audio CD's total time from its length in CD frames (1/75 s); minutes may pass 59
