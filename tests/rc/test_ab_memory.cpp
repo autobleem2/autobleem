@@ -52,10 +52,10 @@ struct MemWorld {
         }
         // mkswap marks the device made, swapon lists it in /proc/swaps like the kernel does
         tmp.writeFile("bin/mkswap", "#!/bin/sh\necho \"mkswap $*\" >> \"$FAKE_LOG\"\n");
-        tmp.writeFile("bin/swapon",
-                      "#!/bin/sh\necho \"swapon $*\" >> \"$FAKE_LOG\"\n"
-                      "for last; do :; done\n"
-                      "echo \"$last partition 256000 0 100\" >> \"$AB_MEM_PROC/swaps\"\n");
+        string swaponBody = "#!/bin/sh\necho \"swapon $*\" >> \"$FAKE_LOG\"\n";
+        swaponBody += "for last; do :; done\n";
+        swaponBody += "echo \"$last partition 256000 0 100\" >> \"$AB_MEM_PROC/swaps\"\n";
+        tmp.writeFile("bin/swapon", swaponBody);
         const string mkswap = slashes(tmp.at("bin/mkswap"));
         const string swapon = slashes(tmp.at("bin/swapon"));
         const string chmod = "chmod +x \"" + mkswap + "\" \"" + swapon + "\"";
@@ -64,9 +64,9 @@ struct MemWorld {
 
     vector<string> run(int times) {
         const string r = slashes(tmp.path());
-        string body = "export AB_MEM_PROC='" + r + "/proc' AB_MEM_SYS='" + r + "/sys' AB_MEM_DEV='" + r +
-                      "/dev' AB_LOG_DIR='" + r + "/logs' FAKE_LOG='" + r + "/fake.log' PATH='" + r + "/bin':$PATH\n" +
-                      ". '" + string(AB_RC_DIR) + "/ab_memory.sh'\n";
+        string body = "export AB_MEM_PROC='" + r + "/proc' AB_MEM_SYS='" + r + "/sys' AB_MEM_DEV='" + r + "/dev'\n";
+        body += "export AB_LOG_DIR='" + r + "/logs' FAKE_LOG='" + r + "/fake.log' PATH='" + r + "/bin':$PATH\n";
+        body += ". '" + string(AB_RC_DIR) + "/ab_memory.sh'\n";
         for (int i = 0; i < times; i++)
             body += "ab_memory_setup\n";
         tmp.writeFile("driver.sh", body);
