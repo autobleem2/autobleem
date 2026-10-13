@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 585
+# Untranslated: 0 / Total: 586
 
 %1 needs game data it can run: %2.=%1 heeft gamedata nodig die het kan uitvoeren: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoren konden niet gelezen worden en zijn als nullen geschreven.
@@ -156,6 +156,7 @@ no card yet=nog geen kaart
 Not available for a disc in the drive=Niet beschikbaar voor een schijf in het station
 Not enough room in Games: the copy needs %1, %2 is free.=Te weinig ruimte in Games: de kopie heeft %1 nodig, %2 is vrij.
 Not saved: this game has no pcsx.cfg=Niet opgeslagen: deze game heeft geen pcsx.cfg
+PlayStation 1 Games=PlayStation 1-spellen
 Screen halo:=Schermhalo:
 Emulators=Emulators
 Enable=Inschakelen

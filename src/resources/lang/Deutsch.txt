@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 585
+# Untranslated: 0 / Total: 586
 
 %1 needs game data it can run: %2.=%1 braucht Spieldaten, die es ausführen kann: %2.
 %1 sectors could not be read and were written as zeros.=%1 Sektoren konnten nicht gelesen werden und wurden als Nullen geschrieben.
@@ -156,6 +156,7 @@ no card yet=noch keine Karte
 Not available for a disc in the drive=Nicht verfügbar für eine Disc im Laufwerk
 Not enough room in Games: the copy needs %1, %2 is free.=Zu wenig Platz in Games: Die Kopie braucht %1, frei sind %2.
 Not saved: this game has no pcsx.cfg=Nicht gespeichert: Dieses Spiel hat keine pcsx.cfg
+PlayStation 1 Games=PlayStation-1-Spiele
 Screen halo:=Bildschirm-Halo:
 Emulators=Emulatoren
 Enable=Aktivieren

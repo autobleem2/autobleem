@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 585
+# Untranslated: 0 / Total: 586
 
 %1 needs game data it can run: %2.=%1 需要它能运行的游戏数据：%2。
 %1 sectors could not be read and were written as zeros.=有 %1 个扇区无法读取，已写入为零。
@@ -156,6 +156,7 @@ no card yet=尚无记忆卡
 Not available for a disc in the drive=光驱中的光盘不可用
 Not enough room in Games: the copy needs %1, %2 is free.=Games 空间不足：复制需要 %1，可用空间 %2。
 Not saved: this game has no pcsx.cfg=未保存：此游戏没有 pcsx.cfg
+PlayStation 1 Games=PlayStation 1 游戏
 Screen halo:=屏幕光晕：
 Emulators=模拟器
 Enable=启用
