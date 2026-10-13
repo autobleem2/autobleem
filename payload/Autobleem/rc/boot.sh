@@ -41,9 +41,26 @@ show_splash() {
     bt "absplash started (pid $!)"
 }
 
+# Self-repair of the exec bits: this file is sourced, so it runs without +x, but everything below it is executed
+# directly. A stick whose filesystem keeps the Unix mode (ext4) and was unpacked by an older updater has lost
+# them, and the console would sit in a boot loop. Only files on the stick (/media) that exist and are not
+# executable are touched; the console's own storage is never written.
+fix_exec_bits() {
+    for f in /media/Autobleem/rc/*.sh /media/Autobleem/*.sh \
+        /media/Autobleem/bin/autobleem/autobleem-gui /media/Autobleem/bin/autobleem/run.sh \
+        /media/Autobleem/bin/autobleem/abfetch /media/Autobleem/bin/autobleem/abupdate \
+        /media/Autobleem/bin/autobleem/absplash /media/Autobleem/bin/autobleem/abdialog \
+        /media/Autobleem/bin/autobleem/abfatflag /media/Autobleem/bin/emu*/pcsx-ab \
+        /media/Autobleem/bin/abpad/abpadd; do
+        [ -f "$f" ] && [ ! -x "$f" ] && chmod +x "$f" 2> /dev/null
+    done
+    return 0
+}
+
 # The one-time setup of a boot. Not done again when this run is the restart of the loop after an update: the
 # console is already set up (udev rules, the pad seat, the modules, the picture on the screen).
 boot_once() {
+    fix_exec_bits
     # Sony's UI first, at once (the stock logo held the screen until killsony.sh, far below), and again after a
     # second for the late forks (killsony.sh without "now" sleeps one) - in the background, the boot goes on
     $RC/killsony.sh now
@@ -255,6 +272,7 @@ while true; do
     sh $RC/ab_watch.sh start
     rm -f "$AB_RUNTIME_DIR/autobleem_exit"
     bt "starting autobleem.sh"
+    fix_exec_bits # an update during the last round may have brought files without the bit
     ./autobleem.sh
     ab_sh_rc=$?
     bt "autobleem.sh ended (status $ab_sh_rc)"
