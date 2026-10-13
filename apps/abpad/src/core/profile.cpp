@@ -178,7 +178,7 @@ void Profile::loadStream(istream &in) {
             int count = atoi(value.c_str());
             players = (count < 1) ? 1 : (count > MaxPads ? MaxPads : count);
         } else if (key == "hotkey") {
-            hotkey = parseHotkey(lowered(value));
+            hotkey = parseHotkeySet(lowered(value));
         } else if (key == "movement" || key == "dpad") {
             movement = movementAidFromName(lowered(value));
         } else if (key == "cursor") {

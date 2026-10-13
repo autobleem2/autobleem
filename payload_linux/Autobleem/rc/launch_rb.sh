@@ -67,4 +67,9 @@ if ! CORE_SO="$(core_path "$CORE")"; then
 fi
 
 echo "Using core: $CORE_SO"
+# The way out: hold Start+Select or Home for two seconds = SIGTERM (RetroArch saves its SRAM and quits), SIGKILL 3 s
+# later. The watcher is given this shell's pid, which RetroArch keeps when it is exec'd over it, and ends by itself
+# when RetroArch does (rc/ab_exitwatch.sh).
+. "$RC_DIR/ab_exitwatch.sh"
+ab_exitwatch_start "$DATA_MOUNT" $$ --no-reset
 exec retroarch --config "$RA_CONFIG" "${RA_APPEND[@]}" -L "$CORE_SO" "$GAME_FILE"

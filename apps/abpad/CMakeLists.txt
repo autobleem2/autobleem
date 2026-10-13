@@ -6,6 +6,8 @@
 # ours and cheap: no sqlite, no miniz, no SDL. The tests link it next to ab_core, which is fine there.
 
 add_library(abpad_core STATIC
+        src/core/hold.cpp
+        src/core/hold.h
         src/core/kernel_pad.cpp
         src/core/kernel_pad.h
         src/core/keyboard_mode.cpp
