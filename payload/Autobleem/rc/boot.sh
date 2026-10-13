@@ -74,6 +74,9 @@ fix_exec_bits() {
 # The one-time setup of a boot. Not done again when this run is the restart of the loop after an update: the
 # console is already set up (udev rules, the pad seat, the modules, the picture on the screen).
 boot_once() {
+    # off the stick from the first step: everything started from here (the boot picture's absplash first) inherits
+    # this cwd, and the stick check below (checkstick.sh) unmounts the stick - Sony's start.sh left us in rc/
+    cd /tmp
     fix_exec_bits
     # Sony's UI first, at once (the stock logo held the screen until killsony.sh, far below), and again after a
     # second for the late forks (killsony.sh without "now" sleeps one) - in the background, the boot goes on
@@ -187,10 +190,11 @@ boot_once() {
     # unmounts the stick for a check, and selection.sh checks a stick that comes back after a pull
     cp -f $RC/ab_fsck.sh /tmp/ab_fsck.sh && (. /tmp/ab_fsck.sh && ab_fsck_copy)
     copy_stick_pictures
-    # the stick's dirty flag (and its check), before anything of ours writes to it - with this shell's cwd on tmpfs:
-    # it is the one thing of Sony's that holds /media (see the top), and a check needs the stick unmounted
-    cd /tmp
-    $RC/checkstick.sh
+    # the stick's dirty flag (and its check), before anything of ours writes to it - from a tmpfs copy, with this
+    # shell's cwd on tmpfs (the top of boot_once): a script run from the stick holds it open, and a check needs the
+    # stick unmounted
+    cp -f $RC/checkstick.sh /tmp/checkstick.sh
+    sh /tmp/checkstick.sh
     bt "checkstick.sh done"
     # the AutoBleem kernel's SSH key from the stick, if any (C10) - a no-op on the stock kernel
     $RC/ssh_keys.sh
