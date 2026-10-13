@@ -115,6 +115,10 @@ target_compile_definitions(test_psc_cores PRIVATE AB_PLATFORM_DIR="${CMAKE_SOURC
 # is only checked there), and the trimmed pad table the mods read (tools/make_pe_gamecontrollerdb.py)
 ab_add_test(test_pe_run rc/test_pe_run.cpp)
 target_compile_definitions(test_pe_run PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
+
+# rc/ab_memory.sh, overcommit 1 and the zram swap at boot: the real script on a fake /proc, /sys and /dev, run twice
+ab_add_test(test_ab_memory rc/test_ab_memory.cpp)
+target_compile_definitions(test_ab_memory PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if (Python3_Interpreter_FOUND)
     add_test(NAME test_make_pe_gamecontrollerdb COMMAND ${Python3_EXECUTABLE}
