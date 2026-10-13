@@ -3,6 +3,7 @@
 // app's SDL is answered with, the shared-memory handover between the two, the per-app profile and the
 // key table keyboard mode sends.
 
+#include "core/hold.h"
 #include "core/kernel_pad.h"
 #include "core/keyboard_mode.h"
 #include "core/key_names.h"
@@ -725,7 +726,13 @@ TEST_CASE("a profile's defaults are the ones an app that says nothing should get
     CHECK(profile.mode == PadMode::Joystick);
     CHECK(profile.virtualPad == VirtualPadKind::X360);
     CHECK(profile.players == 1);
-    CHECK(profile.hotkey.empty());
+    CHECK(profile.hotkey.size() == 2); // Start+Select or Guide: the one rule for every App
+
+    SUBCASE("a profile can still say no hotkey") {
+        istringstream text("hotkey =\n");
+        profile.loadStream(text);
+        CHECK(profile.hotkey.empty());
+    }
 
     SUBCASE("and a second file is applied over the first") {
         istringstream first("mode = both\nplayers = 4\n");
@@ -769,6 +776,94 @@ TEST_CASE("the hotkey is every named button held together") {
         CHECK(hotkeyHeld(triggers, pulled) == false);
         pulled.set(Element::RightTrigger, static_cast<int16_t>(32767));
         CHECK(hotkeyHeld(triggers, pulled));
+    }
+}
+
+TEST_CASE("the exit hotkey is either combo, as pad.ini spells it") {
+    HotkeySet set = parseHotkeySet("start+select, guide");
+    REQUIRE(set.size() == 2);
+    CHECK(set[0].size() == 2);
+    REQUIRE(set[1].size() == 1);
+    CHECK(set[1][0] == Element::Guide);
+    CHECK(parseHotkeySet("start+select|guide").size() == 2);
+    CHECK(parseHotkeySet("").empty());
+    CHECK(parseHotkeySet("nonsense,guide").size() == 1); // an alternative of unknown names is dropped
+    CHECK(parseHotkeySet(DefaultExitHotkeys).size() == 2);
+
+    HotkeySet rule = parseHotkeySet(DefaultExitHotkeys);
+    ControllerState state;
+    CHECK(hotkeySetHeld(rule, state) == false);
+    state.set(Element::Start, true);
+    CHECK(hotkeySetHeld(rule, state) == false); // Start alone is a game button
+    state.set(Element::Back, true);
+    CHECK(hotkeySetHeld(rule, state)); // a pad with no Guide button leaves by Start+Select
+    ControllerState home;
+    home.set(Element::Guide, true);
+    CHECK(hotkeySetHeld(rule, home)); // a pad with Home leaves by Home alone
+    CHECK(hotkeySetHeld(HotkeySet(), home) == false);
+}
+
+TEST_CASE("the exit hold counts two seconds of the clock") {
+    using Action = ExitHold::Action;
+
+    SUBCASE("a short press does nothing") {
+        ExitHold hold;
+        CHECK(hold.update(true, 1000) == Action::None);
+        CHECK(hold.update(true, 1500) == Action::None);
+        CHECK(hold.update(false, 1600) == Action::None);
+        CHECK(hold.update(false, 9000) == Action::None);
+    }
+
+    SUBCASE("two seconds terminate, once") {
+        ExitHold hold;
+        CHECK(hold.update(true, 1000) == Action::None);
+        CHECK(hold.update(true, 2999) == Action::None);
+        CHECK(hold.update(true, 3000) == Action::Terminate);
+        CHECK(hold.update(true, 3020) == Action::None);
+    }
+
+    SUBCASE("released before two seconds, the count starts over") {
+        ExitHold hold;
+        CHECK(hold.update(true, 0) == Action::None);
+        CHECK(hold.update(true, 1900) == Action::None);
+        CHECK(hold.update(false, 1950) == Action::None);
+        CHECK(hold.update(true, 2000) == Action::None); // a new hold begins here, not at 0
+        CHECK(hold.update(true, 3999) == Action::None);
+        CHECK(hold.update(true, 4000) == Action::Terminate);
+    }
+
+    SUBCASE("the kill comes three seconds after the terminate, held or not") {
+        ExitHold hold;
+        hold.update(true, 0);
+        CHECK(hold.update(true, 2000) == Action::Terminate);
+        CHECK(hold.update(true, 4999) == Action::None);
+        CHECK(hold.update(false, 5000) == Action::Kill);
+        CHECK(hold.update(true, 9000) == Action::None);
+    }
+
+    SUBCASE("the same counting for either combo on a pad with and without Guide") {
+        HotkeySet rule = parseHotkeySet(DefaultExitHotkeys);
+        ControllerState combo;
+        combo.set(Element::Start, true);
+        combo.set(Element::Back, true);
+        ControllerState home;
+        home.set(Element::Guide, true);
+        for (const ControllerState &pad : {combo, home}) {
+            ExitHold hold;
+            CHECK(hold.update(hotkeySetHeld(rule, pad), 0) == Action::None);
+            CHECK(hold.update(hotkeySetHeld(rule, pad), 1999) == Action::None);
+            CHECK(hold.update(hotkeySetHeld(rule, pad), 2000) == Action::Terminate);
+        }
+    }
+
+    SUBCASE("Start alone never leaves") {
+        HotkeySet rule = parseHotkeySet(DefaultExitHotkeys);
+        ControllerState start;
+        start.set(Element::Start, true);
+        ExitHold hold;
+        for (int64_t at = 0; at < 20000; at += 100) {
+            CHECK(hold.update(hotkeySetHeld(rule, start), at) == Action::None);
+        }
     }
 }
 

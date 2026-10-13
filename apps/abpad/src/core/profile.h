@@ -6,7 +6,7 @@
 //     mode = joystick          # joystick | keyboard | both | off
 //     virtual = x360           # the pad a joystick-mode app is shown
 //     players = 1
-//     hotkey = start+select    # held together, quits the app
+//     hotkey = start+select,guide  # either, held for two seconds, quits the app
 //     key.a = Left Ctrl        # keyboard mode: an element -> a key the app already understands
 //     key.dpup = Up
 //     key.leftx = Right        # an axis pushed positive (right, down)
@@ -15,6 +15,7 @@
 // Deliberately not an ableem IniFile: the shim links nothing (see the CMakeLists), and the format is
 // small enough that reading it here costs less than the dependency would.
 
+#include "core/hold.h"
 #include "core/mapping.h"
 #include "core/virtual_pad.h"
 
@@ -42,7 +43,9 @@ struct Profile {
     PadMode mode = PadMode::Joystick;
     VirtualPadKind virtualPad = VirtualPadKind::X360;
     int players = 1;
-    std::vector<Element> hotkey; // all held together; empty = no hotkey
+    // any one of these combos, each held together, for two seconds ends the App (core/hold.h); the owner's rule is
+    // Start+Select or Guide; empty (a profile with "hotkey =") = no hotkey
+    HotkeySet hotkey = parseHotkeySet(DefaultExitHotkeys);
     std::map<Element, std::string> keys;
     std::map<Element, std::string> negativeKeys; // an axis pushed negative (left, up): key.-leftx = Left
     std::string logPath;

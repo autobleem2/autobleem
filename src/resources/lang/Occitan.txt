@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 586
+# Untranslated: 3 / Total: 588
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors an pas pogut èsser legits e son estats escrits coma zèros.
@@ -152,6 +152,7 @@ EmulationStation=EmulationStation
 Emulator=Emulador
 Emulator config menu=Menú config de l'emulador
 Emulator screen scaling:=Escalatge de l'ecran de l'emulador :
+Hold Select+Start or Home for 2 seconds: back to AutoBleem=
 no card yet=pas encara de carta
 Not available for a disc in the drive=Pas disponible per un disc dins lo lector
 Not enough room in Games: the copy needs %1, %2 is free.=Pas pro de plaça dins Games : la còpia ten besonh de %1, %2 son liures.
@@ -432,6 +433,7 @@ Shareware=Shareware
 Sharp=Net
 Sharp (simple)=Net (simple)
 Shift=Maj
+Short press of Select+Start or Home: the emulator's menu=Quicha cuerta de Select+Start o Home : lo menú de l'emulador
 Show internal games:=Afichar los jòcs intèrnes :
 Show performance:=Afichar las performàncias :
 Showing: All games=Afichatge : Totes los jòcs

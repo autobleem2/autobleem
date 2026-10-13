@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 586
+# Untranslated: 1 / Total: 588
 
 %1 needs game data it can run: %2.=%1 har brug for spildata, den kan køre: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunne ikke læses og blev skrevet som nuller.
@@ -152,6 +152,7 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Emulator-konfigurationsmenu
 Emulator screen scaling:=Emulatorens skærmskalering:
+Hold Select+Start or Home for 2 seconds: back to AutoBleem=Hold Select+Start eller Home i 2 sekunder: tilbage til AutoBleem
 no card yet=intet kort endnu
 Not available for a disc in the drive=Ikke tilgængelig for en disk i drevet
 Not enough room in Games: the copy needs %1, %2 is free.=Ikke plads nok i Games: kopien skal bruge %1, %2 er ledig.
@@ -432,6 +433,7 @@ Shareware=Shareware
 Sharp=Skarp
 Sharp (simple)=Skarp (enkel)
 Shift=Skift
+Short press of Select+Start or Home: the emulator's menu=Kort tryk på Select+Start eller Home: emulatorens menu
 Show internal games:=Vis interne spil:
 Show performance:=Vis ydeevne:
 Showing: All games=Viser: Alle spil

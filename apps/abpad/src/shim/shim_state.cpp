@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -12,10 +13,13 @@ using namespace std;
 
 namespace abpad {
 
-// update() runs once per frame of whatever the app is doing, so this is a count of frames rather
-// than a duration - about a second and a half at anything from 30 fps up, and longer on a game that
-// crawls, which is the right way round: a struggling game should be harder to quit by accident.
-constexpr unsigned HotkeyHoldCycles = 60;
+// the clock the hold is counted on: update() runs once per frame of whatever the app is doing, but the hold is two
+// seconds whatever the frame rate (the daemon counts the same two seconds)
+static int64_t monotonicMs() {
+    timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return static_cast<int64_t>(now.tv_sec) * 1000 + now.tv_nsec / 1000000;
+}
 
 //*******************************
 // ShimState::get
@@ -302,17 +306,13 @@ void ShimState::update() {
     // agreed or not. One gesture, escalating, so a person who just wants out holds until it goes.
     bool held = false;
     for (int pad = 0; pad < profile_.players; ++pad) {
-        held = held || hotkeyHeld(profile_.hotkey, controller_[pad]);
+        held = held || hotkeySetHeld(profile_.hotkey, controller_[pad]);
     }
-    if (!held) {
-        hotkeyHeldCycles_ = 0;
-        hotkeyQuitSent_ = false;
-    } else if (++hotkeyHeldCycles_ >= HotkeyHoldCycles && !hotkeyQuitSent_) {
+    if (exitHold_.update(held, monotonicMs()) == ExitHold::Action::Terminate) {
         log("abpad: the hotkey was held - asking the app to quit");
         ShimEvent event;
         event.kind = ShimEvent::Kind::Quit;
         events_.push_back(event);
-        hotkeyQuitSent_ = true;
     }
 
     // The console's Reset button, which abpadd reads (the app never sees it as anything it knows): the

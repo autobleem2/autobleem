@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 586
+# Untranslated: 1 / Total: 588
 
 %1 needs game data it can run: %2.=%1 potrebuje herné dáta, ktoré vie spustiť: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorov sa nepodarilo prečítať a boli zapísané ako nuly.
@@ -152,6 +152,7 @@ EmulationStation=EmulationStation
 Emulator=Emulátor
 Emulator config menu=Konfiguračná ponuka emulátora
 Emulator screen scaling:=Škálovanie obrazu emulátora:
+Hold Select+Start or Home for 2 seconds: back to AutoBleem=Podržte Select+Start alebo Home 2 sekundy: späť do AutoBleem
 no card yet=zatiaľ žiadna karta
 Not available for a disc in the drive=Nie je k dispozícii pre disk v mechanike
 Not enough room in Games: the copy needs %1, %2 is free.=V Games nie je dosť miesta: kópia potrebuje %1, voľných je %2.
@@ -432,6 +433,7 @@ Shareware=Shareware
 Sharp=Ostrý
 Sharp (simple)=Ostrý (jednoduchý)
 Shift=Shift
+Short press of Select+Start or Home: the emulator's menu=Krátke stlačenie Select+Start alebo Home: ponuka emulátora
 Show internal games:=Zobraziť originálne hry:
 Show performance:=Zobraziť výkon:
 Showing: All games=Zobrazujem: Všetky hry

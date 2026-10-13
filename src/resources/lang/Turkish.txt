@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 586
+# Untranslated: 1 / Total: 588
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektör okunamadı ve sıfır olarak yazıldı.
@@ -152,6 +152,7 @@ EmulationStation=EmulationStation
 Emulator=Emülatör
 Emulator config menu=Emülatör yapılandırma menüsü
 Emulator screen scaling:=Emülatör ekran ölçekleme:
+Hold Select+Start or Home for 2 seconds: back to AutoBleem=Select+Start veya Home tuşunu 2 saniye basılı tut: AutoBleem'e dön
 no card yet=henüz kart yok
 Not available for a disc in the drive=Sürücüdeki disk için kullanılamaz
 Not enough room in Games: the copy needs %1, %2 is free.=Games içinde yeterli yer yok: kopya %1 gerektiriyor, %2 boş.
@@ -432,6 +433,7 @@ Shareware=Shareware
 Sharp=Keskin
 Sharp (simple)=Keskin (basit)
 Shift=Shift
+Short press of Select+Start or Home: the emulator's menu=Select+Start veya Home kısa basış: emülatör menüsü
 Show internal games:=Dahili oyunları göster:
 Show performance:=Performansı göster:
 Showing: All games=Gösteriliyor: Tüm oyunlar

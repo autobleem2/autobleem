@@ -15,6 +15,11 @@
 // a pad is mapped at all and what the launcher would call it. --list is the same facts as one tab-separated line
 // per pad on stdout (core/pad_list.h) - read-only, what the launcher's "Virtual gamepad" page runs. --exit-only
 // watches the console's Reset button for the app and does nothing else (an App with VirtualPad=false - see ResetWatch).
+// --exit-only --pads adds the pads: they are read, never grabbed or published, and holding Start+Select or Guide for
+// two seconds ends the program (see exitWatch) - the watcher beside RetroArch, and beside an App that reads the pads
+// itself.
+// --no-reset leaves the Reset button to the program (RetroArch has its own). The same hold ends the App in the daemon's
+// normal mode (core/hold.h): SIGTERM at two seconds, SIGKILL three seconds later.
 //
 // --kernel psc|x360 is the kernel pad (core/kernel_pad.h) for an App no preload reaches: the daemon makes a uinput
 // device with that pad's identity before anything else, holds the real pads with EVIOCGRAB, reads them, and puts the
@@ -25,6 +30,7 @@
 // list always has the console's Reset button device (gpio-keys), in the shim mode too: an App that grabs every event
 // node would silence Reset.
 
+#include "core/hold.h"
 #include "core/kernel_pad.h"
 #include "core/mapping.h"
 #include "core/pad_list.h"
@@ -40,6 +46,7 @@
 #endif
 
 #include <algorithm>
+#include <chrono>
 #include <csignal>
 #include <cstdarg>
 #include <cstdio>
@@ -87,6 +94,11 @@ void say(const char *format, ...) {
     va_end(args);
     fputc('\n', stderr);
     fflush(stderr);
+}
+
+// the monotonic clock the hold is counted on, in milliseconds
+int64_t nowMs() {
+    return chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now().time_since_epoch()).count();
 }
 
 void chatter(const char *format, ...) {
@@ -516,44 +528,43 @@ void writeMappings(const string &path, Slot *slots) {
 // the app and knows its pid, so it is the part that can end it - politely first, then not.
 class QuitWatch {
 public:
-    QuitWatch(const vector<Element> &hotkey, long pid) : hotkey_(hotkey), pid_(pid) {}
+    QuitWatch(const HotkeySet &hotkey, long pid) : hotkey_(hotkey), pid_(pid) {}
 
     bool enabled() const { return pid_ > 0 && !hotkey_.empty(); }
 
-    // called once per cycle with every pad's state; true when the app is gone and we should stop
-    void check(const ControllerState *pads, const bool *connected, int padCount, int rate) {
+    // called once per cycle with every pad's state
+    void check(const ControllerState *pads, const bool *connected, int padCount) {
         if (!enabled()) {
             return;
         }
         bool held = false;
         for (int i = 0; i < padCount; ++i) {
-            held = held || (connected[i] && hotkeyHeld(hotkey_, pads[i]));
+            held = held || (connected[i] && hotkeySetHeld(hotkey_, pads[i]));
         }
-        if (!held) {
-            cycles_ = 0;
-            return;
-        }
-
-        ++cycles_;
-        // the shim has had its go by now (it asks after about a second and a half); these are the
-        // two steps after that, so a single unbroken hold goes ask -> terminate -> kill
-        if (cycles_ == rate * 3) {
+        // the shim asks the app to quit at the same two seconds; this is the part that does not depend on the app
+        // agreeing: SIGTERM at two seconds of an unbroken hold, SIGKILL three seconds after that
+        switch (hold_.update(held, nowMs())) {
+        case ExitHold::Action::Terminate:
             say("abpadd: the hotkey has been held - stopping the app (pid %ld)", pid_);
 #ifndef _WIN32
             kill(static_cast<pid_t>(pid_), SIGTERM);
 #endif
-        } else if (cycles_ == rate * 5) {
+            break;
+        case ExitHold::Action::Kill:
             say("abpadd: it did not stop - killing it");
 #ifndef _WIN32
             kill(static_cast<pid_t>(pid_), SIGKILL);
 #endif
+            break;
+        case ExitHold::Action::None:
+            break;
         }
     }
 
 private:
-    vector<Element> hotkey_;
+    HotkeySet hotkey_;
     long pid_;
-    int cycles_ = 0;
+    ExitHold hold_;
 };
 
 //*******************************
@@ -696,6 +707,63 @@ ControllerState readPad(SDL_GameController *controller) {
         state.set(static_cast<Element>(FirstAxisElement + axis), value);
     }
     return state;
+}
+
+//*******************************
+// exitWatch - the way out beside a program that reads the pads itself (--exit-only --pads)
+//*******************************
+// RetroArch on the console, the Pi and the PC stick, and an App with VirtualPad=false. The pads are only read, through
+// SDL's GameController API with our database, never grabbed, never published: the program keeps every press. Holding
+// the exit hotkey (Start+Select or Guide, pad.ini's `hotkey` when the App has one) for two seconds ends the program
+// by its pid - SIGTERM (RetroArch saves its SRAM and quits cleanly), SIGKILL three seconds later. The console's Reset
+// button is watched too unless the program has its own use for it (watchReset false: RetroArch's input_exit_emulator).
+int exitWatch(long watchPid, bool watchReset, const HotkeySet &hotkey) {
+    Slot slots[MaxPads];
+    unique_ptr<ResetWatch> reset;
+    if (watchReset) {
+        reset = make_unique<ResetWatch>(watchPid, nullptr);
+    }
+    QuitWatch quitWatch(hotkey, watchPid);
+    constexpr int rate = 50;
+    say("abpadd: watching the pads for the exit hotkey (pid %ld)%s", watchPid,
+        (reset && reset->enabled()) ? " and Reset" : "");
+    while (!g_stop) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_JOYDEVICEADDED) {
+                addPad(slots, event.jdevice.which);
+            } else if (event.type == SDL_JOYDEVICEREMOVED) {
+                removePad(slots, event.jdevice.which);
+            }
+        }
+        ControllerState pads[MaxPads];
+        bool connected[MaxPads] = {};
+        int highest = 0;
+        for (int i = 0; i < MaxPads; ++i) {
+            if (slots[i].occupied()) {
+                pads[i] = readPad(slots[i].controller);
+                connected[i] = true;
+                highest = i + 1;
+            }
+        }
+        quitWatch.check(pads, connected, highest);
+        if (reset) {
+            reset->check(rate);
+        }
+#ifndef _WIN32
+        if (watchPid > 0 && kill(static_cast<pid_t>(watchPid), 0) != 0) {
+            chatter("abpadd: the program (pid %ld) is gone", watchPid);
+            break;
+        }
+#endif
+        SDL_Delay(1000 / rate);
+    }
+    for (Slot &slot : slots) {
+        if (slot.occupied()) {
+            SDL_GameControllerClose(slot.controller);
+        }
+    }
+    return 0;
 }
 
 //*******************************
@@ -898,7 +966,9 @@ int main(int argc, char *argv[]) {
     const char *dbFromEnvironment = getenv("AB_PAD_DB");
     string dbPaths = dbFromEnvironment ? dbFromEnvironment : "";
     string mappingsPath;
-    string quitHotkey = "start+select";
+    string quitHotkey; // --quit-hotkey a+b,c: empty = the `hotkey` of pad.ini (AB_PAD_DEFAULTS, AB_PAD_PROFILE)
+    bool exitPadsMode = false;
+    bool noReset = false;
     int rate = 250; // Hz - far more than any game reads its pad at, and a rounding error of a core
     long watchPid = 0;
     bool probeOnly = false;
@@ -932,12 +1002,16 @@ int main(int argc, char *argv[]) {
             watchOnly = true;
         } else if (argument == "--exit-only") {
             exitOnlyMode = true;
+        } else if (argument == "--pads") {
+            exitPadsMode = true;
+        } else if (argument == "--no-reset") {
+            noReset = true;
         } else if (argument == "--verbose") {
             g_verbose = true;
         } else {
             say("usage: abpadd [--shm PATH] [--db FILE] [--mappings FILE] [--watch-pid N]");
             say("              [--quit-hotkey a+b] [--rate HZ] [--kernel psc|x360] [--probe] [--list] [--watch]");
-            say("              [--exit-only] [--verbose]");
+            say("              [--exit-only [--pads] [--no-reset]] [--verbose]");
             return argument == "--help" ? 0 : 2;
         }
     }
@@ -962,7 +1036,8 @@ int main(int argc, char *argv[]) {
         return watch(shmPath);
     }
     if (exitOnlyMode) {
-        // an App that reads the pads itself: only the console's Reset button, no SDL, no shared memory
+        // a program that reads the pads itself: the console's Reset button, and with --pads the exit hotkey as well
+        // (below, once SDL is up); no shared memory either way
 #ifndef _WIN32
         signal(SIGINT, onSignal);
         signal(SIGTERM, onSignal);
@@ -971,7 +1046,9 @@ int main(int argc, char *argv[]) {
         prctl(PR_SET_PDEATHSIG, SIGTERM);
 #endif
 #endif
-        return exitOnly(watchPid);
+        if (!exitPadsMode) {
+            return exitOnly(watchPid);
+        }
     }
 
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
@@ -984,6 +1061,29 @@ int main(int argc, char *argv[]) {
         loadMappings(dbPaths);
     }
 
+    // the exit hotkey: --quit-hotkey, else the App's pad.ini over the defaults - the files the shim reads - else the
+    // rule
+    HotkeySet hotkey;
+    if (!quitHotkey.empty()) {
+        hotkey = parseHotkeySet(quitHotkey);
+    } else {
+        Profile profile;
+        const char *defaults = getenv("AB_PAD_DEFAULTS");
+        if (defaults && *defaults) {
+            profile.loadFile(defaults);
+        }
+        const char *own = getenv("AB_PAD_PROFILE");
+        if (own && *own) {
+            profile.loadFile(own);
+        }
+        hotkey = profile.hotkey;
+    }
+
+    if (exitOnlyMode) {
+        int result = exitWatch(watchPid, !noReset, hotkey);
+        SDL_Quit();
+        return result;
+    }
     if (probeOnly) {
         int result = probe();
         SDL_Quit();
@@ -1063,9 +1163,9 @@ int main(int argc, char *argv[]) {
 #endif
     say("abpadd: publishing to %s", shmPath.c_str());
 
-    QuitWatch quitWatch(parseHotkey(quitHotkey), watchPid);
+    QuitWatch quitWatch(hotkey, watchPid);
     if (quitWatch.enabled()) {
-        say("abpadd: holding %s will stop the app (pid %ld)", quitHotkey.c_str(), watchPid);
+        say("abpadd: holding the exit hotkey for two seconds will stop the app (pid %ld)", watchPid);
     }
     ResetWatch resetWatch(watchPid, shared);
 
@@ -1143,7 +1243,7 @@ int main(int argc, char *argv[]) {
         }
 #endif
         publishPads(*shared, pads, connected, highest);
-        quitWatch.check(pads, connected, highest, rate);
+        quitWatch.check(pads, connected, highest);
         resetWatch.check(rate);
 
 #ifndef _WIN32

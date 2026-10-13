@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 586
+# Untranslated: 1 / Total: 588
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoare nu au putut fi citite și au fost scrise ca zerouri.
@@ -152,6 +152,7 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Meniu de configurare al emulatorului
 Emulator screen scaling:=Scalarea ecranului emulatorului:
+Hold Select+Start or Home for 2 seconds: back to AutoBleem=Ține apăsat Select+Start sau Home 2 secunde: înapoi la AutoBleem
 no card yet=niciun card încă
 Not available for a disc in the drive=Indisponibil pentru un disc din unitate
 Not enough room in Games: the copy needs %1, %2 is free.=Nu este destul loc în Games: copia are nevoie de %1, sunt liberi %2.
@@ -432,6 +433,7 @@ Shareware=Shareware
 Sharp=Clar
 Sharp (simple)=Clar (simplu)
 Shift=Shift
+Short press of Select+Start or Home: the emulator's menu=Apăsare scurtă Select+Start sau Home: meniul emulatorului
 Show internal games:=Arată jocurile interne:
 Show performance:=Afișează performanța:
 Showing: All games=Se arată: Toate jocurile

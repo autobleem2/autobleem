@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 586
+# Untranslated: 1 / Total: 588
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunde inte läsas och skrevs som nollor.
@@ -152,6 +152,7 @@ EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config menu=Emulator-inställningsmeny
 Emulator screen scaling:=Emulatorns skärmskalning:
+Hold Select+Start or Home for 2 seconds: back to AutoBleem=Håll Select+Start eller Home i 2 sekunder: tillbaka till AutoBleem
 no card yet=inget kort än
 Not available for a disc in the drive=Inte tillgängligt för en skiva i enheten
 Not enough room in Games: the copy needs %1, %2 is free.=Inte tillräckligt med utrymme i Games: kopian behöver %1, %2 är ledigt.
@@ -432,6 +433,7 @@ Shareware=Shareware
 Sharp=Skarp
 Sharp (simple)=Skarp (enkel)
 Shift=Skift
+Short press of Select+Start or Home: the emulator's menu=Kort tryck på Select+Start eller Home: emulatorns meny
 Show internal games:=Visa interna spel:
 Show performance:=Visa prestanda:
 Showing: All games=Visar: Alla spel

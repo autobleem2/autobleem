@@ -115,11 +115,11 @@ mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
 # libabpad.so, preloaded, shows the App a pad it understands whichever SDL API it reads. Neither is
 # required: an App whose folder has no pad.ini and a tree with no abpad installed simply run as they
 # always did, and an App whose app.ini says VirtualPad=false (it reads the pads its own way, or has no
-# use for one) gets neither - on the console only the daemon's Reset watch (--exit-only).
+# use for one) gets neither - only the daemon's exit watch (--exit-only --pads).
 #
-# Either way out ends the App: holding Start+Select (the shim asks, the daemon terminates, then
-# kills), and on the console a press of Reset (the daemon asks through the shim, then terminates and
-# kills - see ResetWatch in abpadd.cpp).
+# Either way out ends the App: holding Start+Select or Home (Guide) for two seconds (the shim asks, the daemon
+# terminates, then kills 3 s later - core/hold.h), and on the console a press of Reset (the daemon asks through the
+# shim, then terminates and kills - see ResetWatch in abpadd.cpp). A short press of either does nothing extra.
 #
 # The daemon is given this shell's pid to watch, so it goes when the App goes - including when the
 # App is exec'd over this shell, which keeps the same pid, and including when the App crashes.
@@ -212,6 +212,10 @@ export AB_PAD_HIDE_LIST AB_PAD_HIDE
 if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
     # a block left by the last run would pass for the new daemon being ready (the wait below looks for the file)
     rm -f /tmp/abpad.state /tmp/abpad.state.mappings "$AB_PAD_HIDE_LIST"
+    # the daemon reads the same pad.ini the shim does for the exit hotkey, so the two agree
+    AB_PAD_DEFAULTS_FILE="$AB_ROOT"/Autobleem/rc/pad.default.ini
+    [ -f "$AB_PAD_DEFAULTS_FILE" ] && export AB_PAD_DEFAULTS="$AB_PAD_DEFAULTS_FILE"
+    [ -f "$AB_APP_DIR/pad.ini" ] && export AB_PAD_PROFILE="$AB_APP_DIR/pad.ini"
     env LD_LIBRARY_PATH="$AB_PAD_LD_LIBRARY_PATH" AB_PAD_DB="$AB_PAD_DB" \
         "$AB_PAD_DIR/abpadd" ${AB_PAD_KERNEL:+--kernel $AB_PAD_KERNEL} --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
 
@@ -242,22 +246,23 @@ if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PA
         export AB_PAD_HIDE
     fi
 
-    # the defaults, then this App's own on top - either may be absent
-    AB_PAD_DEFAULTS_FILE="$AB_ROOT"/Autobleem/rc/pad.default.ini
-    [ -f "$AB_PAD_DEFAULTS_FILE" ] && export AB_PAD_DEFAULTS="$AB_PAD_DEFAULTS_FILE"
-    [ -f "$AB_APP_DIR/pad.ini" ] && export AB_PAD_PROFILE="$AB_APP_DIR/pad.ini"
+    # the defaults, then this App's own on top - either may be absent (exported above, before the daemon started)
 
     # For an App the preload cannot reach - one statically linked against SDL - the mapping the
     # daemon actually resolved. Deliberately not our gamecontrollerdb.txt: a file given this way
     # overrides SDL's built-in table, and for a pad SDL already knows the built-in entry is the right
     # one while ours may be a stale line for another of that pad's modes.
     if [ -z "$AB_PAD_KERNEL" ] && [ -f /tmp/abpad.state.mappings ]; then export SDL_GAMECONTROLLERCONFIG_FILE=/tmp/abpad.state.mappings; fi
-elif [ -d /usr/sony ] && [ -x "$AB_PAD_DIR/abpadd" ]; then
-    # The console's Reset button ends every App (the owner's rule, 2026-09-25): an App that reads the
-    # pads itself still gets the daemon, in the mode that only watches Reset (no SDL, no preload) -
-    # still needs the launcher's own library path to find libSDL2 at all.
-    env LD_LIBRARY_PATH="$AB_PAD_LD_LIBRARY_PATH" \
-        "$AB_PAD_DIR/abpadd" --exit-only --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
+elif [ -x "$AB_PAD_DIR/abpadd" ]; then
+    [ -f "$AB_ROOT/Autobleem/rc/pad.default.ini" ] && export AB_PAD_DEFAULTS="$AB_ROOT/Autobleem/rc/pad.default.ini"
+    [ -f "$AB_APP_DIR/pad.ini" ] && export AB_PAD_PROFILE="$AB_APP_DIR/pad.ini"
+    # The one way out of every App (the owner's rule, 2026-10-07): an App that reads the pads itself still gets the
+    # daemon, in the mode that only watches - the console's Reset button (2026-09-25) and the pads, which it reads
+    # without grabbing: Start+Select or Home held for two seconds ends the App. No preload, no shared memory. On the
+    # Pi and the PC stick this is the only way out such an App has. It needs the launcher's own library path to find
+    # libSDL2 at all, and its database to read the pads the way the launcher does.
+    env LD_LIBRARY_PATH="$AB_PAD_LD_LIBRARY_PATH" AB_PAD_DB="$AB_PAD_DB" \
+        "$AB_PAD_DIR/abpadd" --exit-only --pads --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
 fi
 
 # ---------------------------------------------------------------------------------------------
@@ -272,7 +277,7 @@ fi
 # (which waits for the runner) never comes back while any of it runs:
 #   - the program ends by itself: whatever it left running is stopped (a mod's launch.sh that ended while the game it
 #     started played on, holding the screen - OpenJazz on the console, 2026-10-05);
-#   - a TERM/INT/HUP (Reset, Start+Select: abpadd TERMs the runner, which it watches, and KILLs it 1.5 to 3 s later)
+#   - a TERM/INT/HUP (Reset, Start+Select or Home held for 2 s: abpadd TERMs the runner, which it watches, and KILLs it 1.5 to 3 s later)
 #     stops all of it.
 # Either way: TERM to every process of the App, a second for them to go, KILL to what is left, then up to 2 s for the
 # kernel to take them (one stuck in a driver may not go: the log names it). The runner's own pid, abpadd and the
