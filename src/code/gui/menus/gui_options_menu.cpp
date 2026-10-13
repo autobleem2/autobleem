@@ -225,7 +225,7 @@ void GuiOptions::fill() {
 #endif
     // only where the platform can fetch at all (download_command in its ini)
     if (!Env::downloadCommand().empty())
-        lines.emplace_back(CFG_ONLINE, _("Fetch box art online:"), "online", true, vector<string>({"true", "false"}));
+        lines.emplace_back(CFG_ONLINE, _("Fetch box art online:"), "online", true, vector<string>({"false", "true"}));
     if (lines.back().id == CFG_HEADING)
         lines.pop_back(); // a console: nothing under it
 #if defined(AB_ONLINE_UPDATE) && (defined(AB_APPLIANCE) || defined(AB_PLATFORM_WIN) || defined(AB_PLATFORM_PSC))
