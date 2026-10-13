@@ -92,9 +92,9 @@ void PsCarouselGame::releaseNoArtLayers() {
 //*******************************
 // PsCarouselGame::artPath
 //*******************************
-// The image file the cover is made from. A PS1 game: the cover image (.png or .jpg) next to it (the user's, or the covers db's),
-// else what the scan found in RetroArch's thumbnails tree (while that file is still there), else a look in
-// the tree now - an internal game, or one scanned before the tree existed - else the placeholder the
+// The image file the cover is made from. A PS1 game: the cover image (.png or .jpg) next to it (the user's, or the
+// covers db's), else what the scan found in RetroArch's thumbnails tree (while that file is still there), else a
+// look in the tree now - an internal game, or one scanned before the tree existed - else the placeholder the
 // scanner used to copy next to a game. A RetroArch game: its box art, else ra-cover.png; an App: its image,
 // else app-cover.png - for those two `noArt` is set and compose() draws the two-layer placeholder at the
 // system's aspect instead of the file (which is only still named so the cover loader has something to
