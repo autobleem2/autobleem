@@ -1,5 +1,5 @@
 # Experiment (2026-09-22): a soft power-off the way Sony's power_manage does it, but with the stick
-# unmounted - umount /media, red LED, echo mem > /sys/power/state, and after the power button wakes the
+# unmounted - umount /media, orange LED, echo mem > /sys/power/state, and after the power button wakes the
 # console: wait for the stick to come back, mount it, carry on into the launcher. SOURCED from boot.sh
 # (". ./psc_sleep_test.sh") so the cd moves the shell that holds /media as its cwd. Nothing is written
 # to the console's own storage; the log is built in /tmp and copied to System/Logs at the end.
@@ -23,7 +23,7 @@ if umount /media 2>>$OUT; then
     _log "umount /media ok; byte 0x41 = $(dd if=/dev/sda1 bs=1 skip=65 count=1 2>/dev/null | od -A n -t x1)"
     _dmesg_mark=$(dmesg | wc -l)
 
-    echo 0 > /sys/class/leds/green/brightness
+    echo 1 > /sys/class/leds/green/brightness # orange (red + green) = the standby
     echo 1 > /sys/class/leds/red/brightness
     sync
     _log "suspending"

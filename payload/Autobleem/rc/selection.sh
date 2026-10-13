@@ -337,7 +337,7 @@ rear_wake() {
 
 # The console's "power off", the way Sony's own power_manage does it - suspend to RAM, the power button
 # wakes it - but with the stick unmounted first, so it can be pulled while the console is "off" without
-# coming back dirty (Windows' "scan and fix"). The red LED alone is the AutoBleem standby; the USB bus is
+# coming back dirty (Windows' "scan and fix"). The orange LED (red + green) is the AutoBleem standby; the USB bus is
 # reset by the resume and the stick comes back a few seconds later (the same name as before, or the
 # other one), and is mounted again exactly as usb_watch mounted it. Nothing here touches the console's
 # own storage. Returns 0 with the stick mounted again, 1 when it is not back within 60 s (30 s, then 30 s more).
@@ -454,10 +454,10 @@ standby() {
     mark "USB gadget handled (was on: $GADGET_ON)"
 
     led_blink_stop
-    echo 0 > /sys/class/leds/green/brightness
+    echo 1 > /sys/class/leds/green/brightness # orange (red + green) = the standby, as the wake blink's orange
     echo 1 > /sys/class/leds/red/brightness
     sync
-    mark "LED red set, echo mem next"
+    mark "LED orange set, echo mem next"
     # a refused suspend fails the write (EBUSY, a wakeup source held); a real one returns after the wake.
     # Refused: what held it goes to the log, and two more tries for a passing wakelock.
     try=1

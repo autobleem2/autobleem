@@ -570,7 +570,7 @@ Quit, so the stack of screens unwinds and `AutoBleem::run()` leaves cleanly (dat
 joined), "POWERING OFF... PLEASE WAIT" on the screen.
 
 **Never read `/sys/power/wakeup_count` in these scripts**: it
-blocks while a wakeup event is in progress, which hung a diagnostic build on the red LED.
+blocks while a wakeup event is in progress, which hung a diagnostic build on the standby LED (orange now, red until ab-1).
 
 Unbinding/rebinding the driver is
 **not** a way: its probe cannot run twice (IRQ never freed, `probe ... failed with error -16`) and the port stays
