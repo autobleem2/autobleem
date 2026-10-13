@@ -5,8 +5,9 @@
 # the other systems' games) and our own RetroArch build (github.com/autobleem/retroarch-psc: the cores
 # are unpacked by RetroArch itself, libstdc++ is inside it - no RetroBoot libraries on the path).
 #
-#   launch_rb.sh <file> <core>   a game: <core> is a core's path, or NEON / PEOPS for a PS1 game
-#                                (LaunchService::launchRetroArch's argv)
+#   launch_rb.sh <file> <core>   a game: <core> is a core's path (a PS1 game gets the core picked
+#                                for "PlayStation 1 Games" in the RetroArch cores window); NEON / PEOPS only
+#                                from a resume slot an older build wrote (LaunchService::launchRetroArch's argv)
 #   launch_rb.sh                 RetroArch's own menu, nothing loaded (rc/retroarch.sh)
 #
 # What this script says goes to launch.log in the logs dir, RetroArch's own output to retroarch.log there -
@@ -125,6 +126,7 @@ prepare
 
 if [ -n "$2" ]; then
 	case "$2" in
+		# only an old resume slot says these: the slot resumes with the core that wrote it
 		NEON)  CORE=$BIN/cores/pcsx_rearmed_libretro.so ;;
 		PEOPS) CORE=$BIN/cores/swanstation_libretro.so ;;
 		*)     CORE=$2 ;;

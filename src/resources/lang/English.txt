@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 585
+# Untranslated: 0 / Total: 586
 
 %1 needs game data it can run: %2.=%1 needs game data it can run: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors could not be read and were written as zeros.
@@ -156,6 +156,7 @@ no card yet=no card yet
 Not available for a disc in the drive=Not available for a disc in the drive
 Not enough room in Games: the copy needs %1, %2 is free.=Not enough room in Games: the copy needs %1, %2 is free.
 Not saved: this game has no pcsx.cfg=Not saved: this game has no pcsx.cfg
+PlayStation 1 Games=PlayStation 1 Games
 Screen halo:=Screen halo:
 Emulators=Emulators
 Enable=Enable

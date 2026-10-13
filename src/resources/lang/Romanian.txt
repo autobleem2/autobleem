@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 585
+# Untranslated: 0 / Total: 586
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoare nu au putut fi citite și au fost scrise ca zerouri.
@@ -156,6 +156,7 @@ no card yet=niciun card încă
 Not available for a disc in the drive=Indisponibil pentru un disc din unitate
 Not enough room in Games: the copy needs %1, %2 is free.=Nu este destul loc în Games: copia are nevoie de %1, sunt liberi %2.
 Not saved: this game has no pcsx.cfg=Nesalvat: acest joc nu are pcsx.cfg
+PlayStation 1 Games=Jocuri PlayStation 1
 Screen halo:=Halou ecran:
 Emulators=Emulatoare
 Enable=Activează

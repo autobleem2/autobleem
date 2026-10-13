@@ -5,8 +5,9 @@
 #
 # LaunchService::launchRetroArch passes:
 #   $1 the file to run
-#   $2 the core. For AutoBleem's own PS1 games that is the platform's PS1 core (SwanStation on a PC stick,
-#      pcsx_rearmed on a Pi) or "PEOPS" / "NEON" (both pcsx_rearmed here); for a game that came out of a
+#   $2 the core. For AutoBleem's own PS1 games that is the core picked for "PlayStation 1 Games" in the
+#      RetroArch cores window (pcsx_rearmed unless picked otherwise on a Pi, SwanStation on a PC stick), or
+#      "PEOPS" / "NEON" from a resume slot an older build wrote (both pcsx_rearmed here); for a game that came out of a
 #      RetroArch playlist it is the core path the playlist named - RetroArchService resolves it to
 #      RetroArch/cores/<name>.so from the core info files.
 set -uo pipefail
@@ -46,7 +47,7 @@ core_path() {
     fi
 
     case "$name" in
-        NEON|PEOPS|"") name=pcsx_rearmed ;;     # both pcsx GPU plugins are the one libretro core here
+        NEON|PEOPS|"") name=pcsx_rearmed ;;     # old resume slots: both are the one libretro core here
     esac
     # a path that is not there (the platform's PS1 core in RetroArch/cores, which the distribution's
     # RetroArch keeps elsewhere): the same core by its name
