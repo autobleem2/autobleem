@@ -424,6 +424,28 @@ find_stick() {
 # the check-stick picture with its bar goes over this one). Returns 0 with the stick mounted on /media, 1 when the
 # console should sleep (the time is up, or POWER).
 NOSTICK_WAIT=300
+
+# AUTOBLEEM-29: a stick about to be mounted after a wake or a wait is checked (rc/ab_fsck.sh, the check-stick picture
+# with its bar) when it needs it: a FAT whose flag says it was left mounted - pulled, or dirty from elsewhere: the
+# kernel never clears a flag it finds set at mount, so it would stay dirty for good - and, with $2 = check (pulled
+# while mounted), any exFAT/ext too. STICK_CHECKED=1 when it ran (stick_mounted keeps its log).
+STICK_CHECKED=0
+stick_check() {
+    [ -f /tmp/ab_fsck.sh ] || return 0
+    . /tmp/ab_fsck.sh
+    case "$(ab_fsck_type "$1")" in
+    vfat | msdos | fat)
+        [ -x /tmp/abfatflag ] && /tmp/abfatflag "$1" 2> /dev/null | grep -q '^dirty' || return 0
+        ;;
+    *)
+        [ "$2" = check ] || return 0
+        ;;
+    esac
+    rm -f $ABFSCK_LOG
+    ab_fsck "$1"
+    STICK_CHECKED=1
+}
+
 wait_for_stick() {
     want_check=$1
     rm -f /tmp/.abpower
@@ -444,24 +466,13 @@ wait_for_stick() {
                 seen=$DEV
                 sleep 1
             fi
-            if [ "$want_check" = check ] && [ -f /tmp/ab_fsck.sh ] && [ "$DEV" != "$checked" ]; then
+            if [ "$DEV" != "$checked" ]; then
                 checked=$DEV
-                . /tmp/ab_fsck.sh
-                rm -f $ABFSCK_LOG
-                # a FAT is checked only when its flag says it was left mounted (the pull); exFAT/ext always
-                if [ -x /tmp/abfatflag ] && /tmp/abfatflag "$DEV" 2> /dev/null | grep -q '^clean'; then
-                    echo "$(date) $DEV is clean - no check" >> $ABFSCK_LOG
-                else
-                    ab_fsck "$DEV"
-                fi
+                stick_check "$DEV" "$want_check"
             fi
             if mount "$DEV" /media; then
                 rm -f /tmp/.abnostick
                 echo "$(date) stick $DEV mounted after $w s" >> $SLOG
-                if [ "$want_check" = check ] && [ -f /tmp/abfsck.log ]; then
-                    mkdir -p /media/System/Logs
-                    cat /tmp/abfsck.log >> /media/System/Logs/fsck.log
-                fi
                 return 0
             fi
             [ "$DEV" = "$unmountable" ] || echo "$(date) $DEV did not mount - still waiting" >> $SLOG
@@ -484,6 +495,10 @@ wait_for_stick() {
 # session marker is back, and a later boot is not 'after a power-off request'
 stick_mounted() {
     rm -f /tmp/ab_stick_owned
+    if [ "$STICK_CHECKED" = 1 ] && [ -f /tmp/abfsck.log ]; then
+        mkdir -p /media/System/Logs
+        cat /tmp/abfsck.log >> /media/System/Logs/fsck.log
+    fi
     touch /media/System/.session
     rm -f /media/System/Logs/poweroff_reason
     { cat $SLOG; [ -f /tmp/absplash.log ] && sed 's/^/  absplash: /' /tmp/absplash.log; } >> $LOG
@@ -513,9 +528,14 @@ sleep_again() {
 STICK_REAR=0
 stick_after_wake() {
     i=0
+    woke_checked=""
     while [ $i -lt 5 ] || { [ "$STICK_REAR" = 1 ] && [ -f /tmp/.abrearusb ] && [ $i -lt 15 ]; }; do
         DEV=$(find_stick)
         [ $i = 0 ] && { echo "$(date) after the wake:"; blkid | grep '^/dev/sd' | sed 's/^/  /'; } >> $SLOG
+        if [ -n "$DEV" ] && [ "$DEV" != "$woke_checked" ]; then
+            woke_checked=$DEV
+            stick_check "$DEV"
+        fi
         if [ -n "$DEV" ] && mount "$DEV" /media; then
             echo "$(date) mounted $DEV after $i s" >> $SLOG
             return 0
