@@ -63,8 +63,71 @@ string normalized(const string &raw) {
     return text;
 }
 
+// the Linux input code (linux/input-event-codes.h) of an SDL2 scancode, 0 for one not in the table; this is the inverse
+// of SDL2's own linux_scancode_table
+int evdevFromSdl2Scancode(int scancode) {
+    // KEY_A.. KEY_Z are in keyboard-row order, not alphabetical
+    static const int letters[26] = {30, 48, 46, 32, 18, 33, 34, 35, 23, 36, 37, 38, 50,
+                                    49, 24, 25, 16, 19, 31, 20, 22, 47, 17, 45, 21, 44};
+    static const int keypad[10] = {82, 79, 80, 81, 75, 76, 77, 71, 72, 73}; // KP0 .. KP9
+    if (scancode >= 4 && scancode <= 29) {
+        return letters[scancode - 4];
+    }
+    if (scancode >= 30 && scancode <= 38) {
+        return 2 + (scancode - 30); // KEY_1 .. KEY_9
+    }
+    if (scancode == 39) {
+        return 11; // KEY_0
+    }
+    if (scancode >= 58 && scancode <= 67) {
+        return 59 + (scancode - 58); // KEY_F1 .. KEY_F10
+    }
+    if (scancode >= 89 && scancode <= 98) {
+        return keypad[(scancode - 88) % 10];
+    }
+    switch (scancode) {
+    case 40: return 28;  // Return
+    case 41: return 1;   // Escape
+    case 42: return 14;  // Backspace
+    case 43: return 15;  // Tab
+    case 44: return 57;  // Space
+    case 45: return 12;  // minus
+    case 46: return 13;  // equals
+    case 47: return 26;  // left bracket
+    case 48: return 27;  // right bracket
+    case 49: return 43;  // backslash
+    case 51: return 39;  // semicolon
+    case 52: return 40;  // apostrophe
+    case 53: return 41;  // grave
+    case 54: return 51;  // comma
+    case 55: return 52;  // period
+    case 56: return 53;  // slash
+    case 68: return 87;  // F11
+    case 69: return 88;  // F12
+    case 73: return 110; // Insert
+    case 74: return 102; // Home
+    case 75: return 104; // Page up
+    case 76: return 111; // Delete
+    case 77: return 107; // End
+    case 78: return 109; // Page down
+    case 79: return 106; // Right
+    case 80: return 105; // Left
+    case 81: return 108; // Down
+    case 82: return 103; // Up
+    case 88: return 96;  // keypad Enter
+    case 224: return 29; // left Ctrl
+    case 225: return 42; // left Shift
+    case 226: return 56; // left Alt
+    case 228: return 97; // right Ctrl
+    case 229: return 54; // right Shift
+    case 230: return 100; // right Alt
+    }
+    return 0;
+}
+
 KeyCode made(int sdl1Sym, int sdl2Scancode, int sdl2Keycode) {
     KeyCode key;
+    key.evdev = evdevFromSdl2Scancode(sdl2Scancode);
     key.sdl1Sym = sdl1Sym;
     key.sdl2Scancode = sdl2Scancode;
     key.sdl2Keycode = sdl2Keycode ? sdl2Keycode : (sdl2Scancode | Sdl2ScancodeMask);

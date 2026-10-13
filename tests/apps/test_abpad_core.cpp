@@ -828,6 +828,19 @@ TEST_CASE("a key a profile names, in both SDLs' numbers") {
         }
     }
 
+    SUBCASE("SDL 1.2's scancode is the X11 keycode - the evdev code + 8 - not SDL2's scancode") {
+        CHECK(keyCodeFromName("Up").sdl1Scancode() == 111);      // KEY_UP 103
+        CHECK(keyCodeFromName("a").sdl1Scancode() == 38);        // KEY_A 30; SDL2's scancode would be 4
+        CHECK(keyCodeFromName("Space").sdl1Scancode() == 65);    // KEY_SPACE 57
+        CHECK(keyCodeFromName("Return").sdl1Scancode() == 36);   // KEY_ENTER 28
+        CHECK(keyCodeFromName("1").sdl1Scancode() == 10);        // KEY_1 2
+        CHECK(keyCodeFromName("0").sdl1Scancode() == 19);        // KEY_0 11
+        CHECK(keyCodeFromName("F11").sdl1Scancode() == 95);      // KEY_F11 87
+        CHECK(keyCodeFromName("kp5").sdl1Scancode() == 84);      // KEY_KP5 76
+        CHECK(keyCodeFromName("left ctrl").sdl1Scancode() == 37); // KEY_LEFTCTRL 29
+        CHECK(KeyCode().sdl1Scancode() == 0);                    // unknown
+    }
+
     SUBCASE("a name nobody has is reported rather than silently sending nothing") {
         CHECK(keyCodeFromName("").valid() == false);
         CHECK(keyCodeFromName("wibble").valid() == false);
