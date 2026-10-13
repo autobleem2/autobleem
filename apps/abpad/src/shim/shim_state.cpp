@@ -41,13 +41,15 @@ ShimState::ShimState() {
     loadProfile();
     layout_ = &virtualLayout(profile_.virtualPad);
     for (int i = 0; i < ElementCount; ++i) {
-        string name = profile_.keyFor(static_cast<Element>(i));
-        if (!name.empty()) {
-            KeyCode key = keyCodeFromName(name);
-            keyboard_.bind(static_cast<Element>(i), key);
-            if (!key.valid()) {
-                log("abpad: %s is bound to \"%s\", which is not a key name I know",
-                    elementName(static_cast<Element>(i)), name.c_str());
+        for (int negative = 0; negative < 2; ++negative) {
+            string name = profile_.keyFor(static_cast<Element>(i), negative != 0);
+            if (!name.empty()) {
+                KeyCode key = keyCodeFromName(name);
+                keyboard_.bind(static_cast<Element>(i), key, negative != 0);
+                if (!key.valid()) {
+                    log("abpad: %s%s is bound to \"%s\", which is not a key name I know", negative ? "-" : "",
+                        elementName(static_cast<Element>(i)), name.c_str());
+                }
             }
         }
     }

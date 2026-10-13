@@ -178,6 +178,8 @@ players = 1
 hotkey = start+select    # quit the app
 key.a = Left Ctrl        # keyboard mode: a virtual-pad element -> an SDL key name
 key.dpup = Up
+key.leftx = Right        # a stick pushed positive (right, down) ...
+key.-leftx = Left        # ... and negative (left, up); "key.leftx-" is the same
 ```
 
 ## Steps

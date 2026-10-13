@@ -1564,6 +1564,35 @@ TEST_CASE("keyboard mode: a trigger or stick is a key once past the button thres
     CHECK_FALSE(released[1].down);
 }
 
+TEST_CASE("keyboard mode: a stick pushed the negative way fires the key bound with a minus") {
+    KeyboardMode keyboard = keyboardFrom("key.leftx = Right\nkey.-leftx = Left\nkey.lefty- = Up\n");
+    ControllerState state;
+
+    state.set(Element::LeftX, static_cast<int16_t>(-AxisButtonThreshold + 1));
+    CHECK(feed(keyboard, 0, state).empty());
+
+    state.set(Element::LeftX, static_cast<int16_t>(-AxisButtonThreshold));
+    vector<KeyChange> left = feed(keyboard, 0, state);
+    REQUIRE(left.size() == 1);
+    CHECK(left[0].down);
+    CHECK(left[0].key.sdl1Sym == 276); // Left, not Right
+
+    state.set(Element::LeftY, static_cast<int16_t>(-30000));
+    vector<KeyChange> up = feed(keyboard, 0, state);
+    REQUIRE(up.size() == 1);
+    CHECK(up[0].key.sdl1Sym == 273);
+
+    state.set(Element::LeftX, static_cast<int16_t>(0));
+    state.set(Element::LeftY, static_cast<int16_t>(0));
+    CHECK(feed(keyboard, 0, state).size() == 2);
+
+    // the positive key does not fire for a negative push, nor the negative one for a positive push
+    state.set(Element::LeftX, static_cast<int16_t>(30000));
+    vector<KeyChange> right = feed(keyboard, 0, state);
+    REQUIRE(right.size() == 1);
+    CHECK(right[0].key.sdl1Sym == 275);
+}
+
 TEST_CASE("keyboard mode: a pad that goes away lets go of every key it held") {
     KeyboardMode keyboard = keyboardFrom("key.a = Space\nkey.dpleft = Left\nkey.dpright = Right\n");
     SharedState shared;
