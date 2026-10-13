@@ -97,9 +97,10 @@ void GuiRaCores::draw() {
     for (int i = firstVisible_, line = 1; i < total && line <= fit; i++, line++) {
         const RACorePlatform &row = rows_[i];
         // the one PS1 core there is cannot be changed: the row is shown greyed
-        TextRenderer::RowRoleScope role(gui->text(), row.locked                 ? TextRenderer::RowRole::Disabled
-                                                     : i == selected_ ? TextRenderer::RowRole::Selected
-                                                                      : TextRenderer::RowRole::Row);
+        TextRenderer::RowRole rowRole = i == selected_ ? TextRenderer::RowRole::Selected : TextRenderer::RowRole::Row;
+        if (row.locked)
+            rowRole = TextRenderer::RowRole::Disabled;
+        TextRenderer::RowRoleScope role(gui->text(), rowRole);
         const string label = labelFor(row);
         const string value = valueText(row, row.current);
         // the value sits at the right edge: what is left of the row after the label and a gap is its room
