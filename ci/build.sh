@@ -42,6 +42,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$PWD"
 JOBS="${AB_JOBS:-$(nproc)}"
+# MEASUREMENT BRANCH ONLY - drop this line before merging: the renderer backend built by default, so a build started
+# without the environment (the build service) ships ab_render_gles3.so
+AB_RENDER_GL="${AB_RENDER_GL:-1}"
 
 # --- the version the package names carry --------------------------------------------------------------------
 # What the environment says first (make_psc.sh-style AB_GIT_*: the caller's facts about a tree that has no
