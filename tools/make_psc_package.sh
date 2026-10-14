@@ -84,7 +84,7 @@ mkdir -p "$APP" "$STAGE/Autobleem/bin/db"
 cp -a "$REPO/src/resources/." "$APP/"
 cp "$REPO/LICENSE" "$REPO/THIRD_PARTY_NOTICES.md" "$APP/"  # the GPL and the notices travel with the binary
 cp -a "$BUILD_DIR/autobleem-gui" "$APP/autobleem-gui"
-# the loadable GLES 3 renderer, when the build has it (ci/build.sh AB_RENDER_GL=1): next to the program, not UPX-packed
+# the loadable GLES 3 renderer, when the build has it (ci/build.sh default; none with AB_RENDER_GL=0): next to the program, not UPX-packed
 if [ -f "$BUILD_DIR/ab_render_gles3.so" ]; then
     cp -a "$BUILD_DIR/ab_render_gles3.so" "$APP/ab_render_gles3.so"
 fi

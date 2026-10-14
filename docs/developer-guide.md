@@ -317,14 +317,18 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   (`~/.cache/autobleem-sccache`, `AB_SCCACHE_DIR`, 10 GB) so it outlives the container, the run ends with
   the stats; `AB_NO_SCCACHE=1` opts out. Timings from when it was added are in
   autobleem-main `docs/history/launcher-build.md`.
-- **The loadable GLES 3 renderer** (`AB_RENDER_GL`, default off): `AB_RENDER_GL=1 ci/build.sh <target>` passes
-  `-DABLEEM_RENDER_GL=ON` to the target's CMake (psc, rpi, rpi64, pcusb, win; the core's cargo builds
-  `lib_ableem/rust/ab_gl`) and ships `ab_render_gles3.so` (`.dll` on Windows) in the package next to
-  `autobleem-gui` / `autobleem-gui.exe`. Off, the packages have no such file and draw with SDL_Renderer as
-  before. At start the launcher loads `ab_render_<name>` from the program's folder; the names come from
-  `Platform::setRendererBackends`, else the **`AB_RENDERER`** environment variable (a comma list, tried in
-  order, e.g. `AB_RENDERER=gles3,sdl`), else `gles3`. `sdl`, or the end of the list, is SDL_Renderer; a
-  missing file quietly falls back to it and the log says which backend runs ("Renderer backend: ...").
+- **The loadable GLES 3 renderer** (`AB_RENDER_GL`, **on by default** since 2026-10-14, SDL_Renderer is the
+  fallback): `ci/build.sh <target>` passes `-DABLEEM_RENDER_GL=ON` to the target's CMake (psc, rpi, rpi64,
+  pcusb, win; the core's cargo builds `lib_ableem/rust/ab_gl`) and ships `ab_render_gles3.so` (`.dll` on
+  Windows) in the package next to `autobleem-gui` / `autobleem-gui.exe`. `AB_RENDER_GL=0 ci/build.sh <target>`
+  builds without it: the packages have no such file and draw with SDL_Renderer (a build directory left by an
+  ON run is reset, its stale backend file removed). At start the launcher loads `ab_render_<name>` from the
+  program's folder; the names come from `Platform::setRendererBackends`, else the **`AB_RENDERER`**
+  environment variable (a comma list, tried in order, e.g. `AB_RENDERER=gles3,sdl`), else `gles3`.
+  `AB_RENDERER=sdl` forces SDL_Renderer; the end of the list is SDL_Renderer too, and a missing or failing
+  file falls back to it by itself; the log says which backend runs ("Renderer backend: ..."). The permanent
+  diagnostic knobs of the backend: `AB_GL_MIPMAPS`, `AB_GL_ANISO`, `AB_GL_STATS`, and
+  `/media/System/Data/gl.env` (the same variables, one `NAME=value` per line, read at start).
 - **CI: one Docker image builds every target** (autobleem-main's `docs/ci.md` is the operator's page).
   The image (`autobleem-build`) is built and pushed by **`autobleem2/autobleem-build`**'s own `image.yml`
   from that repo's own `docker/Dockerfile` - DOCS-4 (2026-09-27) removed this tree's stale copy of it and of

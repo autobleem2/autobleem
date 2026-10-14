@@ -156,7 +156,7 @@ if [ -n "$PRODUCT_DIR" ]; then
     rm -f "$APP/internal.db" "$APP/run.sh"   # the console's own
     cp "$PRODUCT_DIR/autobleem-gui.exe" "$APP/"
     "$STRIP" "$APP/autobleem-gui.exe"
-    # the loadable GLES 3 renderer, when the build has it (ci/build.sh AB_RENDER_GL=1): next to the exe
+    # the loadable GLES 3 renderer, when the build has it (ci/build.sh default; none with AB_RENDER_GL=0): next to the exe
     if [ -f "$PRODUCT_DIR/ab_render_gles3.dll" ]; then
         cp "$PRODUCT_DIR/ab_render_gles3.dll" "$APP/"
         "$STRIP" "$APP/ab_render_gles3.dll"
@@ -202,7 +202,7 @@ cp -a "$REPO/src/resources/." "$APP/"
 cp "$REPO/LICENSE" "$REPO/THIRD_PARTY_NOTICES.md" "$APP/"
 cp "$BUILD_DIR/autobleem-gui.exe" "$APP/"
 "$STRIP" "$APP/autobleem-gui.exe"
-# the loadable GLES 3 renderer, when the build has it (ci/build.sh AB_RENDER_GL=1): next to the exe
+# the loadable GLES 3 renderer, when the build has it (ci/build.sh default; none with AB_RENDER_GL=0): next to the exe
 if [ -f "$BUILD_DIR/ab_render_gles3.dll" ]; then
     cp "$BUILD_DIR/ab_render_gles3.dll" "$APP/"
     "$STRIP" "$APP/ab_render_gles3.dll"
