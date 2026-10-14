@@ -33,12 +33,18 @@
 #   AB_NO_TESTS=1   neither build nor run the test suites (a quick build for a device check)
 #   AB_NO_UPX=1     leave the shipped binaries unpacked
 #   AB_CLEAN=1      wipe each target's build directory first
+#   AB_RENDER_GL=0  leave the loadable GLES 3 renderer out. Default (unset or 1) = built: -DABLEEM_RENDER_GL=ON, cargo
+#                   builds ab_render_gles3.so/.dll from the core's lib_ableem/rust/ab_gl for every target and it ships
+#                   next to autobleem-gui / the exe. With 0 there is no backend file and the launcher draws with
+#                   SDL_Renderer (which is also its fallback when the file is missing or fails; AB_RENDERER=sdl forces it)
 #   AB_BUILD_CHANNEL=dev|nightly|prerelease|release   the channel the launcher's corner tag names (UIREV-40); unset = dev
 #                   (a hand build says DEV + its commit); the publish workflow sets the real one
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$PWD"
 JOBS="${AB_JOBS:-$(nproc)}"
+# the GLES 3 renderer backend is part of every package (owner decision 2026-10-14); AB_RENDER_GL=0 builds without it
+AB_RENDER_GL="${AB_RENDER_GL:-1}"
 
 # --- the version the package names carry --------------------------------------------------------------------
 # What the environment says first (make_psc.sh-style AB_GIT_*: the caller's facts about a tree that has no
@@ -80,7 +86,18 @@ configure() { # configure BUILD_DIR ARGS...
     fi
     local tests=()
     [ -n "${AB_NO_TESTS:-}" ] && tests=(-DAB_BUILD_TESTS=OFF)
-    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "${tests[@]}" "$@"
+    # the loadable renderer: ON by default; AB_RENDER_GL=0 adds nothing - except to reset a cache an ON run left
+    local gl=()
+    if [ -n "${AB_RENDER_GL:-}" ] && [ "${AB_RENDER_GL}" != 0 ]; then
+        gl=(-DABLEEM_RENDER_GL=ON)
+    elif [ -f "$dir/CMakeCache.txt" ] && grep -q '^ABLEEM_RENDER_GL:BOOL=ON' "$dir/CMakeCache.txt"; then
+        gl=(-DABLEEM_RENDER_GL=OFF)
+    fi
+    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "${tests[@]}" "${gl[@]}" "$@"
+    # (a build directory reused from an ON run must not ship its backend file in an OFF package)
+    if [ ${#gl[@]} -eq 0 ] || [ "${gl[0]}" = -DABLEEM_RENDER_GL=OFF ]; then
+        rm -f "$dir"/ab_render_gles3.so "$dir"/ab_render_gles3.dll
+    fi
 }
 # sccache in front of every compiler when it is there (the image has it; docker/run.sh mounts the cache
 # from the host) - one launcher for the native, Pi, MinGW and console compilers, each keyed by its own
@@ -192,6 +209,9 @@ build_psc() {
     for bin in autobleem-gui absplash abfatflag abupdate abfetch abdialog apps/abpad/abpadd apps/abpad/libabpad.so; do
         bash "$ab_check_psc_binary" "build_psc/$bin" "$toolchain"
     done
+    if [ -f build_psc/ab_render_gles3.so ]; then
+        bash "$ab_check_psc_binary" build_psc/ab_render_gles3.so "$toolchain"
+    fi
     banner "psc: package"
     dist_reset psc
     bash tools/make_psc_package.sh --build-dir build_psc --out dist/psc --version "$VERSION"
@@ -216,6 +236,10 @@ stage_launcher() { # stage_launcher DIR TARGET - dist/<target>/Autobleem/bin/{au
     # checked, so the build carries them there
     if [ -f "$dir/abdialog" ]; then
         cp "$dir/abdialog" "$bin/autobleem/"
+    fi
+    # the loadable renderer (unless AB_RENDER_GL=0), where the launcher looks for it: next to the program
+    if [ -f "$dir/ab_render_gles3.so" ]; then
+        cp "$dir/ab_render_gles3.so" "$bin/autobleem/"
     fi
     cp -a src/resources/. "$bin/autobleem/"
     rm -f "$bin/autobleem/internal.db"   # an appliance has no built-in games (AB_HAS_INTERNAL_GAMES is psc/dev only)
