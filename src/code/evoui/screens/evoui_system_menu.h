@@ -69,6 +69,7 @@ public:
     // with networkProvided: why the extension providing it cannot run ("PSC-Bios is switched off - ..."); set,
     // the row is greyed with this as its description, still selectable (the caller opens the Extensions list)
     std::string networkUnavailable;
+    bool storeProvided = false; // the Store extension can run here (runnable()): the Quick menu's Store row
 
     SystemMenuAction result = SystemMenuAction::None;
     // the row the cursor starts on (the page the player just came back from); None: the first row

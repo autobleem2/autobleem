@@ -688,6 +688,7 @@ void GuiLauncher::loop_openQuickMenu() {
         quickMenu.retroArchInstalled = retroArchInstalledCached(); // the RetroArch cores row needs it
         quickMenu.networkUnavailable = networkUnavailable();
         quickMenu.networkProvided = networkProvided() || !quickMenu.networkUnavailable.empty();
+        quickMenu.storeProvided = storeProvided();
         quickMenu.show();
         action = quickMenu.result;
     }
@@ -705,6 +706,17 @@ void GuiLauncher::loop_openQuickMenu() {
 bool GuiLauncher::networkProvided() {
     app.extensionCatalog().scan();
     return app.extensionCatalog().findProvider(NetworkEntry) != nullptr;
+}
+
+//*******************************
+// GuiLauncher::storeProvided
+//*******************************
+// the Store is offered only while it can run: one that is not installed, switched off, or built for another SDK ABI
+// (the scan knows, BUG-10) leaves the Quick menu - the Extensions list is where the reason is shown
+bool GuiLauncher::storeProvided() {
+    app.extensionCatalog().scan();
+    const ExtensionInfo *info = app.extensionCatalog().find(StoreExtension);
+    return info != nullptr && info->runnable();
 }
 
 //*******************************

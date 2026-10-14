@@ -137,8 +137,20 @@ jobs:
           path: /sccache
           key: sccache-launcher-${{ matrix.target }}-${{ github.sha }}
           restore-keys: sccache-launcher-${{ matrix.target }}-
+      # the Store (BUG-10): the rpi/rpi64/pcusb packages carry the Store built from this tree's SDK, so ext_store is
+      # checked out and ci/build.sh finds it as ../ext_store (a checkout cannot leave the workspace: it is moved
+      # beside the tree). AB_REQUIRE_EXTENSIONS=1 turns a missing checkout into a build failure.
+      - name: Check out the Store beside the tree
+        if: matrix.target == 'rpi' || matrix.target == 'rpi64' || matrix.target == 'pcusb'
+        uses: actions/checkout@v7
+        with: { repository: autobleem2/ext_store, ref: develop, path: ext_store, submodules: false }
+      - name: Move the Store checkout to ../ext_store
+        if: matrix.target == 'rpi' || matrix.target == 'rpi64' || matrix.target == 'pcusb'
+        run: rm -rf ../ext_store && mv ext_store ../ext_store
       - name: Build the launcher (${{ matrix.target }})
-        env: { AB_BUILD_CHANNEL: "${{ needs.plan.outputs.channel }}" }
+        env:
+          AB_BUILD_CHANNEL: "${{ needs.plan.outputs.channel }}"
+          AB_REQUIRE_EXTENSIONS: "${{ (matrix.target == 'rpi' || matrix.target == 'rpi64' || matrix.target == 'pcusb') && '1' || '' }}"
         run: ci/build.sh ${{ matrix.target }}
       - name: Stage the launcher artifact
         id: stage
