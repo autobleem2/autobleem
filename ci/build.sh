@@ -111,6 +111,12 @@ if [ -z "${AB_NO_EXTENSIONS:-}" ]; then
     fi
     if [ -n "$ext_dirs" ]; then
         EXT_ARGS=("-DAB_EXTENSION_DIRS=$ext_dirs" -DAB_BUILD_STORE_SERVER=OFF)
+    elif [ -n "${AB_REQUIRE_EXTENSIONS:-}" ]; then
+        echo "AB_REQUIRE_EXTENSIONS: no ../ext_store checkout (and no AB_EXTENSION_DIRS) - the package would have no Store" >&2
+        exit 1
+    else
+        echo "!!!! NOTICE: no ../ext_store checkout and no AB_EXTENSION_DIRS - the packages built now carry NO Store" >&2
+        echo "!!!!         (set AB_REQUIRE_EXTENSIONS=1 to make this a failure; the publish workflows do)" >&2
     fi
 fi
 dist_reset() { rm -rf "dist/$1"; mkdir -p "dist/$1"; }
@@ -263,7 +269,7 @@ build_rpi() { # build_rpi armhf|arm64
     esac
     banner "rpi $arch: configure + build ($dir)"
     configure "$dir" -DCMAKE_SYSTEM_PROCESSOR="$proc" -DCMAKE_BUILD_TYPE=Release -DAB_RPI_DEBUG=OFF \
-        -DCMAKE_TOOLCHAIN_FILE="$toolchain" "${EXT_ARGS[@]}"
+        -DCMAKE_TOOLCHAIN_FILE="$toolchain" ${EXT_ARGS[@]+"${EXT_ARGS[@]}"}
     ninja -C "$dir" -j "$JOBS"
     banner "rpi $arch: check"
     file "$dir/autobleem-gui"
@@ -278,7 +284,7 @@ build_rpi() { # build_rpi armhf|arm64
 
 build_pcusb() {
     banner "pcusb: configure + build (build_pcusb)"
-    configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake "${EXT_ARGS[@]}"
+    configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake ${EXT_ARGS[@]+"${EXT_ARGS[@]}"}
     ninja -C build_pcusb -j "$JOBS"
     banner "pcusb: check"
     file build_pcusb/autobleem-gui
