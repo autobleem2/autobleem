@@ -258,6 +258,21 @@ apply_output_mode() {
     bt "Weston back in ${want}"
 }
 
+# AUTOBLEEM-33: the stick boot (the new /init: the root's upper layer on tmpfs below /abrw) leaves the console's /data
+# read-write, as Sony's own boot has it. It is read-only only while the AutoBleem launcher runs, and read-write again
+# when the launcher has left (standby, RetroArch, power off: Sony's power manager and saves write there). The legacy
+# boot keeps its overlay on /data - never touched there. ext4 with its journal: the remount to ro flushes it.
+data_mode() {
+    grep -qs ' / overlay .*upperdir=/abrw/' /proc/mounts || return 0
+    grep -qs ' /data ext4 ' /proc/mounts || return 0
+    sync
+    if mount -o remount,"$1" /data 2> /dev/null; then
+        bt "/data $1"
+    else
+        bt "/data $1 FAILED (still $(awk '$2 == "/data" { split($4, o, ","); print o[1] }' /proc/mounts))"
+    fi
+}
+
 # The launcher, and after it whatever it asked for: selection.sh comes back (exit 0) after a standby or a
 # RetroArch session and the launcher is started over; a reboot never returns. It runs from a copy on
 # tmpfs with the cwd there, so nothing of ours is on the stick while it unmounts it - the copy is taken
@@ -310,9 +325,11 @@ while true; do
     rm -f "$AB_RUNTIME_DIR/autobleem_exit"
     bt "starting autobleem.sh"
     fix_exec_bits # an update during the last round may have brought files without the bit
+    data_mode ro
     ./autobleem.sh
     ab_sh_rc=$?
     bt "autobleem.sh ended (status $ab_sh_rc)"
+    data_mode rw
     # autobleem.sh writes the launcher's own status; if it was killed itself, its status is the next best
     [ -f "$AB_RUNTIME_DIR/autobleem_exit" ] || echo $ab_sh_rc > "$AB_RUNTIME_DIR/autobleem_exit"
     # (the stick pulled: these copies fail and the ones taken before the round stay)
