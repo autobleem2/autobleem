@@ -97,6 +97,22 @@ sccache_stats() {
     banner "sccache"
     sccache --show-stats 2>/dev/null | grep -E "Compile requests|Cache hits|Cache misses|Non-cacheable|Cache size|Cache location" || true
 }
+# --- extensions built with the launcher (BUG-10) ---------------------------------------------------------------
+# The Store (ext_store) is a plugin compiled against the launcher's SDK headers; one built earlier fails in dlopen
+# or is refused by the ABI stamp. So a package carries the Store built here, from the same SDK: the checkout next
+# to this tree (../ext_store, or AB_EXTENSION_DIRS=dir;dir, ;-separated) is built with the launcher
+# (ab_add_extension, CMakeLists.txt) and staged as dist/<target>/Extensions/<name>/ by stage_launcher.
+# No checkout = no Store in the package, said loudly. AB_NO_EXTENSIONS=1 builds none.
+EXT_ARGS=()
+if [ -z "${AB_NO_EXTENSIONS:-}" ]; then
+    ext_dirs="${AB_EXTENSION_DIRS:-}"
+    if [ -z "$ext_dirs" ] && [ -f ../ext_store/CMakeLists.txt ]; then
+        ext_dirs="$(cd ../ext_store && pwd)"
+    fi
+    if [ -n "$ext_dirs" ]; then
+        EXT_ARGS=("-DAB_EXTENSION_DIRS=$ext_dirs" -DAB_BUILD_STORE_SERVER=OFF)
+    fi
+fi
 dist_reset() { rm -rf "dist/$1"; mkdir -p "dist/$1"; }
 dist_note() { # dist_note TARGET - what was built, for the artifact
     { echo "AutoBleem $VERSION - $1"; echo "built $(date -u '+%Y-%m-%d %H:%M:%S UTC') on $(uname -m) $(cat /etc/os-release 2>/dev/null | sed -n 's/^PRETTY_NAME="\(.*\)"/\1/p')"; } \
@@ -224,6 +240,18 @@ stage_launcher() { # stage_launcher DIR TARGET - dist/<target>/Autobleem/bin/{au
     else
         echo "    (no abpad in $dir/apps/abpad - Apps would run without the virtual gamepad)"
     fi
+    # the extensions built with the launcher (EXT_ARGS): the stick's Extensions/<name>/, never the Store's LAN
+    # server (extensions/store-server is a program, not an extension)
+    if [ ${#EXT_ARGS[@]} -gt 0 ] && [ -d "$dir/extensions" ]; then
+        local ext
+        for ext in "$dir"/extensions/*/; do
+            [ -f "${ext}extension.ini" ] || continue
+            mkdir -p "dist/$target/Extensions"
+            cp -a "${ext%/}" "dist/$target/Extensions/"
+        done
+    else
+        echo "    (no extension built with the launcher - no ../ext_store checkout or AB_NO_EXTENSIONS: the package has no Store)"
+    fi
     dist_note "$target"
 }
 
@@ -235,7 +263,7 @@ build_rpi() { # build_rpi armhf|arm64
     esac
     banner "rpi $arch: configure + build ($dir)"
     configure "$dir" -DCMAKE_SYSTEM_PROCESSOR="$proc" -DCMAKE_BUILD_TYPE=Release -DAB_RPI_DEBUG=OFF \
-        -DCMAKE_TOOLCHAIN_FILE="$toolchain"
+        -DCMAKE_TOOLCHAIN_FILE="$toolchain" "${EXT_ARGS[@]}"
     ninja -C "$dir" -j "$JOBS"
     banner "rpi $arch: check"
     file "$dir/autobleem-gui"
@@ -250,7 +278,7 @@ build_rpi() { # build_rpi armhf|arm64
 
 build_pcusb() {
     banner "pcusb: configure + build (build_pcusb)"
-    configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake
+    configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake "${EXT_ARGS[@]}"
     ninja -C build_pcusb -j "$JOBS"
     banner "pcusb: check"
     file build_pcusb/autobleem-gui
