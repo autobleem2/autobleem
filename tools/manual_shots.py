@@ -73,6 +73,39 @@ NOT_HERE = {
 }
 
 
+def make_fake_disc(folder, kind):
+    """Extensions/disc-fake*/fake.cue: the dev stand-in for the USB drive's disc (App::startDriveWatcher). kind 'ps1' =
+    a PlayStation image make_usb.py makes (serial SLUS-01234), 'audio' = an audio CD of three tracks of silence"""
+    sys.path.insert(0, HERE)
+    import make_usb
+    os.makedirs(folder, exist_ok=True)
+    if kind == 'ps1':
+        with open(os.path.join(folder, 'fake.bin'), 'wb') as f:
+            f.write(make_usb.make_iso(title='Fake Disc'))
+        cue = 'FILE "fake.bin" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n'
+    else:
+        with open(os.path.join(folder, 'fake.bin'), 'wb') as f:
+            f.write(bytes(2352 * 75 * 3 * 20))  # three tracks of 20 s
+        cue = ''.join('  TRACK %02d AUDIO\n    INDEX 01 00:%02d:00\n' % (n + 1, n * 20) for n in range(3))
+        cue = 'FILE "fake.bin" BINARY\n' + cue
+    with open(os.path.join(folder, 'fake.cue'), 'w', newline='\n') as f:
+        f.write(cue)
+
+
+def emit(out, langs):
+    """for a run through the keeper's tools (vm_sandbox_start with the build and an ext folder, vm_sandbox_drive with
+    a script): the ext folders (disc-fake PS1 and audio, one at a time) and one drive script per language"""
+    for kind in ('ps1', 'audio'):
+        make_fake_disc(os.path.join(out, 'ext', 'disc-fake-' + kind), kind)
+    os.makedirs(os.path.join(out, 'scripts'), exist_ok=True)
+    for code in langs:
+        with open(os.path.join(out, 'scripts', code + '-warm.txt'), 'w') as f:
+            f.write(WARM_UP.replace('; ', '\n') + '\n')
+        with open(os.path.join(out, 'scripts', code + '.txt'), 'w') as f:
+            f.write(script().replace('; ', '\n') + '\n')
+    print('emitted into %s: ext/disc-fake-ps1, ext/disc-fake-audio, scripts/<lang>.txt for %s' % (out, ', '.join(langs)))
+
+
 def abvm(who, *args, check=True):
     r = subprocess.run(ABVM + ['--who', who] + list(args), text=True, capture_output=True)
     if check and r.returncode != 0:
@@ -98,7 +131,9 @@ def to_jpegs(shots, target, add_new):
 
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--package', required=True, help='the PC-stick release package, a path on the test machine')
+    ap.add_argument('--package', help='the PC-stick release package, a path on the test machine')
+    ap.add_argument('--emit', metavar='DIR', help='only write the fake discs and the drive scripts into DIR (for a run '
+                    'through the keeper\'s tools, where abvm is not reachable)')
     ap.add_argument('--lang', action='append', choices=sorted(LANGS), help='a manual language (default: all)')
     ap.add_argument('--manuals', default=os.path.join(REPO, '..', 'autobleem-manuals'),
                     help='the autobleem-manuals checkout (default: the sibling one)')
@@ -107,6 +142,11 @@ def main(argv):
     ap.add_argument('--add-new', action='store_true', help='also write the shots a language folder does not have')
     ap.add_argument('--keep', action='store_true', help='leave the sandbox (and its lease) after the run')
     args = ap.parse_args(argv)
+    if args.emit:
+        emit(args.emit, args.lang or sorted(LANGS))
+        return 0
+    if not args.package:
+        ap.error('--package is required (or --emit DIR)')
     images = os.path.join(args.manuals, 'manuals', 'images')
     if not os.path.isdir(images):
         sys.exit('%s: no manuals/images - give the autobleem-manuals checkout with --manuals' % args.manuals)
