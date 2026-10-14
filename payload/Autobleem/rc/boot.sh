@@ -101,6 +101,12 @@ boot_once() {
     BT_FILE=$AB_LOG_DIR/boot.log
     bt "log directory $AB_LOG_DIR"
 
+    # AUTOBLEEM-31: overcommit_memory=1 and zram swap in RAM (rc/ab_memory.sh) - the N64 and Dreamcast emulators
+    # reserve big address ranges up front, which the stock overcommit 0 refuses. Once per boot; idempotent.
+    . $RC/ab_memory.sh
+    ab_memory_setup
+    bt "memory policy set (ab_memory.sh)"
+
     # CONSOLE-15 P2: selection.sh's standby() leaves System/Logs/poweroff_reason before it unmounts the stick and
     # deletes it when the standby ended in a wake. Found here, the console was reset or powered off in between: say so
     # in standby.log, with Sony's power log if it is there, once.
