@@ -73,7 +73,8 @@ void GuiSystemMenu::init() {
 
     if (kind == Kind::Quick) {
         addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
-        addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
+        if (storeProvided)
+            addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
         if (retroArchInstalled)
             addItem(SystemMenuAction::RetroArchCores, "RetroArch cores", _("RetroArch cores"),
                     _("Choose the core that plays each system"));
