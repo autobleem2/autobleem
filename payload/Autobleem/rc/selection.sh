@@ -189,6 +189,7 @@ poweroff_instead() {
         { grep -v ' \[stick\]$' $SLOG; echo; } >> $FAILLOG # the [stick] lines are on the stick already
         sync
         mark "poweroff_instead: LED red, umount and shutdown -h now are next"
+        bt_release
         n=0
         until umount /media 2>/dev/null || [ $n -ge 5 ]; do
             n=$((n + 1))
@@ -367,20 +368,43 @@ rear_detect() {
     [ "$REAR_HAD" = 1 ] && REAR_KIDS=$(rear_kids)
 }
 
+# AUTOBLEEM-33: on the stick boot the Bluetooth pairings are an ext4 image on the stick, loop-mounted over
+# /var/lib/bluetooth (the kernel overlay's abstate.sh). The loop device holds the stick, so /media cannot be unmounted
+# while it is mounted: the standby gave up after 5 tries, "/media is busy - holders:" with none listed (a loop device
+# is no process; 2026-10-14). ab_bt_image runs abstate's helper in a subshell: umount before every umount of the
+# stick, mount once the stick is back (stick_mounted). The legacy boot (bind mount, not on the stick): nothing.
+ab_bt_image() {
+    [ -r /etc/autobleem/abstate.sh ] || return 0
+    (
+        . /etc/autobleem/abstate.sh
+        [ "$(ab_mode)" = new ] || exit 0
+        case "$1" in
+        umount) ab_bt_umount ;;
+        mount) ab_bt_mount ;;
+        esac
+    ) 2>> $SLOG
+}
+
+# Bluetooth stopped (each unit once; rear_wake starts BT_UNITS again) and its image let go of the stick. Called
+# before the stick's umount and again in quiesce_for_suspend - the second call finds nothing left to do.
+bt_release() {
+    for u in bluetooth abbtagent; do
+        if systemctl -q is-active $u.service 2>/dev/null; then
+            ab_timeout systemctl stop $u.service > /dev/null 2>&1
+            case " $BT_UNITS " in *" $u.service "*) ;; *) BT_UNITS="$BT_UNITS $u.service" ;; esac
+            mark "Bluetooth stopped for the suspend: $u.service"
+        fi
+    done
+    ab_bt_image umount
+}
+
 # CONSOLE-15 P2: a hub with a Wi-Fi dongle on the rear port keeps its root port from suspending, and the kernel
 # then refuses the suspend (see rear_quiesce above): the rear devices are made idle first - after the stick's umount, which
 # may be on that hub. A real suspend is tried either way; poweroff_instead only after it failed. Bluetooth stopped for the suspend and started again by rear_wake once its adapter is back (see
 # there). The kernel overlay's start script binds its key store over /var/lib/bluetooth again on every start - the
 # same directory, so the extra layer changes nothing and is left alone (the pairings live there)
 quiesce_for_suspend() {
-    BT_UNITS=""
-    for u in bluetooth abbtagent; do
-        systemctl -q is-active $u.service 2>/dev/null && BT_UNITS="$BT_UNITS $u.service"
-    done
-    if [ -n "$BT_UNITS" ]; then
-        ab_timeout systemctl stop $BT_UNITS > /dev/null 2>&1
-        mark "Bluetooth stopped for the suspend:$BT_UNITS"
-    fi
+    bt_release
     if [ "$REAR_HAD" = 1 ]; then
         mark "rear USB: $REAR_KIDS device(s) below the hub: $(rear_state) - quiescing"
         rear_quiesce
@@ -502,6 +526,7 @@ stick_mounted() {
     touch /media/System/.session
     rm -f /media/System/Logs/poweroff_reason
     { cat $SLOG; [ -f /tmp/absplash.log ] && sed 's/^/  absplash: /' /tmp/absplash.log; } >> $LOG
+    ab_bt_image mount # the pairings image back over /var/lib/bluetooth before rear_wake's bluetoothd needs it
 }
 
 # the suspend once more with no stick in (AUTOBLEEM-28: nobody put one in, or POWER on the insert-stick picture):
@@ -519,6 +544,7 @@ sleep_again() {
     rear_detect
     STICK_REAR=0 # no stick in: the insert-stick picture after 5 s
     mark "the standby again with no stick (rear_had=$REAR_HAD)"
+    BT_UNITS=""
     quiesce_for_suspend
 }
 
@@ -600,6 +626,8 @@ standby() {
     state_dump >> $FAILLOG
     sync
     mark "state before the first step saved (watchdog, usb, power supplies, boot reason)"
+    BT_UNITS=""
+    bt_release
     mark "umount /media next"
     n=0
     until umount /media; do
