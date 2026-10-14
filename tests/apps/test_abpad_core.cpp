@@ -3,6 +3,7 @@
 // app's SDL is answered with, the shared-memory handover between the two, the per-app profile and the
 // key table keyboard mode sends.
 
+#include "core/hold.h"
 #include "core/kernel_pad.h"
 #include "core/keyboard_mode.h"
 #include "core/key_names.h"
@@ -725,7 +726,13 @@ TEST_CASE("a profile's defaults are the ones an app that says nothing should get
     CHECK(profile.mode == PadMode::Joystick);
     CHECK(profile.virtualPad == VirtualPadKind::X360);
     CHECK(profile.players == 1);
-    CHECK(profile.hotkey.empty());
+    CHECK(profile.hotkey.size() == 2); // Start+Select or Guide: the one rule for every App
+
+    SUBCASE("a profile can still say no hotkey") {
+        istringstream text("hotkey =\n");
+        profile.loadStream(text);
+        CHECK(profile.hotkey.empty());
+    }
 
     SUBCASE("and a second file is applied over the first") {
         istringstream first("mode = both\nplayers = 4\n");
@@ -769,6 +776,94 @@ TEST_CASE("the hotkey is every named button held together") {
         CHECK(hotkeyHeld(triggers, pulled) == false);
         pulled.set(Element::RightTrigger, static_cast<int16_t>(32767));
         CHECK(hotkeyHeld(triggers, pulled));
+    }
+}
+
+TEST_CASE("the exit hotkey is either combo, as pad.ini spells it") {
+    HotkeySet set = parseHotkeySet("start+select, guide");
+    REQUIRE(set.size() == 2);
+    CHECK(set[0].size() == 2);
+    REQUIRE(set[1].size() == 1);
+    CHECK(set[1][0] == Element::Guide);
+    CHECK(parseHotkeySet("start+select|guide").size() == 2);
+    CHECK(parseHotkeySet("").empty());
+    CHECK(parseHotkeySet("nonsense,guide").size() == 1); // an alternative of unknown names is dropped
+    CHECK(parseHotkeySet(DefaultExitHotkeys).size() == 2);
+
+    HotkeySet rule = parseHotkeySet(DefaultExitHotkeys);
+    ControllerState state;
+    CHECK(hotkeySetHeld(rule, state) == false);
+    state.set(Element::Start, true);
+    CHECK(hotkeySetHeld(rule, state) == false); // Start alone is a game button
+    state.set(Element::Back, true);
+    CHECK(hotkeySetHeld(rule, state)); // a pad with no Guide button leaves by Start+Select
+    ControllerState home;
+    home.set(Element::Guide, true);
+    CHECK(hotkeySetHeld(rule, home)); // a pad with Home leaves by Home alone
+    CHECK(hotkeySetHeld(HotkeySet(), home) == false);
+}
+
+TEST_CASE("the exit hold counts two seconds of the clock") {
+    using Action = ExitHold::Action;
+
+    SUBCASE("a short press does nothing") {
+        ExitHold hold;
+        CHECK(hold.update(true, 1000) == Action::None);
+        CHECK(hold.update(true, 1500) == Action::None);
+        CHECK(hold.update(false, 1600) == Action::None);
+        CHECK(hold.update(false, 9000) == Action::None);
+    }
+
+    SUBCASE("two seconds terminate, once") {
+        ExitHold hold;
+        CHECK(hold.update(true, 1000) == Action::None);
+        CHECK(hold.update(true, 2999) == Action::None);
+        CHECK(hold.update(true, 3000) == Action::Terminate);
+        CHECK(hold.update(true, 3020) == Action::None);
+    }
+
+    SUBCASE("released before two seconds, the count starts over") {
+        ExitHold hold;
+        CHECK(hold.update(true, 0) == Action::None);
+        CHECK(hold.update(true, 1900) == Action::None);
+        CHECK(hold.update(false, 1950) == Action::None);
+        CHECK(hold.update(true, 2000) == Action::None); // a new hold begins here, not at 0
+        CHECK(hold.update(true, 3999) == Action::None);
+        CHECK(hold.update(true, 4000) == Action::Terminate);
+    }
+
+    SUBCASE("the kill comes three seconds after the terminate, held or not") {
+        ExitHold hold;
+        hold.update(true, 0);
+        CHECK(hold.update(true, 2000) == Action::Terminate);
+        CHECK(hold.update(true, 4999) == Action::None);
+        CHECK(hold.update(false, 5000) == Action::Kill);
+        CHECK(hold.update(true, 9000) == Action::None);
+    }
+
+    SUBCASE("the same counting for either combo on a pad with and without Guide") {
+        HotkeySet rule = parseHotkeySet(DefaultExitHotkeys);
+        ControllerState combo;
+        combo.set(Element::Start, true);
+        combo.set(Element::Back, true);
+        ControllerState home;
+        home.set(Element::Guide, true);
+        for (const ControllerState &pad : {combo, home}) {
+            ExitHold hold;
+            CHECK(hold.update(hotkeySetHeld(rule, pad), 0) == Action::None);
+            CHECK(hold.update(hotkeySetHeld(rule, pad), 1999) == Action::None);
+            CHECK(hold.update(hotkeySetHeld(rule, pad), 2000) == Action::Terminate);
+        }
+    }
+
+    SUBCASE("Start alone never leaves") {
+        HotkeySet rule = parseHotkeySet(DefaultExitHotkeys);
+        ControllerState start;
+        start.set(Element::Start, true);
+        ExitHold hold;
+        for (int64_t at = 0; at < 20000; at += 100) {
+            CHECK(hold.update(hotkeySetHeld(rule, start), at) == Action::None);
+        }
     }
 }
 
@@ -826,6 +921,19 @@ TEST_CASE("a key a profile names, in both SDLs' numbers") {
             CHECK(key.sdl1Sym == 306);
             CHECK(key.sdl2Scancode == 224);
         }
+    }
+
+    SUBCASE("SDL 1.2's scancode is the X11 keycode - the evdev code + 8 - not SDL2's scancode") {
+        CHECK(keyCodeFromName("Up").sdl1Scancode() == 111);       // KEY_UP 103
+        CHECK(keyCodeFromName("a").sdl1Scancode() == 38);         // KEY_A 30; SDL2's scancode would be 4
+        CHECK(keyCodeFromName("Space").sdl1Scancode() == 65);     // KEY_SPACE 57
+        CHECK(keyCodeFromName("Return").sdl1Scancode() == 36);    // KEY_ENTER 28
+        CHECK(keyCodeFromName("1").sdl1Scancode() == 10);         // KEY_1 2
+        CHECK(keyCodeFromName("0").sdl1Scancode() == 19);         // KEY_0 11
+        CHECK(keyCodeFromName("F11").sdl1Scancode() == 95);       // KEY_F11 87
+        CHECK(keyCodeFromName("kp5").sdl1Scancode() == 84);       // KEY_KP5 76
+        CHECK(keyCodeFromName("left ctrl").sdl1Scancode() == 37); // KEY_LEFTCTRL 29
+        CHECK(KeyCode().sdl1Scancode() == 0);                     // unknown
     }
 
     SUBCASE("a name nobody has is reported rather than silently sending nothing") {
@@ -1499,9 +1607,11 @@ KeyboardMode keyboardFrom(const string &profileText) {
     profile.loadStream(text);
     KeyboardMode keyboard;
     for (int i = 0; i < ElementCount; ++i) {
-        string name = profile.keyFor(static_cast<Element>(i));
-        if (!name.empty()) {
-            keyboard.bind(static_cast<Element>(i), keyCodeFromName(name));
+        for (int negative = 0; negative < 2; ++negative) {
+            string name = profile.keyFor(static_cast<Element>(i), negative != 0);
+            if (!name.empty()) {
+                keyboard.bind(static_cast<Element>(i), keyCodeFromName(name), negative != 0);
+            }
         }
     }
     return keyboard;
@@ -1562,6 +1672,35 @@ TEST_CASE("keyboard mode: a trigger or stick is a key once past the button thres
     REQUIRE(released.size() == 2);
     CHECK_FALSE(released[0].down);
     CHECK_FALSE(released[1].down);
+}
+
+TEST_CASE("keyboard mode: a stick pushed the negative way fires the key bound with a minus") {
+    KeyboardMode keyboard = keyboardFrom("key.leftx = Right\nkey.-leftx = Left\nkey.lefty- = Up\n");
+    ControllerState state;
+
+    state.set(Element::LeftX, static_cast<int16_t>(-AxisButtonThreshold + 1));
+    CHECK(feed(keyboard, 0, state).empty());
+
+    state.set(Element::LeftX, static_cast<int16_t>(-AxisButtonThreshold));
+    vector<KeyChange> left = feed(keyboard, 0, state);
+    REQUIRE(left.size() == 1);
+    CHECK(left[0].down);
+    CHECK(left[0].key.sdl1Sym == 276); // Left, not Right
+
+    state.set(Element::LeftY, static_cast<int16_t>(-30000));
+    vector<KeyChange> up = feed(keyboard, 0, state);
+    REQUIRE(up.size() == 1);
+    CHECK(up[0].key.sdl1Sym == 273);
+
+    state.set(Element::LeftX, static_cast<int16_t>(0));
+    state.set(Element::LeftY, static_cast<int16_t>(0));
+    CHECK(feed(keyboard, 0, state).size() == 2);
+
+    // the positive key does not fire for a negative push, nor the negative one for a positive push
+    state.set(Element::LeftX, static_cast<int16_t>(30000));
+    vector<KeyChange> right = feed(keyboard, 0, state);
+    REQUIRE(right.size() == 1);
+    CHECK(right[0].key.sdl1Sym == 275);
 }
 
 TEST_CASE("keyboard mode: a pad that goes away lets go of every key it held") {
@@ -1740,6 +1879,31 @@ TEST_CASE("pad list: what is not a pad line is left out") {
     CHECK(pads[1].driver == "?");
 
     CHECK(parsePadList({}).empty()); // no pads: the daemon prints nothing
+}
+
+TEST_CASE("pad list: a DualShock 4 with its motion sensors and touchpad nodes is one pad") {
+    const char *names[] = {"Wireless Controller", "Wireless Controller Motion Sensors", "Wireless Controller Touchpad",
+                           "Xbox 360 Controller"};
+    vector<PadListEntry> seen;
+    for (int i = 0; i < 4; ++i) {
+        PadListEntry entry;
+        entry.index = i;
+        entry.connected = true;
+        entry.name = names[i];
+        seen.push_back(entry);
+    }
+
+    vector<PadListEntry> pads = withoutSensorNodes(seen);
+    REQUIRE(pads.size() == 2);
+    CHECK(pads[0].name == "Wireless Controller");
+    CHECK(pads[0].index == 0);
+    CHECK(pads[1].name == "Xbox 360 Controller");
+    CHECK(pads[1].index == 1); // numbered without the sensor nodes
+
+    CHECK(isPadSensorName("Sony Interactive Entertainment Wireless Controller Motion Sensors"));
+    CHECK(isPadSensorName("PS4 Controller TOUCHPAD"));
+    CHECK_FALSE(isPadSensorName("Wireless Controller"));
+    CHECK_FALSE(isPadSensorName("Touchpad")); // a bare name is a device of its own, not a pad's node
 }
 
 TEST_CASE("keyboard mode: a profile file that is missing changes nothing") {

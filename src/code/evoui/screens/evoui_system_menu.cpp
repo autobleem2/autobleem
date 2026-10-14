@@ -122,6 +122,15 @@ void GuiSystemMenu::init() {
 
     selected = 0;
     firstVisible = 0;
+    if (startOn != SystemMenuAction::None) {
+        for (int i = 0; i < static_cast<int>(rows.size()); i++) {
+            if (!rows[i].heading && rows[i].action == startOn) {
+                selected = i;
+                break;
+            }
+        }
+        keepSelectedVisible();
+    }
     result = SystemMenuAction::None;
     style = gui->panelStyle();
     publishItems();

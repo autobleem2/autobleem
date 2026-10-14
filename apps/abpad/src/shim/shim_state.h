@@ -104,9 +104,8 @@ private:
     bool announcedPads_ = false;
     // The hotkey has to be *held*, not merely pressed: Start and Select are both live buttons in
     // plenty of games, and a pad quitting the game because two of them were pressed together would
-    // be worse than having no way out at all.
-    unsigned hotkeyHeldCycles_ = 0;
-    bool hotkeyQuitSent_ = false;
+    // be worse than having no way out at all. Two seconds of the clock, the same count the daemon makes.
+    ExitHold exitHold_;
     // the daemon's quit requests (the console's Reset button): a count, so the first snapshot sets the
     // baseline and only a later, different count asks the app to quit
     uint32_t quitRequestsSeen_ = 0;

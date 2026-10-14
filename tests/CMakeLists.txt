@@ -2,6 +2,14 @@
 # tests/ through the same AB_BUILD_TESTS switch; both use its harness (doctest, EnvFixture, TempDir).
 include(${CMAKE_SOURCE_DIR}/autobleem-core/tests/harness.cmake)
 
+# every language file through the Rust text engine: no empty boxes, the lines that got wider listed
+# (autobleem-core lib_ableem/rust/ab_text). Native and pcusb run it; the MinGW build (its SDL through pkg-config,
+# its tests never run) leaves it out
+if (ABLEEM_TEXT_RUST AND NOT WIN32)
+    ab_add_test(test_text_languages screens/test_text_languages.cpp LIBS ableem ab_text SDL2_ttf SDL2)
+    target_compile_definitions(test_text_languages PRIVATE AB_LAUNCHER_RESOURCES="${CMAKE_SOURCE_DIR}/src/resources")
+endif()
+
 # abpad, the virtual gamepad for Apps (apps/abpad)
 ab_add_test(test_abpad_core apps/test_abpad_core.cpp LIBS abpad_core)
 
@@ -81,6 +89,9 @@ target_include_directories(test_set_picker_tabs PRIVATE ${CMAKE_SOURCE_DIR}/src/
 # The CD player screen's pure rules (evoui/screens/cd_player_logic.h): times, grid cursor, bar segments, repeat cycle
 ab_add_test(test_cd_player_logic screens/test_cd_player_logic.cpp)
 target_include_directories(test_cd_player_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+# The Repeat and Shuffle glyphs' per-row geometry (evoui/screens/cd_glyphs.h)
+ab_add_test(test_cd_glyphs screens/test_cd_glyphs.cpp)
+target_include_directories(test_cd_glyphs PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
 
 # The disc view's pure rules (evoui/screens/disc_view_logic.h): the drive chip, R1 footer rule, crossfade
 ab_add_test(test_disc_view_logic screens/test_disc_view_logic.cpp)
@@ -90,6 +101,11 @@ target_include_directories(test_disc_view_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/
 ab_add_test(test_ra_job screens/test_ra_job.cpp ${CMAKE_SOURCE_DIR}/src/code/evoui/ra_job_service.cpp)
 target_include_directories(test_ra_job PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
 target_compile_definitions(test_ra_job PRIVATE AB_TOOLS_DIR="${CMAKE_SOURCE_DIR}/tools")
+
+# Copying the disc in the drive to Games as a CHD (evoui/screens/disc_rip_logic.h): who is offered the copy, the names
+# of the CHD / .sbi / .m3u, the LibCrypt .sbi choice, the refusals before the rip, the popup's numbers
+ab_add_test(test_disc_rip_logic screens/test_disc_rip_logic.cpp)
+target_include_directories(test_disc_rip_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
 
 # The RetroArch-installed gates (evoui/screens/ra_gates.h, pure): a PS1 game's emulator, the Lightgun set
 ab_add_test(test_ra_gates screens/test_ra_gates.cpp)
@@ -104,6 +120,10 @@ target_compile_definitions(test_psc_cores PRIVATE AB_PLATFORM_DIR="${CMAKE_SOURC
 # is only checked there), and the trimmed pad table the mods read (tools/make_pe_gamecontrollerdb.py)
 ab_add_test(test_pe_run rc/test_pe_run.cpp)
 target_compile_definitions(test_pe_run PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
+
+# rc/ab_memory.sh, overcommit 1 and the zram swap at boot: the real script on a fake /proc, /sys and /dev, run twice
+ab_add_test(test_ab_memory rc/test_ab_memory.cpp)
+target_compile_definitions(test_ab_memory PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if (Python3_Interpreter_FOUND)
     add_test(NAME test_make_pe_gamecontrollerdb COMMAND ${Python3_EXECUTABLE}
@@ -135,3 +155,7 @@ target_include_directories(test_launch_picture PRIVATE ${CMAKE_SOURCE_DIR}/src/c
 # in its binary against the running libc
 ab_add_test(test_ra_glibc_check screens/test_ra_glibc_check.cpp)
 target_include_directories(test_ra_glibc_check PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
+
+# AUTOBLEEM-22: the game editor's rows greyed for a disc in the drive (gui/menus/game_editor_options.h, pure)
+ab_add_test(test_game_editor_options screens/test_game_editor_options.cpp)
+target_include_directories(test_game_editor_options PRIVATE ${CMAKE_SOURCE_DIR}/src/code/gui/menus)

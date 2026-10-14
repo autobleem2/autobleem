@@ -217,6 +217,7 @@ void GuiOptions::fill() {
     }
 
     heading(_("Library"));
+    lines.emplace_back(CFG_CLEAN_NAMES, _("Clean game names:"), "cleannames", true, vector<string>({"false", "true"}));
 #ifdef AB_HAS_INTERNAL_GAMES
     // an appliance or a Windows PC has no built-in games to show (GameQueryService::showInternalGames is hard
     // false there)
@@ -225,7 +226,7 @@ void GuiOptions::fill() {
 #endif
     // only where the platform can fetch at all (download_command in its ini)
     if (!Env::downloadCommand().empty())
-        lines.emplace_back(CFG_ONLINE, _("Fetch box art online:"), "online", true, vector<string>({"true", "false"}));
+        lines.emplace_back(CFG_ONLINE, _("Fetch box art online:"), "online", true, vector<string>({"false", "true"}));
     if (lines.back().id == CFG_HEADING)
         lines.pop_back(); // a console: nothing under it
 #if defined(AB_ONLINE_UPDATE) && (defined(AB_APPLIANCE) || defined(AB_PLATFORM_WIN) || defined(AB_PLATFORM_PSC))

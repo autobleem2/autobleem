@@ -21,6 +21,13 @@ string GuiRaCores::valueText(const RACorePlatform &row, int choice) {
 }
 
 //*******************************
+// GuiRaCores::labelFor
+//*******************************
+string GuiRaCores::labelFor(const RACorePlatform &row) {
+    return row.isPs1() ? _("PlayStation 1 Games") : row.database;
+}
+
+//*******************************
 // GuiRaCores::init
 //*******************************
 void GuiRaCores::init() {
@@ -49,7 +56,7 @@ void GuiRaCores::publish() const {
         return;
     vector<string> names{"#" + _("RetroArch cores")};
     for (const RACorePlatform &row : rows_)
-        names.push_back(row.database);
+        names.push_back(labelFor(row));
     ableem::DebugDriver::publish(typeid(*this).name(), names, rows_.empty() ? -1 : selected_ + 1);
 }
 
@@ -89,9 +96,12 @@ void GuiRaCores::draw() {
 
     for (int i = firstVisible_, line = 1; i < total && line <= fit; i++, line++) {
         const RACorePlatform &row = rows_[i];
-        TextRenderer::RowRoleScope role(gui->text(),
-                                        i == selected_ ? TextRenderer::RowRole::Selected : TextRenderer::RowRole::Row);
-        const string label = row.database;
+        // the one PS1 core there is cannot be changed: the row is shown greyed
+        TextRenderer::RowRole rowRole = i == selected_ ? TextRenderer::RowRole::Selected : TextRenderer::RowRole::Row;
+        if (row.locked)
+            rowRole = TextRenderer::RowRole::Disabled;
+        TextRenderer::RowRoleScope role(gui->text(), rowRole);
+        const string label = labelFor(row);
         const string value = valueText(row, row.current);
         // the value sits at the right edge: what is left of the row after the label and a gap is its room
         const int room = right - content.x - gui->text().textWidth(font, label) - 3 * PanelStyle::RowInset;
@@ -112,6 +122,8 @@ void GuiRaCores::change(int step, bool repeat) {
     if (rows_.empty())
         return;
     RACorePlatform &row = rows_[selected_];
+    if (row.locked)
+        return;
     row.current = abgui::stepIndex(row.current, step, static_cast<int>(row.cores.size()), repeat);
 }
 

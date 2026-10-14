@@ -389,8 +389,12 @@ void AutoBleem::launchGame() {
 
     takeAppMessage();
 
-    if (disc)
+    if (disc) {
         discSeenChanges = ~0u; // the launcher is back with the disc still in: its view opens again
+        lastDisc = disc;       // the resume screen is the disc's, whatever the carousel had selected
+    } else {
+        lastDisc.reset();
+    }
     pendingDisc.reset();
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
     session_.package.reset();
@@ -706,7 +710,7 @@ int AutoBleem::run() {
     if (session_.menuOption == MENU_OPTION_POWEROFF) {
         gui_->drawText(_("POWERING OFF... PLEASE WAIT")); // the standby follows within a second
     } else {
-        Gui::splash(_("Loading ... Please Wait ..."));
+        Gui::splash(_("Loading... Please wait..."));
     }
     gui_->finish();
 

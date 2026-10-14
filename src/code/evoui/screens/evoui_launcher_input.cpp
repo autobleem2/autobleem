@@ -62,6 +62,7 @@ void GuiLauncher::loop() {
         pollSettleLoads();
         applyScanUpdate(app.scans().poll());
         pollDisc();
+        selectRippedGame();
         app.extensions().poll();
         applyExtensionRequests();
         pollPadBattery();
@@ -534,9 +535,6 @@ void GuiLauncher::loop_joyButton_Pressed() {
     } else if (e.button == Button::R1) {
         if (discViewOpen)
             return;
-        // R1 "Disc" while a disc is ready: its view comes back (the footer says so); else the first-letter jump
-        if (discViewCanOpenIn() && discview::r1ShowsDisc(discDriveNow(), discViewOpen) && enterDiscView())
-            return;
         R1_isPressedForFastForward = true;
         loop_nextGameFirstLetter();
 
@@ -565,15 +563,15 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
             return;
         }
 
-        if (carousel.games[carousel.selected]->title == "") {
+        if (carousel.games[carousel.selected]->shownTitle() == "") {
             return;
         }
 
         // find the index of all the first letters
         map<char, int> firstLetterToIndex;
         for (int index = 0; index < carousel.games.size(); ++index) {
-            if (carousel.games[index]->title != "") {
-                char firstLetter = toupper(carousel.games[index]->title[0]);
+            if (carousel.games[index]->shownTitle() != "") {
+                char firstLetter = toupper(carousel.games[index]->shownTitle()[0]);
                 if (firstLetterToIndex.find(firstLetter) == firstLetterToIndex.end()) // if letter not in map
                     firstLetterToIndex[firstLetter] = index;                          // add the first letter to the map
             }
@@ -583,7 +581,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
             return; // nothing with a title
 
         if (carousel.selectedIsValid()) {
-            char currentLetter = toupper(carousel.games[carousel.selected]->title[0]);
+            char currentLetter = toupper(carousel.games[carousel.selected]->shownTitle()[0]);
             int nextGame = carousel.selected;
             if (firstLetterToIndex.size() == 1) {
                 nextGame = firstLetterToIndex[currentLetter]; // there is only one first letter in the games
@@ -607,7 +605,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
                 // we have prev/next game first letter;
                 carousel.selected = nextGame;
                 app.audio().cursor.play();
-                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0, 1)),
+                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->shownTitle().substr(0, 1)),
                                              DefaultShowingTimeout);
                 carousel.setInitialPositions(carousel.selected);
                 updateMeta();
@@ -615,7 +613,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
             } else {
                 // no change
                 app.audio().cancel.play();
-                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0, 1)),
+                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->shownTitle().substr(0, 1)),
                                              DefaultShowingTimeout);
             }
         }
@@ -687,6 +685,10 @@ void GuiLauncher::loop_startButton_Pressed() {
 // GuiLauncher::loop_circleButtonPressed
 //*******************************
 void GuiLauncher::loop_circleButton_Pressed() {
+    // Circle "Disc" while a disc is ready and the carousel (or an empty roster) shows: its view comes back (the footer
+    // says so); Circle had nothing to do there
+    if (discViewCanOpenIn() && discview::circleShowsDisc(discDriveNow(), discViewOpen) && enterDiscView())
+        return;
     if (state == LauncherScreenState::Set) {
         if (carousel.games.empty()) {
             app.audio().cancel.play(); // the row stays open on an empty set (settleEmptyRoster)
@@ -698,7 +700,7 @@ void GuiLauncher::loop_circleButton_Pressed() {
             motionStart = 0;
         }
     } else if (state == LauncherScreenState::Games && discViewOpen) {
-        leaveDiscView(); // back to the carousel; the disc stays, the chip lit, R1 brings the view back
+        leaveDiscView(); // back to the carousel; the disc stays, the chip lit, Circle brings the view back
     } else if (state == LauncherScreenState::Games) {
         // there is no classic menu to fall back to any more (the background-scan work's step 3) - Circle here
         // used to close the launcher; R2 (the system menu) is where Power Off and everything else now lives
@@ -767,8 +769,11 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 // GuiLauncher::loop_squareButtonPressed
 //*******************************
 void GuiLauncher::loop_squareButton_Pressed() {
-    if (discViewOpen)
-        return; // a physical disc plays in pcsx-abnxt alone
+    if (discViewOpen) { // a physical disc plays in pcsx-abnxt alone; Square copies a known PS1 disc to Games
+        if (copyDiscOffered())
+            copyDiscToGames();
+        return;
+    }
 
     if (Env::retroArchInstalled()) {
 

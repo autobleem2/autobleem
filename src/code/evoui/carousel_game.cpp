@@ -92,9 +92,9 @@ void PsCarouselGame::releaseNoArtLayers() {
 //*******************************
 // PsCarouselGame::artPath
 //*******************************
-// The image file the cover is made from. A PS1 game: the PNG next to it (the user's, or the covers db's),
-// else what the scan found in RetroArch's thumbnails tree (while that file is still there), else a look in
-// the tree now - an internal game, or one scanned before the tree existed - else the placeholder the
+// The image file the cover is made from. A PS1 game: the cover image (.png or .jpg) next to it (the user's, or the
+// covers db's), else what the scan found in RetroArch's thumbnails tree (while that file is still there), else a
+// look in the tree now - an internal game, or one scanned before the tree existed - else the placeholder the
 // scanner used to copy next to a game. A RetroArch game: its box art, else ra-cover.png; an App: its image,
 // else app-cover.png - for those two `noArt` is set and compose() draws the two-layer placeholder at the
 // system's aspect instead of the file (which is only still named so the cover loader has something to
@@ -106,8 +106,8 @@ const string &PsCarouselGame::artPath() {
     if (!memoryArt.empty())
         return art; // empty: the bytes are the cover
     if (!(*this)->foreign) {
-        art = (*this)->folder + sep + (*this)->base + ".png";
-        if (!DirEntry::exists(art)) {
+        art = ableem::findGameCover((*this)->folder, (*this)->base);
+        if (art.empty()) {
             art = (*this)->coverPath;
             if (art.empty() || !DirEntry::exists(art)) {
                 art = App::get().thumbnails().findBoxArt(ableem::ThumbnailLookup::PlayStationDbName, (*this)->title,

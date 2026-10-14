@@ -86,13 +86,9 @@ void GuiBtnGuide::draw() {
         key(ableem::KeyboardMap::systemMenuKey()));
     row("|@Up|", _("Quick menu (Re-scan, Store, Network & Controllers, System menu)"), key(_("Arrow up")));
     section(_("In game"));
-    row("|@Select+Start|", _("Emulator config menu"));
+    row("|@Select+Start|", _("Short press of Select+Start or Home: the emulator's menu"));
+    row("|@Select+Start|", _("Hold Select+Start or Home for 2 seconds: back to AutoBleem"));
     row(_("RESET"), _("Quit emulation - back to AutoBleem"));
-    if (retroArch) {
-        section(_("In RetroArch game"));
-        row("|@Select+Start|", _("Open RetroArch menu"));
-        row(_("POWER"), _("Exit to EvoUI"));
-    }
 
     gui->renderStatus("|@O| " + _("Back") + "|");
 }

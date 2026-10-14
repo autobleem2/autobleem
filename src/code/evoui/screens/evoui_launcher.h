@@ -518,6 +518,9 @@ public:
     bool discViewOpen = false;
     bool discAudio = false; // ... and the disc is an audio CD
     GameKey discSavedKey;
+    // the game the after-run resume screen (Save) is about: the disc that just played, else null = the carousel's
+    // selected game (discview::resumeGameFor). Set in loadAssets, used by loop_crossButtonPressed_STATE_RESUME.
+    PsGamePtr resumeGame;
     // the crossfade between the carousel and the disc's cover (discview::fadeAlpha): the picture under the background
     // swaps at the middle
     bool discFading = false, discFadeEntering = false, discFadeSwapped = false;
@@ -528,11 +531,18 @@ public:
     void pollDisc();
     // makes discGame/discPsGame/discArt/discTitle from discStatus
     void buildDisc();
+    // box art was fetched into the thumbnails tree: a PS1 disc still on default.png takes it
+    void discBoxArtArrived();
     // enterDiscView / leaveDiscView through the crossfade
     void startDiscFade(bool entering);
     // the carousel <-> the disc, at the fade's middle
     void swapDiscView(bool entering);
-    // R1 / a disc becoming ready: false when it cannot be shown now
+    // the launcher is built anew after a disc game: the disc view stands again with that disc (no fade), before the
+    // resume screen is made
+    void reenterDiscViewAfterRun(const std::shared_ptr<DiscGame> &disc);
+    // after a reload of the assets (Options, an extension's settings): the disc view that was up stands again
+    void restoreDiscView(bool wasOpen);
+    // Circle / a disc becoming ready: false when it cannot be shown now
     bool enterDiscView();
     // Circle / the disc taken out
     bool leaveDiscView();
@@ -544,4 +554,11 @@ public:
     void openCdPlayer();
     // the meta section's disc mode, after its texts were set
     void applyDiscMeta();
+    // Square in the disc view of a PS1 disc the databases know: copy the disc to Games as a CHD (evoui_disc_view.cpp)
+    bool copyDiscOffered() const;
+    void copyDiscToGames();
+    // the folder of the game just copied: once the rescan is done the game is selected (selectRippedGame, each frame)
+    std::string ripSelectFolder;
+    bool ripScanFinished = false;
+    void selectRippedGame();
 };

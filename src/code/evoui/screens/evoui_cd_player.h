@@ -62,6 +62,11 @@ private:
 
     PanelStyle style;
     ableem::Texture caseImage;
+    // the supersampled Repeat, Repeat Track and Shuffle glyphs (white, tinted when drawn) for keys of
+    // smoothGlyphSize; rebuilt when it changes or the render targets are lost (smoothGlyphsAt)
+    ableem::Texture smoothGlyphs[3];
+    int smoothGlyphSize = 0;
+    unsigned long smoothGlyphsAt = 0;
     std::vector<int> numbers; // the audio tracks' numbers, in disc order
     int focus = 0;            // index into numbers
     int firstRow = 0;
