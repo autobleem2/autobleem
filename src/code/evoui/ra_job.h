@@ -173,10 +173,10 @@ struct JobState {
                 return;
             }
         }
-        // no end line: the runner died (or the file never came) - the exit status is all there is
-        if (exitCode == 0)
-            state = State::Ok;
-        else if (exitCode == 3 || (exitCode == -1 && stopAsked))
+        // no end line: the runner died (or the file never came) - the exit status is all there is. Exit 0 without
+        // 'end|ok' (missing, garbled, only a phase line, empty) is not a success: nothing says it finished.
+        // Exit 3 without 'end|stopped' stays Stopped: our SIGTERM may take the runner before it can write.
+        if (exitCode == 3 || (exitCode == -1 && stopAsked))
             state = State::Stopped;
         else {
             state = State::Error;
@@ -209,6 +209,28 @@ inline double fraction(const Progress &p) {
     if (p.total == 0)
         return -1;
     return p.done >= p.total ? 1.0 : static_cast<double>(p.done) / static_cast<double>(p.total);
+}
+
+// The bar of one phase: a known total is a fraction of THIS phase only; total 0 (or no phase yet) is indeterminate
+// and sweeps to and fro from the phase's start (phaseAgeMs = time since the phase began), never a carried-over value.
+struct Bar {
+    bool indeterminate = false;
+    double value = 0; // 0..1
+};
+
+inline Bar barFor(const Progress &p, unsigned phaseAgeMs) {
+    Bar bar;
+    if (p.phase <= 0)
+        return bar; // nothing seen yet: empty
+    const double f = fraction(p);
+    if (f >= 0) {
+        bar.value = f;
+        return bar;
+    }
+    bar.indeterminate = true;
+    const unsigned t = phaseAgeMs % 2000;
+    bar.value = (t < 1000 ? t : 2000 - t) / 1000.0;
+    return bar;
 }
 
 // "42.1 MB"
@@ -290,6 +312,14 @@ inline std::vector<Row> panelRows(bool installed, bool networkUp, RowAction chos
     if (biosRowShown(chosen))
         rows.push_back({RowAction::DeleteBios, true});
     return rows;
+}
+
+// How the end of a run is shown: a plain message with one OK for what happened (Done, Stopped, every error), nothing
+// while no run has ended. The yes/no questions (Install/Remove, "Stop?") are confirms and not part of an outcome.
+enum class EndBox { None, Message };
+
+inline EndBox boxFor(State state) {
+    return state == State::Ok || state == State::Stopped || state == State::Error ? EndBox::Message : EndBox::None;
 }
 
 // the System menu's row is there where a runner exists; the Quick menu's "Install RetroArch..." only while absent

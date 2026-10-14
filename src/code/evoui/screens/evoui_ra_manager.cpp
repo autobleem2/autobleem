@@ -3,6 +3,9 @@
 #include "gui/gui.h"
 #include "gui/screens/gui_confirm.h"
 
+#include <ab_gui/panel.h>
+#include <ab_gui/text_page.h>
+
 #include <algorithm>
 
 using namespace std;
@@ -59,6 +62,50 @@ string phaseTitle(const string &key) {
     return _("Loading ... Please Wait ..."); // a key this launcher does not know (a newer runner)
 }
 } // namespace
+
+//*******************************
+// GuiRaMessage
+//*******************************
+// abgui::Confirm::draw with the one hint
+void GuiRaMessage::draw() {
+    ctx.drawBackdrop();
+    const abgui::Style style = ctx.style();
+    const ableem::Font &font = ctx.font(abgui::FontRole::Row);
+    const vector<abgui::HintItem> hints = {{{"X"}, _("OK")}};
+    const int panelWidth = abgui::Panel::compactWidth(ctx, hints, "");
+    const int width = min(textWidth(style), panelWidth - 2 * (style.rowInset + 8));
+    const vector<string> rows = abgui::wrapText(label, width, [&font](const string &s) { return font.width(s); });
+    const int textHeight = static_cast<int>(rows.size()) * font.lineHeight();
+    const abgui::Panel panel(panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth),
+                             style);
+    panel.sheet(ctx);
+
+    const bool programShadow = ctx.setTextShadow(style.textShadow);
+    int y = panel.header(ctx, title.empty() ? _("RetroArch...") : title) + TextGapTop;
+    const int x = panel.rect().x + style.rowInset + 8;
+    for (const string &row : rows) {
+        if (!row.empty())
+            ctx.drawText(font, row, x, y, style.text);
+        y += font.lineHeight();
+    }
+    style.footer(ctx, panel.footer(), hints, "", false);
+    ctx.setTextShadow(programShadow);
+}
+
+// Cross and Circle, Enter and Escape: all say OK
+void GuiRaMessage::onAction(const abgui::ActionEvent &action) {
+    const Event &e = action.event;
+    if (e.type == Event::Type::ButtonDown &&
+        (action.action == abgui::Action::Confirm || action.action == abgui::Action::Back))
+        answer(true);
+    else if (e.type == Event::Type::KeyDown && (e.key == Key::Return || e.key == Key::Escape))
+        answer(true);
+}
+
+void GuiRaMessage::onUnmapped(const Event &event) {
+    if (event.type == Event::Type::KeyDown && (event.key == Key::Return || event.key == Key::Escape))
+        answer(true);
+}
 
 //*******************************
 // GuiRaManager
@@ -240,6 +287,8 @@ void GuiRaManager::loop() {
 void GuiRaProgress::init() {
     style = gui->panelStyle();
     stopping = false;
+    barPhase = 0;
+    barPhaseStartMs = 0;
 }
 
 void GuiRaProgress::draw() {
@@ -253,13 +302,14 @@ void GuiRaProgress::draw() {
         detail += "   " + to_string(p.done) + " / " + to_string(p.total);
     if (stopping)
         detail = _("Stopping...");
-    double fraction = rajob::fraction(p);
-    if (fraction < 0 && p.phase > 0) {
-        // unknown total: the bar sweeps to and fro so it is seen to be alive
-        const unsigned int t = gui->platform().ticks() % 2000;
-        fraction = (t < 1000 ? t : 2000 - t) / 1000.0;
-    } else if (fraction < 0)
-        fraction = 0;
+    // the bar belongs to one phase: a new phase starts it again; an unknown total sweeps to and fro so it is seen to
+    // be alive, it never keeps the previous phase's fraction
+    const unsigned int now = gui->platform().ticks();
+    if (p.phase != barPhase) {
+        barPhase = p.phase;
+        barPhaseStartMs = now;
+    }
+    const double fraction = rajob::barFor(p, now - barPhaseStartMs).value;
 
     const int bodyHeight = 20 + LineHeight + 34 + 12;
     const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;

@@ -203,11 +203,60 @@ TEST_CASE("status: a runner that dies without an end line is an error 'other'") 
     CHECK(noExec.code == "other");
 }
 
-TEST_CASE("status: without an end line the exit code still says ok / stopped") {
+TEST_CASE("status: exit 0 without a proper end|ok is an error 'other', never Done") {
+    for (const char *text : {"", "garbage|garbage", "phase 9/9|install-binary|0|0", "end|", "end|error|"}) {
+        JobState job; // the file missing is the same as a file the parser rejects
+        job.begin();
+        job.apply(text);
+        job.childExited(0);
+        CHECK(job.state == State::Error);
+        CHECK(job.code == "other");
+    }
+    JobState missing;
+    missing.begin();
+    missing.childExited(0);
+    CHECK(missing.state == State::Error);
+    CHECK(missing.code == "other");
+
     JobState ok;
     ok.begin();
+    ok.apply("phase 1/1|unpack|1|2");
+    ok.apply("end|ok");
     ok.childExited(0);
     CHECK(ok.state == State::Ok);
+}
+
+TEST_CASE("the bar is per phase: total 0 is a pulse, never a carried-over fraction") {
+    const Progress known = parseLine("phase 8/9|merge-config|6|10").progress;
+    const Bar a = barFor(known, 500);
+    CHECK_FALSE(a.indeterminate);
+    CHECK(a.value == doctest::Approx(0.6));
+
+    const Progress zero = parseLine("phase 9/9|install-binary|0|0").progress;
+    for (unsigned age : {0u, 300u, 1000u, 1700u, 2300u}) {
+        const Bar b = barFor(zero, age);
+        CHECK(b.indeterminate);
+        CHECK(b.value >= 0);
+        CHECK(b.value <= 1);
+    }
+    CHECK(barFor(zero, 0).value == 0.0); // a new phase starts the sweep from the start
+    CHECK(barFor(zero, 1000).value == 1.0);
+    CHECK(barFor(zero, 1500).value == doctest::Approx(0.5));
+
+    const Bar none = barFor(Progress(), 700); // no phase seen yet
+    CHECK_FALSE(none.indeterminate);
+    CHECK(none.value == 0.0);
+}
+
+TEST_CASE("the end of a run is a plain message box; no run ended shows none") {
+    CHECK(boxFor(State::Ok) == EndBox::Message);
+    CHECK(boxFor(State::Stopped) == EndBox::Message);
+    CHECK(boxFor(State::Error) == EndBox::Message);
+    CHECK(boxFor(State::Idle) == EndBox::None);
+    CHECK(boxFor(State::Running) == EndBox::None);
+}
+
+TEST_CASE("status: without an end line only exit 3 / our SIGTERM say stopped") {
     JobState stopped;
     stopped.begin();
     stopped.childExited(3);
@@ -397,7 +446,20 @@ TEST_CASE("RaJobService: an old run's last line does not leak into the next") {
     const std::string runner = script(tmp, "sleep 0.3\nexit 0\n"); // no file of its own
     RaJobService job;
     REQUIRE(job.startCommand({runner, "x"}, file));
-    CHECK(finish(job).state == State::Ok);
+    CHECK(finish(job).state == State::Error); // the old end|error|download is gone, and exit 0 alone is no success
+    CHECK(job.status().code == "other");
+}
+
+TEST_CASE("RaJobService: exit 0 with a file that is garbled or only a phase line is an error") {
+    TempDir tmp("rajob_exit0");
+    const std::string file = tmp.at("p");
+    for (const char *content : {"phase 9/9|install-binary|0|0", "nonsense", ""}) {
+        const std::string runner = script(tmp, std::string("printf '%s\\n' '") + content + "' > \"$3\"\nexit 0\n");
+        RaJobService job;
+        REQUIRE(job.startCommand({runner, "install", "--progress", file}, file));
+        CHECK(finish(job).state == State::Error);
+        CHECK(job.status().code == "other");
+    }
 }
 
 TEST_CASE("RaJobService with the fake runner: a whole install, then a remove") {

@@ -1189,6 +1189,9 @@ void GuiLauncher::loop_raManager() {
     raCheckedAt_ = 0;
     forgetSetCounts();
 
+    if (rajob::boxFor(job.status().state) != rajob::EndBox::Message)
+        return;
+    // the end of a run is a message with one OK, not a question
     string message;
     switch (job.status().state) {
     case rajob::State::Ok:
@@ -1208,7 +1211,7 @@ void GuiLauncher::loop_raManager() {
         else if (code == "checksum")
             message = _("A downloaded file is damaged - try again");
         else if (code == "apt-provided")
-            message = _("RetroArch comes from the system's packages and was not removed");
+            message = _("RetroArch here belongs to the system's package manager, so AutoBleem leaves it alone.");
         else
             message = _("Something went wrong - see the log");
         break;
@@ -1216,7 +1219,7 @@ void GuiLauncher::loop_raManager() {
     default:
         return;
     }
-    GuiConfirm confirm(*gui);
-    confirm.label = message;
-    confirm.show();
+    GuiRaMessage box(*gui);
+    box.label = message;
+    box.show();
 }
