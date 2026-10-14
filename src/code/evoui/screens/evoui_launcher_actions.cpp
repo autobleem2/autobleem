@@ -1208,7 +1208,7 @@ void GuiLauncher::loop_raManager() {
         else if (code == "checksum")
             message = _("A downloaded file is damaged - try again");
         else if (code == "apt-provided")
-            message = _("RetroArch comes from the system's packages and was not removed");
+            message = _("RetroArch here belongs to the system's package manager, so AutoBleem leaves it alone.");
         else
             message = _("Something went wrong - see the log");
         break;

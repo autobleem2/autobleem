@@ -240,6 +240,8 @@ void GuiRaManager::loop() {
 void GuiRaProgress::init() {
     style = gui->panelStyle();
     stopping = false;
+    barPhase = 0;
+    barPhaseStartMs = 0;
 }
 
 void GuiRaProgress::draw() {
@@ -253,13 +255,14 @@ void GuiRaProgress::draw() {
         detail += "   " + to_string(p.done) + " / " + to_string(p.total);
     if (stopping)
         detail = _("Stopping...");
-    double fraction = rajob::fraction(p);
-    if (fraction < 0 && p.phase > 0) {
-        // unknown total: the bar sweeps to and fro so it is seen to be alive
-        const unsigned int t = gui->platform().ticks() % 2000;
-        fraction = (t < 1000 ? t : 2000 - t) / 1000.0;
-    } else if (fraction < 0)
-        fraction = 0;
+    // the bar belongs to one phase: a new phase starts it again; an unknown total sweeps to and fro so it is seen to
+    // be alive, it never keeps the previous phase's fraction
+    const unsigned int now = gui->platform().ticks();
+    if (p.phase != barPhase) {
+        barPhase = p.phase;
+        barPhaseStartMs = now;
+    }
+    const double fraction = rajob::barFor(p, now - barPhaseStartMs).value;
 
     const int bodyHeight = 20 + LineHeight + 34 + 12;
     const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;

@@ -71,5 +71,7 @@ public:
 private:
     PanelStyle style;
     bool stopping = false;
+    int barPhase = 0;             // the phase the bar was last drawn for; a change restarts the bar
+    unsigned barPhaseStartMs = 0; // when that phase began
     rajob::JobState shown; // the job's state this frame
 };
