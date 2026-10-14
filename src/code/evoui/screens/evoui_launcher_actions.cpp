@@ -1189,6 +1189,9 @@ void GuiLauncher::loop_raManager() {
     raCheckedAt_ = 0;
     forgetSetCounts();
 
+    if (rajob::boxFor(job.status().state) != rajob::EndBox::Message)
+        return;
+    // the end of a run is a message with one OK, not a question
     string message;
     switch (job.status().state) {
     case rajob::State::Ok:
@@ -1216,7 +1219,7 @@ void GuiLauncher::loop_raManager() {
     default:
         return;
     }
-    GuiConfirm confirm(*gui);
-    confirm.label = message;
-    confirm.show();
+    GuiRaMessage box(*gui);
+    box.label = message;
+    box.show();
 }

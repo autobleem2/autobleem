@@ -248,6 +248,14 @@ TEST_CASE("the bar is per phase: total 0 is a pulse, never a carried-over fracti
     CHECK(none.value == 0.0);
 }
 
+TEST_CASE("the end of a run is a plain message box; no run ended shows none") {
+    CHECK(boxFor(State::Ok) == EndBox::Message);
+    CHECK(boxFor(State::Stopped) == EndBox::Message);
+    CHECK(boxFor(State::Error) == EndBox::Message);
+    CHECK(boxFor(State::Idle) == EndBox::None);
+    CHECK(boxFor(State::Running) == EndBox::None);
+}
+
 TEST_CASE("status: without an end line only exit 3 / our SIGTERM say stopped") {
     JobState stopped;
     stopped.begin();

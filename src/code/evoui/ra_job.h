@@ -314,6 +314,14 @@ inline std::vector<Row> panelRows(bool installed, bool networkUp, RowAction chos
     return rows;
 }
 
+// How the end of a run is shown: a plain message with one OK for what happened (Done, Stopped, every error), nothing
+// while no run has ended. The yes/no questions (Install/Remove, "Stop?") are confirms and not part of an outcome.
+enum class EndBox { None, Message };
+
+inline EndBox boxFor(State state) {
+    return state == State::Ok || state == State::Stopped || state == State::Error ? EndBox::Message : EndBox::None;
+}
+
 // the System menu's row is there where a runner exists; the Quick menu's "Install RetroArch..." only while absent
 inline bool quickInstallRowShown(bool managerAvailable, bool installed) {
     return managerAvailable && !installed;

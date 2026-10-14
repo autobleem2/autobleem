@@ -7,6 +7,7 @@
 #pragma once
 
 #include "gui/gui_screen.h"
+#include "gui/screens/gui_confirm.h"
 #include "gui/panel_style.h"
 #include "../ra_job.h"
 #include "../ra_job_service.h"
@@ -18,6 +19,20 @@
 // RaChoice
 //******************
 enum class RaChoice { None, Install, Update, Remove, RemoveWithBios };
+
+//******************
+// GuiRaMessage
+//******************
+// A plain message with one OK (Cross, Enter or Circle, Escape): GuiConfirm's look with the one answer in the footer.
+// The caller sets `label` and `title`, then show().
+class GuiRaMessage : public GuiConfirm {
+public:
+    explicit GuiRaMessage(ableem::GuiBase &g) : GuiConfirm(g) {}
+
+    void draw() override;
+    void onAction(const abgui::ActionEvent &action) override;
+    void onUnmapped(const ableem::Event &event) override;
+};
 
 //******************
 // GuiRaManager
