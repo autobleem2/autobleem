@@ -24,6 +24,7 @@
 #define OPT_NOSEAMS 17 // Remove seams: with Resolution
 #define OPT_DITHERING 18
 #define OPT_RESUME 19 // Resume: ask / last slot / never (EMU-26)
+#define OPT_CRTMASK 20 // CRT mask: pcsx-abnxt, with the CRT (raster) filter
 
 // A disc in the drive is no entry in the library: it can be neither a favorite, a light-gun game, played with
 // RetroArch nor locked. Resume and the picture settings work (the disc has its own pcsx.cfg).

@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 588
+# Untranslated: 3 / Total: 592
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors an pas pogut èsser legits e son estats escrits coma zèros.
@@ -19,6 +19,7 @@ All games=Totes los jòcs
 Already in Games: %1=Ja dins Games : %1
 Always=Totjorn
 Animations:=Animacions:
+Aperture=Grasilha
 app=aplicacion
 Applying settings...=Aplicacion dels reglatges...
 Apps=Aplicacions
@@ -100,6 +101,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Marge CRT :
+CRT mask:=Masca CRT :
 CRT-Pi=CRT-Pi
 Cue file not found=Fichièr CUE introbable
 Custom=Personalizada
@@ -121,6 +123,7 @@ Delete slot=Suprimir l'emplaçament
 Delete the !SaveState folder of %s?=Suprimir lo dorsièr !SaveState de %s ?
 Delete the folder %s?=Suprimir lo dorsièr %s ?
 Delete the settings saved in the emulator and use AutoBleem's again?=Suprimir los paramètres enregistrats dins l'emulador e tornar prendre los d'AutoBleem ?
+Delta=Delta
 DEMO=DEMO
 Description=Descripcion
 Diagnostics=Diagnostic
@@ -153,6 +156,7 @@ Emulator=Emulador
 Emulator config menu=Menú config de l'emulador
 Emulator screen scaling:=Escalatge de l'ecran de l'emulador :
 Hold Select+Start or Home for 2 seconds: back to AutoBleem=
+Needs the CRT (raster) filter=Requerís lo filtre CRT (raster)
 no card yet=pas encara de carta
 Not available for a disc in the drive=Pas disponible per un disc dins lo lector
 Not enough room in Games: the copy needs %1, %2 is free.=Pas pro de plaça dins Games : la còpia ten besonh de %1, %2 son liures.

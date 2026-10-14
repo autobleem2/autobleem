@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 588
+# Untranslated: 1 / Total: 592
 
 %1 needs game data it can run: %2.=%1 heeft gamedata nodig die het kan uitvoeren: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoren konden niet gelezen worden en zijn als nullen geschreven.
@@ -19,6 +19,7 @@ All games=Alle games
 Already in Games: %1=Staat al in Games: %1
 Always=Altijd
 Animations:=Animaties:
+Aperture=Streep
 app=app
 Applying settings...=Instellingen toepassen...
 Apps=Apps
@@ -100,6 +101,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-marge:
+CRT mask:=CRT-masker:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-bestand niet gevonden
 Custom=Aangepast
@@ -121,6 +123,7 @@ Delete slot=Slot verwijderen
 Delete the !SaveState folder of %s?=De !SaveState-map van %s verwijderen?
 Delete the folder %s?=De map %s verwijderen?
 Delete the settings saved in the emulator and use AutoBleem's again?=De in de emulator opgeslagen instellingen verwijderen en weer die van AutoBleem gebruiken?
+Delta=Delta
 DEMO=DEMO
 Description=Beschrijving
 Diagnostics=Diagnose
@@ -153,6 +156,7 @@ Emulator=Emulator
 Emulator config menu=Emulator configuratiemenu
 Emulator screen scaling:=Schermschaling van de emulator:
 Hold Select+Start or Home for 2 seconds: back to AutoBleem=Houd Select+Start of Home 2 seconden ingedrukt: terug naar AutoBleem
+Needs the CRT (raster) filter=Vereist het filter CRT (raster)
 no card yet=nog geen kaart
 Not available for a disc in the drive=Niet beschikbaar voor een schijf in het station
 Not enough room in Games: the copy needs %1, %2 is free.=Te weinig ruimte in Games: de kopie heeft %1 nodig, %2 is vrij.

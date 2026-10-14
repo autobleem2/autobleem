@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 588
+# Untranslated: 1 / Total: 592
 
 %1 needs game data it can run: %2.=%1 precisa de dados de jogo que consiga executar: %2.
 %1 sectors could not be read and were written as zeros.=%1 setores não puderam ser lidos e foram gravados como zeros.
@@ -19,6 +19,7 @@ All games=Todos os jogos
 Already in Games: %1=Já está em Games: %1
 Always=Sempre
 Animations:=Animações:
+Aperture=Grade
 app=apps
 Applying settings...=Aplicando as configurações...
 Apps=Apps
@@ -100,6 +101,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Margem CRT:
+CRT mask:=Máscara CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=Arquivo CUE não encontrado
 Custom=Person.
@@ -121,6 +123,7 @@ Delete slot=Excluir slot
 Delete the !SaveState folder of %s?=Excluir a pasta !SaveState de %s?
 Delete the folder %s?=Excluir a pasta %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Excluir as configurações salvas no emulador e voltar a usar as do AutoBleem?
+Delta=Delta
 DEMO=DEMO
 Description=Descrição
 Diagnostics=Diagnóstico
@@ -153,6 +156,7 @@ Emulator=Emulador
 Emulator config menu=Menu de configurações do emulador
 Emulator screen scaling:=Escala da tela do emulador:
 Hold Select+Start or Home for 2 seconds: back to AutoBleem=Segure Select+Start ou Home por 2 segundos: voltar ao AutoBleem
+Needs the CRT (raster) filter=Requer o filtro CRT (raster)
 no card yet=ainda sem cartão
 Not available for a disc in the drive=Indisponível para um disco na unidade
 Not enough room in Games: the copy needs %1, %2 is free.=Espaço insuficiente em Games: a cópia precisa de %1, %2 livres.

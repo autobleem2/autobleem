@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 588
+# Untranslated: 1 / Total: 592
 
 %1 needs game data it can run: %2.=%1 har brug for spildata, den kan køre: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunne ikke læses og blev skrevet som nuller.
@@ -19,6 +19,7 @@ All games=Alle spil
 Already in Games: %1=Findes allerede i Games: %1
 Always=Altid
 Animations:=Animationer:
+Aperture=Gitter
 app=app
 Applying settings...=Anvender indstillinger...
 Apps=Apps
@@ -100,6 +101,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-margen:
+CRT mask:=CRT-maske:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-filen blev ikke fundet
 Custom=Tilpasset
@@ -121,6 +123,7 @@ Delete slot=Slet slot
 Delete the !SaveState folder of %s?=Slet !SaveState-mappen for %s?
 Delete the folder %s?=Slet mappen %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Slet indstillingerne gemt i emulatoren og brug AutoBleems igen?
+Delta=Delta
 DEMO=DEMO
 Description=Beskrivelse
 Diagnostics=Diagnostik
@@ -153,6 +156,7 @@ Emulator=Emulator
 Emulator config menu=Emulator-konfigurationsmenu
 Emulator screen scaling:=Emulatorens skærmskalering:
 Hold Select+Start or Home for 2 seconds: back to AutoBleem=Hold Select+Start eller Home i 2 sekunder: tilbage til AutoBleem
+Needs the CRT (raster) filter=Kræver filteret CRT (raster)
 no card yet=intet kort endnu
 Not available for a disc in the drive=Ikke tilgængelig for en disk i drevet
 Not enough room in Games: the copy needs %1, %2 is free.=Ikke plads nok i Games: kopien skal bruge %1, %2 er ledig.

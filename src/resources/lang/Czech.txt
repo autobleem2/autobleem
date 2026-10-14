@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 588
+# Untranslated: 1 / Total: 592
 
 %1 needs game data it can run: %2.=%1 potřebuje herní data, která umí spustit: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorů nešlo přečíst a byly zapsány jako nuly.
@@ -19,6 +19,7 @@ All games=Všechny hry
 Already in Games: %1=Už je v Games: %1
 Always=Vždy
 Animations:=Animace:
+Aperture=Štěrbinová
 app=aplikace
 Applying settings...=Použití nastavení...
 Apps=Aplikace
@@ -100,6 +101,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Okraj CRT:
+CRT mask:=Maska CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=Soubor CUE nenalezen
 Custom=Vlastní
@@ -121,6 +123,7 @@ Delete slot=Smazat pozici
 Delete the !SaveState folder of %s?=Smazat složku !SaveState hry %s?
 Delete the folder %s?=Smazat složku %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Smazat nastavení uložená v emulátoru a znovu použít nastavení AutoBleemu?
+Delta=Delta
 DEMO=UKÁZKA
 Description=Popis
 Diagnostics=Diagnostika
@@ -153,6 +156,7 @@ Emulator=Emulátor
 Emulator config menu=Konfigurační nabídka emulátoru
 Emulator screen scaling:=Škálování obrazu emulátoru:
 Hold Select+Start or Home for 2 seconds: back to AutoBleem=Podržte Select+Start nebo Home 2 sekundy: zpět do AutoBleem
+Needs the CRT (raster) filter=Vyžaduje filtr CRT (raster)
 no card yet=zatím žádná karta
 Not available for a disc in the drive=Není k dispozici pro disk v mechanice
 Not enough room in Games: the copy needs %1, %2 is free.=V Games není dost místa: kopie potřebuje %1, volných je %2.

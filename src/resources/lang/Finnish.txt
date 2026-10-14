@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 588
+# Untranslated: 1 / Total: 592
 
 %1 needs game data it can run: %2.=%1 tarvitsee pelitiedot, joita se osaa ajaa: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektoria ei voitu lukea, ja ne kirjoitettiin nollina.
@@ -19,6 +19,7 @@ All games=Kaikki pelit
 Already in Games: %1=On jo Games-kansiossa: %1
 Always=Aina
 Animations:=Animaatiot:
+Aperture=Rako
 app=sovellus
 Applying settings...=Otetaan asetukset käyttöön...
 Apps=Sovellukset
@@ -100,6 +101,7 @@ CRT (fast)=CRT (nopea)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-reunus:
+CRT mask:=CRT-maski:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-tiedostoa ei löytynyt
 Custom=Mukautettu
@@ -121,6 +123,7 @@ Delete slot=Poista paikka
 Delete the !SaveState folder of %s?=Poistetaanko kohteen %s !SaveState-kansio?
 Delete the folder %s?=Poistetaanko kansio %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Poistetaanko emulaattoriin tallennetut asetukset ja käytetään taas AutoBleemin asetuksia?
+Delta=Delta
 DEMO=DEMO
 Description=Kuvaus
 Diagnostics=Vianmääritys
@@ -153,6 +156,7 @@ Emulator=Emulaattori
 Emulator config menu=Emulaattorin konfigurointivalikko
 Emulator screen scaling:=Emulaattorin näytön skaalaus:
 Hold Select+Start or Home for 2 seconds: back to AutoBleem=Pidä Select+Start tai Home painettuna 2 sekuntia: takaisin AutoBleemiin
+Needs the CRT (raster) filter=Vaatii suodattimen CRT (raster)
 no card yet=ei vielä korttia
 Not available for a disc in the drive=Ei käytettävissä asemassa olevalle levylle
 Not enough room in Games: the copy needs %1, %2 is free.=Games-kansiossa ei ole tarpeeksi tilaa: kopio tarvitsee %1, vapaana on %2.

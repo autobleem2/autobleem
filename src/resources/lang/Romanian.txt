@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 588
+# Untranslated: 1 / Total: 592
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoare nu au putut fi citite și au fost scrise ca zerouri.
@@ -19,6 +19,7 @@ All games=Toate jocurile
 Already in Games: %1=Există deja în Games: %1
 Always=Mereu
 Animations:=Animații:
+Aperture=Grilă
 app=aplicație
 Applying settings...=Se aplică setările...
 Apps=Aplicații
@@ -100,6 +101,7 @@ CRT (fast)=CRT (rapid)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Margine CRT:
+CRT mask:=Mască CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=Fișierul CUE nu a fost găsit
 Custom=Personalizat
@@ -121,6 +123,7 @@ Delete slot=Șterge slotul
 Delete the !SaveState folder of %s?=Ștergi dosarul !SaveState al jocului %s?
 Delete the folder %s?=Ștergi dosarul %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Ștergi setările salvate în emulator și folosești din nou setările AutoBleem?
+Delta=Delta
 DEMO=DEMO
 Description=Descriere
 Diagnostics=Diagnosticare
@@ -153,6 +156,7 @@ Emulator=Emulator
 Emulator config menu=Meniu de configurare al emulatorului
 Emulator screen scaling:=Scalarea ecranului emulatorului:
 Hold Select+Start or Home for 2 seconds: back to AutoBleem=Ține apăsat Select+Start sau Home 2 secunde: înapoi la AutoBleem
+Needs the CRT (raster) filter=Necesită filtrul CRT (raster)
 no card yet=niciun card încă
 Not available for a disc in the drive=Indisponibil pentru un disc din unitate
 Not enough room in Games: the copy needs %1, %2 is free.=Nu este destul loc în Games: copia are nevoie de %1, sunt liberi %2.
