@@ -167,6 +167,9 @@ jobs:
             rm -rf stage out && mkdir -p stage/nsis out
             cp -a "$PK" stage/AutoBleem
             rm -rf stage/AutoBleem/AutoBleemWinSetup.exe stage/AutoBleem/emu stage/AutoBleem/emunxt
+            if [ "${AB_RENDER_GL:-1}" != 0 ]; then
+              [ -f stage/AutoBleem/ab_render_gles3.dll ] || { echo "::error::no ab_render_gles3.dll in the Windows package - the GLES 3 backend is missing"; exit 1; }
+            fi
             cp installer/windows/autobleem.nsi src/win/autobleem.ico stage/nsis/
             # uploaded unsigned below; sign-win signs autobleem-gui.exe and makes launcher-win64-<v>.tar.gz
             echo "plat=win64" >> "$GITHUB_OUTPUT"
@@ -207,6 +210,14 @@ jobs:
             fi
             cp -a src/resources/. "$BIN/autobleem/"
             rm -f "$BIN/autobleem/internal.db"          # an appliance has no built-in games
+          fi
+          # the loadable GLES 3 renderer (on by default, ci/build.sh; AB_RENDER_GL=0 builds without it), next to
+          # autobleem-gui where the launcher looks for it - not UPX-packed. This step copies a list of files, so
+          # the backend has to be on it: until 2026-10-15 it was not and every nightly shipped without it. A
+          # package without it fails here, loudly.
+          if [ "${AB_RENDER_GL:-1}" != 0 ]; then
+            [ -f "$D/ab_render_gles3.so" ] || { echo "::error::no $D/ab_render_gles3.so - the GLES 3 backend is missing from the build"; exit 1; }
+            cp "$D/ab_render_gles3.so" "$BIN/autobleem/"
           fi
           cp LICENSE THIRD_PARTY_NOTICES.md "$BIN/autobleem/" 2>/dev/null || true
           if [ -f "$D/apps/abpad/abpadd" ] && [ -f "$D/apps/abpad/libabpad.so" ]; then
