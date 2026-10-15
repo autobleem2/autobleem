@@ -77,6 +77,43 @@ class TemplateFromPackage(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.t, 'Themes', 'ab2')))  # nothing of the old one stays
         self.assertFalse(os.path.exists(self.t + '.new'))
 
+    def test_an_old_template_that_cannot_be_removed_never_leaves_a_half_template(self):
+        self.stale_template()
+        real_rmtree = abvm.shutil.rmtree
+
+        def rmtree(path, *args, **kwargs):  # the root-owned old tree: the host cannot delete it
+            if str(path).endswith('_template.old'):
+                return
+            real_rmtree(path, *args, **kwargs)
+
+        with mock.patch.object(abvm.shutil, 'rmtree', rmtree), mock.patch('builtins.print') as shown:
+            abvm.sb_template(self.package_dir())
+        self.assertEqual(read(os.path.join(self.t, 'VERSION')), 'v2.0.0-alpha3\n')  # the new one, whole
+        self.assertTrue(os.path.isfile(os.path.join(self.t, 'Themes', 'ab2.0.0', 'theme.ini')))
+        self.assertFalse(os.path.exists(os.path.join(self.t, 'Themes', 'ab2')))
+        self.assertFalse(os.path.exists(self.t + '.new'))
+        self.assertEqual(read(os.path.join(self.t + '.old', 'VERSION')), 'v1.0.0\n')
+        said = [c[0][0] for c in shown.call_args_list]
+        self.assertTrue(any('_template.old' in s and 'sudo rm -rf' in s for s in said), said)
+
+    def test_leftovers_of_an_earlier_run_are_cleared_by_the_guest_when_the_host_cannot(self):
+        write(os.path.join(self.t + '.old', 'VERSION'), 'x')
+        write(os.path.join(self.t + '.new', 'VERSION'), 'y')
+        real_rmtree = abvm.shutil.rmtree
+        guest = []
+
+        def rmtree(path, *args, **kwargs):
+            if str(path).endswith('_template.old'):
+                return
+            real_rmtree(path, *args, **kwargs)
+
+        with mock.patch.object(abvm.shutil, 'rmtree', rmtree), \
+                mock.patch.object(abvm, 'guest_run', lambda cmd, *a, **k: guest.append(cmd)):
+            abvm.sb_clear_leftover('_template.old')
+            abvm.sb_clear_leftover('_template.new')
+        self.assertEqual(guest, [f'sudo rm -rf {abvm.SB_GUEST}/_template.old'])
+        self.assertFalse(os.path.exists(self.t + '.new'))
+
     def test_db_is_the_link_to_shared_and_the_user_dirs_are_empty(self):
         abvm.sb_template(self.package_dir())
         db = os.path.join(self.t, 'Autobleem', 'bin', 'db')

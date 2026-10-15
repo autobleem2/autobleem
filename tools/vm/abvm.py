@@ -1237,9 +1237,22 @@ def sb_nightly_package(dest):
     return path
 
 
+def sb_clear_leftover(name):
+    """remove _template.old / _template.new left by an earlier run: here first, then (root-owned files the guest
+    made) by guest sudo"""
+    path = sb_host(name)
+    if not os.path.lexists(path):
+        return
+    shutil.rmtree(path, ignore_errors=True)
+    if os.path.lexists(path):
+        guest_run(f'sudo rm -rf {SB_GUEST}/{name}')
+
+
 def sb_template_from_package(package):
     """_template from a pcusb release package (a .tar.gz path or URL, the folder it unpacks to, or `nightly`) in
     place of the stick: the same parts, built here on the share's host side, swapped in whole"""
+    for leftover in ('_template.old', '_template.new'):
+        sb_clear_leftover(leftover)
     work = tempfile.mkdtemp(prefix='abvm-template-')
     try:
         src = os.path.expanduser(package[5:] if package.startswith('host:') else package)
@@ -1278,8 +1291,13 @@ def sb_template_from_package(package):
             with open(os.path.join(new, 'VERSION')) as f:
                 version = f.read().strip()
         os.symlink('../../../_shared/db', os.path.join(new, 'Autobleem', 'bin', 'db'))
-        shutil.rmtree(t, ignore_errors=True)
+        old = t + '.old'
+        if os.path.lexists(t):
+            os.rename(t, old)
         os.rename(new, t)
+        shutil.rmtree(old, ignore_errors=True)
+        if os.path.lexists(old):
+            print(f'old template left at _template.old - remove it with: sudo rm -rf {SB_GUEST}/_template.old')
         sb_template_source_write(os.path.basename(src.rstrip('/')), version or '(no VERSION)')
         sb_open_modes(t)
     finally:
