@@ -24,14 +24,32 @@ enum class RaChoice { None, Install, Update, Remove, RemoveWithBios };
 // GuiRaMessage
 //******************
 // A plain message with one OK (Cross, Enter or Circle, Escape): GuiConfirm's look with the one answer in the footer.
-// The caller sets `label` and `title`, then show().
+// The caller sets `label` (the body) and `title`, then show(). A `tag` ("ERROR") is drawn in red above the body.
 class GuiRaMessage : public GuiConfirm {
 public:
     explicit GuiRaMessage(ableem::GuiBase &g) : GuiConfirm(g) {}
 
+    std::string tag;
+
     void draw() override;
     void onAction(const abgui::ActionEvent &action) override;
     void onUnmapped(const ableem::Event &event) override;
+};
+
+//******************
+// GuiRaNotice
+//******************
+// The box before an Install / Update: the title, a body, bullets, an accent line, Cross "Start" / Circle "Cancel".
+// GuiConfirm's answers (Cross = true, Circle = false); the caller sets title, label (body), bullets, accent,
+// confirmLabel and cancelLabel, then show().
+class GuiRaNotice : public GuiConfirm {
+public:
+    explicit GuiRaNotice(ableem::GuiBase &g) : GuiConfirm(g) {}
+
+    std::vector<std::string> bullets;
+    std::string accent; // drawn last, in the accent colour
+
+    void draw() override;
 };
 
 //******************
@@ -116,5 +134,6 @@ private:
     unsigned barPhaseStartMs = 0; // when that phase began
     int meterItem = -1;           // the package the speed meter is following
     rajob::RateMeter meter;       // download speed, smoothed over a few seconds
+    rajob::StallClock stall;      // when the phase, package or count last changed
     rajob::JobState shown;        // the job's state this frame
 };

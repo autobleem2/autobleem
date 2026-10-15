@@ -19,6 +19,7 @@
 //
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -235,8 +236,16 @@ inline double fraction(const Progress &p) {
 // and sweeps to and fro from the phase's start (phaseAgeMs = time since the phase began), never a carried-over value.
 struct Bar {
     bool indeterminate = false;
-    double value = 0; // 0..1
+    double value = 0;      // 0..1
+    bool overReal = false; // a stalled bar: `value` is the real fraction and `sweep` a moving mark over it
+    double sweep = 0;      // 0..1, where the mark is (overReal only)
 };
+
+// the to-and-fro position of a sweep, 0..1, 2 s for a round
+inline double sweepPosition(unsigned ageMs) {
+    const unsigned t = ageMs % 2000;
+    return (t < 1000 ? t : 2000 - t) / 1000.0;
+}
 
 inline Bar barFor(const Progress &p, unsigned phaseAgeMs) {
     Bar bar;
@@ -248,9 +257,71 @@ inline Bar barFor(const Progress &p, unsigned phaseAgeMs) {
         return bar;
     }
     bar.indeterminate = true;
-    const unsigned t = phaseAgeMs % 2000;
-    bar.value = (t < 1000 ? t : 2000 - t) / 1000.0;
+    bar.value = sweepPosition(phaseAgeMs);
     return bar;
+}
+
+// Movement must always be visible: a bar whose phase, package and count have not changed for more than StallMs shows a
+// sweep over its real value (a runner's single long step writes nothing in between).
+constexpr unsigned StallMs = 1000;
+
+inline Bar barWithStall(const Progress &p, unsigned phaseAgeMs, unsigned stalledMs) {
+    Bar bar = barFor(p, phaseAgeMs);
+    if (p.phase > 0 && !bar.indeterminate && stalledMs > StallMs) {
+        bar.indeterminate = true;
+        bar.overReal = true;
+        bar.sweep = sweepPosition(stalledMs - StallMs);
+    }
+    return bar;
+}
+
+// When (phase, item, done) last changed: feed it the progress every frame, ask how long it has stood still.
+class StallClock {
+public:
+    void feed(unsigned nowMs, const Progress &p) {
+        if (!seen_ || p.phase != phase_ || p.item != item_ || p.itemIndex != itemIndex_ || p.done != done_) {
+            seen_ = true;
+            phase_ = p.phase;
+            item_ = p.item;
+            itemIndex_ = p.itemIndex;
+            done_ = p.done;
+            changedMs_ = nowMs;
+        }
+    }
+    unsigned stalledMs(unsigned nowMs) const { return seen_ && nowMs > changedMs_ ? nowMs - changedMs_ : 0; }
+    void reset() { *this = StallClock(); }
+
+private:
+    bool seen_ = false;
+    int phase_ = 0;
+    std::string item_;
+    int itemIndex_ = 0;
+    uint64_t done_ = 0;
+    unsigned changedMs_ = 0;
+};
+
+// An item's name for the screen: the runner's '_' is a space (Retroarch_themes -> Retroarch themes). Display only.
+inline std::string displayName(const std::string &item) {
+    std::string out = item;
+    for (char &c : out)
+        if (c == '_')
+            c = ' ';
+    return out;
+}
+
+// What a package line calls the package: a plain description. A file name (it has a '.') is never shown - the phase's
+// description stands for it; a plain name (cheats, Retroarch_themes) is shown with spaces for '_'.
+inline std::string packageWhat(const std::string &description, const std::string &item) {
+    if (item.empty() || item.find('.') != std::string::npos)
+        return description;
+    return displayName(item);
+}
+
+// The unit of a phase's numbers: the runner's, or - on an old 4-field line - bytes for a download, items otherwise.
+inline std::string effectiveUnit(const Progress &p) {
+    if (!p.unit.empty())
+        return p.unit;
+    return p.key.compare(0, 8, "download") == 0 ? "bytes" : "items";
 }
 
 // "42.1 MB"
@@ -282,15 +353,106 @@ inline double usedFraction(uint64_t freeBytes, uint64_t totalBytes) {
     return static_cast<double>(totalBytes - freeBytes) / static_cast<double>(totalBytes);
 }
 
-// "12.3 / 45.0 MB" for bytes, "1200 / 41000" for files and items (the text around it says what it counts).
-// Never a raw byte count.
-inline std::string packageAmount(uint64_t done, uint64_t total, const std::string &unit) {
+// "128 of 289 MB" / "1200 of 5400 files" / "2 of 4", as the numbers and what they count (the screen puts the words
+// around them). Bytes are MB (a total under 10 MB with one decimal) or KB (under 1 MB): never a raw byte count.
+struct Amount {
+    enum class Kind { MB, KB, Files, Items };
+    Kind kind = Kind::Items;
+    std::string done;
+    std::string total;
+};
+
+inline Amount amountFor(uint64_t done, uint64_t total, const std::string &unit) {
+    Amount a;
+    char buf[32];
     if (unit == "bytes") {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%.1f / %.1f MB", static_cast<double>(done) / 1e6, static_cast<double>(total) / 1e6);
-        return buf;
+        if (total < 1000000) {
+            a.kind = Amount::Kind::KB;
+            snprintf(buf, sizeof(buf), "%.0f", static_cast<double>(done) / 1e3);
+            a.done = buf;
+            snprintf(buf, sizeof(buf), "%.0f", static_cast<double>(total) / 1e3);
+            a.total = buf;
+        } else {
+            a.kind = Amount::Kind::MB;
+            const char *format = total < 10000000 ? "%.1f" : "%.0f";
+            snprintf(buf, sizeof(buf), format, static_cast<double>(done) / 1e6);
+            a.done = buf;
+            snprintf(buf, sizeof(buf), format, static_cast<double>(total) / 1e6);
+            a.total = buf;
+        }
+        return a;
     }
-    return std::to_string(done) + " / " + std::to_string(total);
+    a.kind = unit == "files" ? Amount::Kind::Files : Amount::Kind::Items;
+    a.done = std::to_string(done);
+    a.total = std::to_string(total);
+    return a;
+}
+
+// an empty unit (an old 4-field line) is read by the phase's key
+inline Amount amountFor(const Progress &p) {
+    return amountFor(p.done, p.total, effectiveUnit(p));
+}
+
+// what the Remove confirm lists: the lines as ids, the screen gives them their words
+enum class RemoveItem {
+    // deleted
+    RetroArch,
+    Cores,
+    MenuAssets,
+    Databases,
+    Cheats,
+    Overlays,
+    Shaders,
+    Bios,
+    // stays
+    Games,
+    Playlists,
+    Covers,
+    Saves,
+    SaveStates,
+    Settings,
+};
+
+struct RemoveLists {
+    std::vector<RemoveItem> deleted;
+    std::vector<RemoveItem> stays;
+};
+
+inline RemoveLists removeLists(bool withBios) {
+    RemoveLists lists;
+    lists.deleted = {RemoveItem::RetroArch, RemoveItem::Cores,    RemoveItem::MenuAssets, RemoveItem::Databases,
+                     RemoveItem::Cheats,    RemoveItem::Overlays, RemoveItem::Shaders};
+    if (withBios)
+        lists.deleted.push_back(RemoveItem::Bios);
+    lists.stays = {RemoveItem::Games, RemoveItem::Playlists,  RemoveItem::Covers,
+                   RemoveItem::Saves, RemoveItem::SaveStates, RemoveItem::Settings};
+    return lists;
+}
+
+// "2.4 MB/s" (decimal is '.' or ',' as the language writes it); "" while the speed is not known
+inline std::string speedText(double bytesPerSecond, char decimal) {
+    char buf[32];
+    if (bytesPerSecond >= 1e6)
+        snprintf(buf, sizeof(buf), "%.1f MB/s", bytesPerSecond / 1e6);
+    else
+        snprintf(buf, sizeof(buf), "%.0f KB/s", bytesPerSecond / 1e3);
+    std::string out = buf;
+    for (char &c : out)
+        if (c == '.')
+            c = decimal;
+    return out;
+}
+
+// the time left as the meter says it: "About 1 min left" is rounded to whole minutes from 60 s, to 5 s below
+inline std::string roughDuration(double seconds) {
+    if (seconds < 0)
+        return "";
+    char buf[32];
+    if (seconds >= 60)
+        snprintf(buf, sizeof(buf), "%ld min", static_cast<long>(seconds / 60.0 + 0.5));
+    else
+        snprintf(buf, sizeof(buf), "%ld s", std::max(5L, static_cast<long>(seconds / 5.0 + 0.5) * 5));
+    return buf;
 }
 
 // the whole job, 0..1, in equal steps: phase i of n at fraction f is (i - 1 + f) / n
@@ -324,6 +486,7 @@ public:
             started_ = true;
             rate_ = 0;
             haveRate_ = false;
+            samples_ = 0;
             lastMs_ = nowMs;
             lastDone_ = done;
             return;
@@ -335,11 +498,14 @@ public:
         const double weight = dt >= 4000 ? 1.0 : dt / 4000.0; // a window of about 4 s
         rate_ = haveRate_ ? rate_ + (instant - rate_) * weight : instant;
         haveRate_ = true;
+        samples_++;
         lastMs_ = nowMs;
         lastDone_ = done;
     }
     void reset() { *this = RateMeter(); }
-    bool known() const { return haveRate_ && rate_ > 0; }
+    // a number is shown only from MinSamples readings on: the first ones swing too much to be believed
+    static constexpr int MinSamples = 3;
+    bool known() const { return haveRate_ && rate_ > 0 && samples_ >= MinSamples; }
     double bytesPerSecond() const { return rate_; }
     // seconds left for `remaining` bytes, -1 when the speed is not known yet
     double secondsLeft(uint64_t remaining) const { return known() ? static_cast<double>(remaining) / rate_ : -1; }
@@ -347,6 +513,7 @@ public:
 private:
     bool started_ = false;
     bool haveRate_ = false;
+    int samples_ = 0;
     double rate_ = 0;
     unsigned lastMs_ = 0;
     uint64_t lastDone_ = 0;

@@ -62,6 +62,13 @@ string phaseTitle(const string &key) {
     return _("Loading ... Please Wait ..."); // a key this launcher does not know (a newer runner)
 }
 
+// the title of a phase in the job line ("Step 3 of 9 - Downloading cores"): the short form of phaseTitle
+string stepTitle(const string &key) {
+    if (key == "download-cores")
+        return _("Downloading cores");
+    return phaseTitle(key);
+}
+
 // the one-line "why" under a phase's package
 string phaseWhy(const string &key) {
     if (key == "check-space")
@@ -69,7 +76,7 @@ string phaseWhy(const string &key) {
     if (key == "download-retroarch")
         return _("The RetroArch program itself.");
     if (key == "download-cores")
-        return _("The emulators that play each system's games.");
+        return _("Cores are the emulators - one for every console RetroArch supports.");
     if (key == "download-libs")
         return _("Helper libraries RetroArch needs to run.");
     if (key == "download-apps")
@@ -99,6 +106,57 @@ string fill(string format, const vector<string> &args) {
     }
     return format;
 }
+
+// "128 of 289 MB" / "1200 of 5400 files" / "2 of 4"
+string amountText(const rajob::Amount &amount) {
+    const vector<string> numbers = {amount.done, amount.total};
+    switch (amount.kind) {
+    case rajob::Amount::Kind::MB:
+        return fill(_("%s of %s MB"), numbers);
+    case rajob::Amount::Kind::KB:
+        return fill(_("%s of %s KB"), numbers);
+    case rajob::Amount::Kind::Files:
+        return fill(_("%s of %s files"), numbers);
+    case rajob::Amount::Kind::Items:
+        break;
+    }
+    return fill(_("%s of %s"), numbers);
+}
+
+// the words of the Remove confirm's lines
+string removeItemText(rajob::RemoveItem item) {
+    switch (item) {
+    case rajob::RemoveItem::RetroArch:
+        return _("RetroArch itself");
+    case rajob::RemoveItem::Cores:
+        return _("Emulator cores");
+    case rajob::RemoveItem::MenuAssets:
+        return _("Menu assets");
+    case rajob::RemoveItem::Databases:
+        return _("Databases");
+    case rajob::RemoveItem::Cheats:
+        return _("Cheats");
+    case rajob::RemoveItem::Overlays:
+        return _("Overlays");
+    case rajob::RemoveItem::Shaders:
+        return _("Shaders");
+    case rajob::RemoveItem::Bios:
+        return _("BIOS files");
+    case rajob::RemoveItem::Games:
+        return _("Your games");
+    case rajob::RemoveItem::Playlists:
+        return _("Playlists");
+    case rajob::RemoveItem::Covers:
+        return _("Covers");
+    case rajob::RemoveItem::Saves:
+        return _("Saves (memory cards)");
+    case rajob::RemoveItem::SaveStates:
+        return _("Save states");
+    case rajob::RemoveItem::Settings:
+        return _("Settings");
+    }
+    return "";
+}
 } // namespace
 
 //*******************************
@@ -113,7 +171,8 @@ void GuiRaMessage::draw() {
     const int panelWidth = abgui::Panel::compactWidth(ctx, hints, "");
     const int width = min(textWidth(style), panelWidth - 2 * (style.rowInset + 8));
     const vector<string> rows = abgui::wrapText(label, width, [&font](const string &s) { return font.width(s); });
-    const int textHeight = static_cast<int>(rows.size()) * font.lineHeight();
+    const int tagHeight = tag.empty() ? 0 : font.lineHeight();
+    const int textHeight = static_cast<int>(rows.size()) * font.lineHeight() + tagHeight;
     const abgui::Panel panel(panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth),
                              style);
     panel.sheet(ctx);
@@ -121,6 +180,10 @@ void GuiRaMessage::draw() {
     const bool programShadow = ctx.setTextShadow(style.textShadow);
     int y = panel.header(ctx, title.empty() ? _("RetroArch...") : title) + TextGapTop;
     const int x = panel.rect().x + style.rowInset + 8;
+    if (!tag.empty()) {
+        ctx.drawText(font, tag, x, y, ableem::Color(230, 70, 70, 255)); // the ERROR tag
+        y += tagHeight;
+    }
     for (const string &row : rows) {
         if (!row.empty())
             ctx.drawText(font, row, x, y, style.text);
@@ -130,6 +193,63 @@ void GuiRaMessage::draw() {
     ctx.setTextShadow(programShadow);
 }
 
+//*******************************
+// GuiRaNotice
+//*******************************
+// abgui::Confirm::draw with the body, the bullets and the accent line
+void GuiRaNotice::draw() {
+    ctx.drawBackdrop();
+    const abgui::Style style = ctx.style();
+    const ableem::Font &font = ctx.font(abgui::FontRole::Row);
+    const vector<abgui::HintItem> hints = {{{"X"}, confirmLabel.empty() ? _("Start") : confirmLabel},
+                                           {{"O"}, cancelLabel.empty() ? _("Cancel") : cancelLabel}};
+    const int panelWidth = abgui::Panel::compactWidth(ctx, hints, "");
+    const int width = min(textWidth(style), panelWidth - 2 * (style.rowInset + 8));
+    const auto measure = [&font](const string &s) { return font.width(s); };
+
+    struct Row {
+        string text;
+        ableem::Color color;
+    };
+    vector<Row> rows;
+    for (const string &row : abgui::wrapText(label, width, measure))
+        rows.push_back({row, style.text});
+    rows.push_back({"", style.text});
+    const string dash = "- ";
+    const string indent(dash.size(), ' ');
+    const int bulletWidth = width - font.width(dash);
+    for (const string &bullet : bullets) {
+        bool first = true;
+        for (const string &row : abgui::wrapText(bullet, bulletWidth, measure)) {
+            rows.push_back({(first ? dash : indent) + row, style.text});
+            first = false;
+        }
+    }
+    if (!accent.empty()) {
+        rows.push_back({"", style.text});
+        for (const string &row : abgui::wrapText(accent, width, measure))
+            rows.push_back({row, style.secondary});
+    }
+    const int textHeight = static_cast<int>(rows.size()) * font.lineHeight();
+    const abgui::Panel panel(panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth),
+                             style);
+    panel.sheet(ctx);
+
+    const bool programShadow = ctx.setTextShadow(style.textShadow);
+    int y = panel.header(ctx, title.empty() ? _("Before you start") : title) + TextGapTop;
+    const int x = panel.rect().x + style.rowInset + 8;
+    for (const Row &row : rows) {
+        if (!row.text.empty())
+            ctx.drawText(font, row.text, x, y, row.color);
+        y += font.lineHeight();
+    }
+    style.footer(ctx, panel.footer(), hints, "", false);
+    ctx.setTextShadow(programShadow);
+}
+
+//*******************************
+// GuiRaMessage (continued)
+//*******************************
 // Cross and Circle, Enter and Escape: all say OK
 void GuiRaMessage::onAction(const abgui::ActionEvent &action) {
     const Event &e = action.event;
@@ -340,6 +460,7 @@ void GuiRaProgress::init() {
     barPhaseStartMs = 0;
     meterItem = -1;
     meter.reset();
+    stall.reset();
 }
 
 //*******************************
@@ -352,14 +473,13 @@ void GuiRaRemoveConfirm::init() {
 
 void GuiRaRemoveConfirm::draw() {
     Fonts &fonts = gui->assets().themeFonts;
-    vector<string> deleted = {_("RetroArch and its emulator cores"), _("Libraries, apps and menu assets")};
-    vector<string> stays = {_("Your games"), _("Your saves and save states"), _("Your settings")};
-    if (withBios)
-        deleted.push_back(_("BIOS files"));
-    else
-        stays.push_back(_("BIOS files"));
-    const string warning =
-        withBios ? _("Without the BIOS files some games will not start until you add them again.") : "";
+    const rajob::RemoveLists lists = rajob::removeLists(withBios);
+    vector<string> deleted, stays;
+    for (rajob::RemoveItem item : lists.deleted)
+        deleted.push_back(removeItemText(item));
+    for (rajob::RemoveItem item : lists.stays)
+        stays.push_back(removeItemText(item));
+    const string warning = withBios ? _("Cores that need these BIOS files won't start until you copy them back.") : "";
     const int rows = static_cast<int>(max(deleted.size(), stays.size()));
     const int bodyHeight = LineHeight + 12 + rows * LineHeight + (withBios ? LineHeight + 16 : 0) + 12;
     const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
@@ -429,22 +549,27 @@ void GuiRaRemoveConfirm::loop() {
 void GuiRaProgress::draw() {
     Fonts &fonts = gui->assets().themeFonts;
     const rajob::Progress &p = shown.progress;
-    const string phaseName = p.phase > 0 ? phaseTitle(p.key) : _("Loading ... Please Wait ...");
-    const string title = p.phase > 0
-                             ? fill(_("Step %s of %s"), {to_string(p.phase), to_string(p.phases)}) + " - " + phaseName
-                             : phaseName;
-    const int percent = static_cast<int>(rajob::jobFraction(p) * 100.0);
-    const string percentText = to_string(percent) + "%";
+    // the panel's title: what the run is
+    const string title = op == rajob::Op::Remove   ? _("Removing RetroArch")
+                         : op == rajob::Op::Update ? _("Updating RetroArch")
+                                                   : _("Installing RetroArch");
+    // the job line: "Step 3 of 9 - Downloading cores", the percent at its right
+    const string phaseName = p.phase > 0 ? stepTitle(p.key) : _("Loading ... Please Wait ...");
+    const string jobLine =
+        p.phase > 0 ? fill(_("Step %s of %s"), {to_string(p.phase), to_string(p.phases)}) + " - " + phaseName
+                    : phaseName;
+    const string percentText = to_string(static_cast<int>(rajob::jobFraction(p) * 100.0)) + "%";
 
-    // the bar belongs to one phase: a new phase starts it again; an unknown total sweeps to and fro so it is seen to
-    // be alive, it never keeps the previous phase's fraction
+    // the bar belongs to one phase: a new phase starts it again, it never keeps the previous phase's fraction. When
+    // the phase, the package and the count have not changed for a second, a sweep runs over the real value.
     const unsigned int now = gui->platform().ticks();
     if (p.phase != barPhase) {
         barPhase = p.phase;
         barPhaseStartMs = now;
     }
+    stall.feed(now, p);
     // the speed follows one package of a download; a new package or phase starts the meter again
-    const bool downloading = p.unit == "bytes" && p.key.compare(0, 8, "download") == 0;
+    const bool downloading = rajob::effectiveUnit(p) == "bytes" && p.key.compare(0, 8, "download") == 0;
     const int itemKey = p.phase * 1000 + p.itemIndex;
     if (itemKey != meterItem) {
         meterItem = itemKey;
@@ -452,28 +577,33 @@ void GuiRaProgress::draw() {
     }
     if (downloading)
         meter.feed(now, p.done);
-    const double fraction = rajob::barFor(p, now - barPhaseStartMs).value;
+    const rajob::Bar bar = rajob::barWithStall(p, now - barPhaseStartMs, stall.stalledMs(now));
 
-    // the package line: its name, "Package i of n"; the numbers line: MB or files (never raw bytes), speed, time left
-    string package = p.item;
-    if (p.itemCount > 0)
-        package += (package.empty() ? "" : "   ") +
-                   fill(_("Package %s of %s"), {to_string(p.itemIndex), to_string(p.itemCount)});
-    string numbers;
-    if (p.phase > 0 && p.total > 0) {
-        numbers = rajob::packageAmount(p.done, p.total, p.unit);
-        if (p.unit == "files")
-            numbers += " " + _("files");
-        if (downloading && meter.known())
-            numbers += "   " + rajob::humanSpace(static_cast<uint64_t>(meter.bytesPerSecond())) + "/s   " +
-                       fill(_("%s left"), {rajob::humanDuration(meter.secondsLeft(p.total - min(p.done, p.total)))});
+    // the package line (bold): "<what> - 128 of 289 MB", "Package 3 of 9" at its right
+    string package;
+    if (p.phase > 0) {
+        package = rajob::packageWhat(phaseTitle(p.key), p.item);
+        if (p.total > 0)
+            package += " - " + amountText(rajob::amountFor(p));
     }
-    string why = stopping ? _("Stopping...") : phaseWhy(p.key);
+    const string packageCount =
+        p.itemCount > 0 ? fill(_("Package %s of %s"), {to_string(p.itemIndex), to_string(p.itemCount)}) : "";
+    const string why = stopping ? _("Stopping...") : phaseWhy(p.key);
+    // the meter: nothing until the speed has three readings; a Remove has no speed, it has the wait
+    string meterLine;
+    if (op == rajob::Op::Remove)
+        meterLine = _("Please wait - this takes about half a minute");
+    else if (downloading && meter.known()) {
+        const string decimal = _("decimal point");
+        const string left = fill(_("About %s left"),
+                                 {rajob::roughDuration(meter.secondsLeft(p.total - min(p.done, p.total)))});
+        meterLine = left + " \xC2\xB7 " + rajob::speedText(meter.bytesPerSecond(), decimal == "," ? ',' : '.');
+    }
 
-    const int bodyHeight = 16 + 3 * LineHeight + 2 * 34 + LineHeight + 12;
+    const int bodyHeight = 12 + LineHeight + 34 + 36 + 34 + 2 * LineHeight + 12;
     const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
     ableem::Rect panel = drawPanel(
-        *gui, style, panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], numbers}}), panelHeight);
+        *gui, style, panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], jobLine}}), panelHeight);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
@@ -481,28 +611,45 @@ void GuiRaProgress::draw() {
     gui->text().setShadow(shadow);
 
     const int inner = panel.w - 2 * TextInset;
-    const int percentWidth = gui->text().textWidth(fonts[FONT_28_BOLD], percentText);
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD],
-                                     gui->text().elide(fonts[FONT_28_BOLD], title, inner - percentWidth - 16),
+    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], gui->text().elide(fonts[FONT_28_BOLD], title, inner),
                                      panel.x + TextInset, panel.y + 18, style.text, XALIGN_LEFT);
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], percentText, panel.x + panel.w - TextInset - percentWidth,
-                                     panel.y + 18, style.text, XALIGN_LEFT);
     style.rule(gui->uiContext(), panel, panel.y + PanelStyle::HeaderHeight - 8);
     int y = panel.y + PanelStyle::HeaderHeight + 12;
     // the whole job
+    const int percentWidth = gui->text().textWidth(fonts[FONT_22_MED], percentText);
+    gui->text().renderText_WithColor(fonts[FONT_22_MED],
+                                     gui->text().elide(fonts[FONT_22_MED], jobLine, inner - percentWidth - 16),
+                                     panel.x + TextInset, y, style.text, XALIGN_LEFT);
+    gui->text().renderText_WithColor(fonts[FONT_22_MED], percentText, panel.x + panel.w - TextInset - percentWidth, y,
+                                     style.text, XALIGN_LEFT);
+    y += LineHeight;
     style.progressBox(gui->uiContext(), ableem::Rect(panel.x + TextInset, y, inner, 22),
                       min(1.0, rajob::jobFraction(p)));
-    y += 34 + 8;
-    // the current package
-    gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], package, inner),
-                                     panel.x + TextInset, y, style.text, XALIGN_LEFT);
-    y += LineHeight;
-    style.progressBox(gui->uiContext(), ableem::Rect(panel.x + TextInset, y + 4, inner, 22), min(1.0, fraction));
     y += 34;
-    gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], numbers, inner),
+    // the current package
+    const int countWidth = gui->text().textWidth(fonts[FONT_22_MED], packageCount);
+    gui->text().renderText_WithColor(fonts[FONT_28_BOLD],
+                                     gui->text().elide(fonts[FONT_28_BOLD], package, inner - countWidth - 16),
+                                     panel.x + TextInset, y, style.text, XALIGN_LEFT);
+    gui->text().renderText_WithColor(fonts[FONT_22_MED], packageCount, panel.x + panel.w - TextInset - countWidth,
+                                     y + 4, style.description, XALIGN_LEFT);
+    y += 36;
+    const ableem::Rect packageBar(panel.x + TextInset, y, inner, 22);
+    style.progressBox(gui->uiContext(), packageBar, min(1.0, bar.value));
+    if (bar.overReal) {
+        // the sweep: a mark running to and fro over the bar - dark over the fill, light over the empty part
+        const int markWidth = inner / 6;
+        const int markX = packageBar.x + static_cast<int>(bar.sweep * (inner - markWidth));
+        const bool overFill = markX + markWidth / 2 < packageBar.x + static_cast<int>(bar.value * inner);
+        const ableem::Color mark = overFill ? ableem::Color(0, 0, 0, 120)
+                                            : ableem::Color(style.text.r, style.text.g, style.text.b, 150);
+        style.plate(gui->uiContext(), ableem::Rect(markX, packageBar.y + 2, markWidth, packageBar.h - 4), mark);
+    }
+    y += 34;
+    gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], why, inner),
                                      panel.x + TextInset, y, style.description, XALIGN_LEFT);
-    y += LineHeight + 4;
-    gui->text().renderText_WithColor(fonts[FONT_15_BOLD], gui->text().elide(fonts[FONT_15_BOLD], why, inner),
+    y += LineHeight;
+    gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], meterLine, inner),
                                      panel.x + TextInset, y, style.description, XALIGN_LEFT);
 
     const bool canStop = rajob::stopAllowed(op) && !stopping;

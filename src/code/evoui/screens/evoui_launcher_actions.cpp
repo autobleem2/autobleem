@@ -1178,13 +1178,13 @@ void GuiLauncher::loop_raManager() {
                          : choice == RaChoice::Update ? rajob::Op::Update
                                                       : rajob::Op::Remove;
     if (rajob::noticeFirst(op)) {
-        GuiConfirm notice(*gui);
-        notice.title = op == rajob::Op::Update ? _("Update RetroArch") : _("Install RetroArch");
-        notice.label =
-            _("This takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small "
-              "files to unpack.") +
-            "\n\n" + _("Keep the console on and the stick in. Stop keeps what is already downloaded.") + "\n\n" +
-            _("A good moment to go and make a coffee.");
+        GuiRaNotice notice(*gui);
+        notice.title = _("Before you start");
+        notice.label = _("Installing RetroArch takes about 10-15 minutes on the console: about 400 MB to download and "
+                         "tens of thousands of small files to write.");
+        notice.bullets = {_("Keep the console on and the stick in."),
+                          _("Stop keeps everything downloaded so far - Install carries on later.")};
+        notice.accent = _("A good moment to go and make a coffee.");
         notice.confirmLabel = _("Start");
         notice.cancelLabel = _("Cancel");
         notice.show();
@@ -1214,15 +1214,46 @@ void GuiLauncher::loop_raManager() {
     if (rajob::boxFor(job.status().state) != rajob::EndBox::Message)
         return;
     // the end of a run is a message with one OK, not a question
-    string message;
+    string message, title, tag;
+    const bool update = op == rajob::Op::Update;
+    // "%s" in `format` filled in order by `args`
+    const auto fill = [](string format, const vector<string> &args) {
+        for (const string &arg : args) {
+            const size_t at = format.find("%s");
+            if (at == string::npos)
+                break;
+            format.replace(at, 2, arg);
+        }
+        return format;
+    };
     switch (job.status().state) {
     case rajob::State::Ok:
-        message = op == rajob::Op::Remove ? _("RetroArch is removed.") : _("RetroArch is installed.");
+        if (op == rajob::Op::Remove) {
+            title = _("RetroArch is removed");
+            message = _("Your games, saves and settings are still on the stick.");
+        } else {
+            title = update ? _("RetroArch is updated") : _("RetroArch is installed");
+            uint64_t freeBytes = 0, totalBytes = 0;
+            string version = RaJobService::installedVersion();
+            if (version.empty())
+                version = "?";
+            if (RaJobService::stickSpace(freeBytes, totalBytes))
+                message = fill(_("Version %s is ready - start it from the System menu. Free on the stick: %s"),
+                               {version, rajob::humanSpace(freeBytes)});
+            else
+                message = fill(_("Version %s is ready - start it from the System menu."), {version});
+        }
         break;
     case rajob::State::Stopped:
-        message = _("The parts downloaded so far are kept. Choose Install again to carry on.");
+        title = update ? _("Update stopped") : _("Installation stopped");
+        message = update ? _("The parts downloaded so far are kept. Choose Update again to carry on. RetroArch was not "
+                             "changed.")
+                         : _("The parts downloaded so far are kept. Choose Install again to carry on. RetroArch was "
+                             "not changed.");
         break;
     case rajob::State::Error: {
+        title = op == rajob::Op::Remove ? _("Removal failed") : update ? _("Update failed") : _("Installation failed");
+        tag = _("ERROR");
         const string &code = job.status().code;
         if (code == "no-network")
             message = _("There is no network connection");
@@ -1242,6 +1273,8 @@ void GuiLauncher::loop_raManager() {
         return;
     }
     GuiRaMessage box(*gui);
+    box.title = title;
+    box.tag = tag;
     box.label = message;
     box.show();
 }

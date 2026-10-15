@@ -408,10 +408,129 @@ TEST_CASE("the panel's stick line: free space of the total and a thin used bar")
     CHECK(usedFraction(0, 1000) == 1.0);
 }
 
-TEST_CASE("the progress panel's numbers: MB with one decimal or files, never raw bytes") {
-    CHECK(packageAmount(3604512, 6295495, "bytes") == "3.6 / 6.3 MB");
-    CHECK(packageAmount(1200, 41000, "files") == "1200 / 41000");
-    CHECK(packageAmount(2, 5, "items") == "2 / 5");
+TEST_CASE("the progress panel's numbers: MB, files or items, never raw bytes") {
+    Amount a = amountFor(3604512, 6295495, "bytes");
+    CHECK(a.kind == Amount::Kind::MB);
+    CHECK(a.done == "3.6");
+    CHECK(a.total == "6.3");
+    a = amountFor(128000000, 289000000, "bytes");
+    CHECK(a.kind == Amount::Kind::MB);
+    CHECK(a.done == "128");
+    CHECK(a.total == "289");
+    a = amountFor(120000, 640000, "bytes");
+    CHECK(a.kind == Amount::Kind::KB);
+    CHECK(a.done == "120");
+    CHECK(a.total == "640");
+    a = amountFor(1200, 5400, "files");
+    CHECK(a.kind == Amount::Kind::Files);
+    CHECK(a.done == "1200");
+    CHECK(a.total == "5400");
+    a = amountFor(2, 4, "items");
+    CHECK(a.kind == Amount::Kind::Items);
+    CHECK(a.total == "4");
+}
+
+TEST_CASE("an empty unit (an old 4-field line): a download is bytes, anything else items - never a raw byte count") {
+    const Progress dl = parseLine("phase 3/9|download-cores|128000000|289000000").progress;
+    CHECK(effectiveUnit(dl) == "bytes");
+    Amount a = amountFor(dl);
+    CHECK(a.kind == Amount::Kind::MB);
+    CHECK(a.done == "128");
+    CHECK(a.total == "289");
+    CHECK(a.done.find("000000") == std::string::npos);
+    const Progress un = parseLine("phase 8/9|unpack|1200|5400").progress;
+    CHECK(effectiveUnit(un) == "items");
+    a = amountFor(un);
+    CHECK(a.kind == Amount::Kind::Items);
+    CHECK(a.done == "1200");
+    // a unit the runner wrote wins over the key
+    CHECK(effectiveUnit(parseLine("phase 8/9|unpack|1|2|files||0|0").progress) == "files");
+    CHECK(effectiveUnit(parseLine("phase 3/9|download-cores|1|2|items|x|1|1").progress) == "items");
+}
+
+TEST_CASE("an item's '_' is shown as a space, a file name is replaced by the phase's description") {
+    CHECK(displayName("Retroarch_themes") == "Retroarch themes");
+    CHECK(displayName("cheats") == "cheats");
+    CHECK(displayName("") == "");
+    CHECK(packageWhat("Downloading emulator cores", "Retroarch_themes") == "Retroarch themes");
+    CHECK(packageWhat("Downloading emulator cores", "cores-psc-20261003.tar.gz") == "Downloading emulator cores");
+    CHECK(packageWhat("Downloading emulator cores", "") == "Downloading emulator cores");
+}
+
+TEST_CASE("a bar that stood still for more than a second sweeps over its real value") {
+    const Progress p = parseLine("phase 3/9|download-cores|0|1|items|cores|1|9").progress;
+    Bar b = barWithStall(p, 5000, 900);
+    CHECK_FALSE(b.indeterminate);
+    CHECK_FALSE(b.overReal);
+    CHECK(b.value == 0.0);
+    b = barWithStall(p, 5000, 1000); // exactly 1 s: not more
+    CHECK_FALSE(b.indeterminate);
+    b = barWithStall(p, 5000, 1100);
+    CHECK(b.indeterminate);
+    CHECK(b.overReal);
+    CHECK(b.value == 0.0); // the real value stays
+    CHECK(b.sweep >= 0);
+    CHECK(b.sweep <= 1);
+    const Progress half = parseLine("phase 3/9|download-cores|5|10|items|cores|1|9").progress;
+    b = barWithStall(half, 0, 4000);
+    CHECK(b.value == doctest::Approx(0.5));
+    CHECK(b.sweep == doctest::Approx(sweepPosition(3000)));
+    // no phase yet: nothing to sweep
+    CHECK_FALSE(barWithStall(Progress(), 0, 9000).indeterminate);
+    // an unknown total sweeps as before
+    CHECK(barWithStall(parseLine("phase 9/9|install-binary|0|0").progress, 500, 0).indeterminate);
+}
+
+TEST_CASE("the stall clock: a change of phase, package or count starts the second again") {
+    StallClock clock;
+    Progress p = parseLine("phase 3/9|download-cores|10|100|bytes|a.tar.gz|1|9").progress;
+    clock.feed(1000, p);
+    CHECK(clock.stalledMs(1000) == 0);
+    clock.feed(1900, p);
+    CHECK(clock.stalledMs(1900) == 900);
+    CHECK(barWithStall(p, 0, clock.stalledMs(1900)).indeterminate == false);
+    clock.feed(2100, p);
+    CHECK(clock.stalledMs(2100) == 1100);
+    CHECK(barWithStall(p, 0, clock.stalledMs(2100)).overReal);
+
+    p.done = 11; // done moved
+    clock.feed(2200, p);
+    CHECK(clock.stalledMs(2200) == 0);
+    clock.feed(3000, p);
+    p.item = "b.tar.gz";
+    p.itemIndex = 2; // another package
+    clock.feed(3300, p);
+    CHECK(clock.stalledMs(3300) == 0);
+    clock.feed(4000, p);
+    p.phase = 4; // another phase
+    clock.feed(4100, p);
+    CHECK(clock.stalledMs(4100) == 0);
+    clock.feed(5300, p);
+    CHECK(clock.stalledMs(5300) == 1200);
+    clock.reset();
+    CHECK(clock.stalledMs(9000) == 0);
+}
+
+TEST_CASE("the Remove confirm lists: eight deleted with the BIOS files, seven without; six stay") {
+    RemoveLists lists = removeLists(false);
+    CHECK(lists.deleted.size() == 7);
+    CHECK(lists.stays.size() == 6);
+    lists = removeLists(true);
+    REQUIRE(lists.deleted.size() == 8);
+    CHECK(lists.deleted.back() == RemoveItem::Bios);
+    CHECK(std::count(lists.stays.begin(), lists.stays.end(), RemoveItem::Playlists) == 1);
+    CHECK(std::count(lists.stays.begin(), lists.stays.end(), RemoveItem::Covers) == 1);
+}
+
+TEST_CASE("the meter's words: speed with the language's decimal, time rounded") {
+    CHECK(speedText(2400000, '.') == "2.4 MB/s");
+    CHECK(speedText(2400000, ',') == "2,4 MB/s");
+    CHECK(speedText(350000, '.') == "350 KB/s");
+    CHECK(roughDuration(60) == "1 min");
+    CHECK(roughDuration(200) == "3 min");
+    CHECK(roughDuration(42) == "40 s");
+    CHECK(roughDuration(1) == "5 s");
+    CHECK(roughDuration(-1) == "");
 }
 
 TEST_CASE("the whole job's bar: phase i of n at fraction f is (i - 1 + f) / n") {
@@ -428,13 +547,16 @@ TEST_CASE("the download's speed is smoothed and the time left follows it") {
     meter.feed(0, 0);
     meter.feed(100, 1000000); // too short: not counted
     CHECK_FALSE(meter.known());
-    meter.feed(1000, 1000000); // 1 MB/s
-    REQUIRE(meter.known());
+    meter.feed(1000, 1000000); // 1 MB/s: the first sample, no number shown yet
     CHECK(meter.bytesPerSecond() == doctest::Approx(1000000));
+    CHECK_FALSE(meter.known());
     meter.feed(2000, 3000000); // 2 MB/s now, but only a quarter of the weight
+    CHECK_FALSE(meter.known());
     CHECK(meter.bytesPerSecond() > 1000000);
     CHECK(meter.bytesPerSecond() < 1500000);
-    meter.feed(3000, 3000000 - 1); // done going back (a new package): starts again
+    meter.feed(3000, 5000000); // the third sample: now it is believed
+    CHECK(meter.known());
+    meter.feed(4000, 5000000 - 1); // done going back (a new package): starts again
     CHECK_FALSE(meter.known());
     CHECK(humanDuration(45) == "45 s");
     CHECK(humanDuration(200) == "3 min 20 s");
