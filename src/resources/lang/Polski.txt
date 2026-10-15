@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 726
+# Untranslated: 0 / Total: 730
 
 %1 needs game data it can run: %2.=%1 potrzebuje danych gry, które potrafi uruchomić: %2.
 %1 sectors could not be read and were written as zeros.=Nie udało się odczytać %1 sektorów - zapisano je jako zera.
@@ -215,6 +215,7 @@ Needs the CRT (raster) filter=Wymaga filtra CRT (raster)
 no card yet=jeszcze brak karty
 Not available for a disc in the drive=Niedostępne dla płyty w napędzie
 Not enough room in Games: the copy needs %1, %2 is free.=Za mało miejsca w Games: kopia potrzebuje %1, wolne jest %2.
+Not enough space to unpack the theme.=Za mało miejsca, aby rozpakować motyw.
 Not saved: this game has no pcsx.cfg=Nie zapisano: ta gra nie ma pliku pcsx.cfg
 Opening the downloaded packages onto the stick.=Rozpakowywanie pobranych pakietów na pendrive.
 Overlays=Nakładki
@@ -586,8 +587,11 @@ The parts downloaded so far are kept. Choose Install again to carry on. RetroArc
 The parts downloaded so far are kept. Choose Update again to carry on. RetroArch was not changed.=Dotychczas pobrane części są zachowane. Wybierz ponownie Aktualizuj, aby kontynuować. RetroArch nie został zmieniony.
 The RetroArch program itself.=Sam program RetroArch.
 The Store is not installed=Sklep nie jest zainstalowany
+The theme zip could not be unpacked.=Nie udało się rozpakować pliku zip motywu.
+The theme zip is broken.=Plik zip motywu jest uszkodzony.
 The update is downloaded - the installer is opening...=Aktualizacja pobrana - otwieranie instalatora...
 Theme Hospital data=Dane Theme Hospital
+Theme not found, using the default theme.=Nie znaleziono motywu, używany jest motyw domyślny.
 Theme switched to the default (CRT 4:3)=Motyw zmieniony na domyślny (CRT 4:3)
 There is no network connection=Brak połączenia z siecią
 There is not enough free space=Za mało wolnego miejsca

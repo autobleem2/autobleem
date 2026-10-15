@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 726
+# Untranslated: 0 / Total: 730
 
 %1 needs game data it can run: %2.=%1 需要它能运行的游戏数据：%2。
 %1 sectors could not be read and were written as zeros.=有 %1 个扇区无法读取，已写入为零。
@@ -215,6 +215,7 @@ Needs the CRT (raster) filter=需要 CRT (raster) 滤镜
 no card yet=尚无记忆卡
 Not available for a disc in the drive=光驱中的光盘不可用
 Not enough room in Games: the copy needs %1, %2 is free.=Games 空间不足：复制需要 %1，可用空间 %2。
+Not enough space to unpack the theme.=空间不足，无法解压主题。
 Not saved: this game has no pcsx.cfg=未保存：此游戏没有 pcsx.cfg
 Opening the downloaded packages onto the stick.=正在把下载的软件包解压到U盘上。
 Overlays=叠加层
@@ -586,8 +587,11 @@ The parts downloaded so far are kept. Choose Install again to carry on. RetroArc
 The parts downloaded so far are kept. Choose Update again to carry on. RetroArch was not changed.=已下载的部分会保留。再次选择“更新”即可继续。RetroArch 未被更改。
 The RetroArch program itself.=RetroArch 程序本身。
 The Store is not installed=商店未安装
+The theme zip could not be unpacked.=无法解压主题压缩包。
+The theme zip is broken.=主题压缩包已损坏。
 The update is downloaded - the installer is opening...=更新已下载 - 正在打开安装程序...
 Theme Hospital data=Theme Hospital 数据
+Theme not found, using the default theme.=找不到主题，改用默认主题。
 Theme switched to the default (CRT 4:3)=主题已切换为默认主题 (CRT 4:3)
 There is no network connection=没有网络连接
 There is not enough free space=可用空间不足

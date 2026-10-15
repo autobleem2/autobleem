@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 726
+# Untranslated: 1 / Total: 730
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors an pas pogut èsser legits e son estats escrits coma zèros.
@@ -215,6 +215,7 @@ Needs the CRT (raster) filter=Requerís lo filtre CRT (raster)
 no card yet=pas encara de carta
 Not available for a disc in the drive=Pas disponible per un disc dins lo lector
 Not enough room in Games: the copy needs %1, %2 is free.=Pas pro de plaça dins Games : la còpia ten besonh de %1, %2 son liures.
+Not enough space to unpack the theme.=I a pas pro d'espaci per descomprimir lo tèma.
 Not saved: this game has no pcsx.cfg=Pas enregistrat : aqueste jòc a pas de pcsx.cfg
 Opening the downloaded packages onto the stick.=Los paquets telecargats son descompressats sus la clau.
 Overlays=Superposicions
@@ -586,8 +587,11 @@ The parts downloaded so far are kept. Choose Install again to carry on. RetroArc
 The parts downloaded so far are kept. Choose Update again to carry on. RetroArch was not changed.=Las partidas ja telecargadas son conservadas. Tornatz causir Metre a jorn per contunhar. RetroArch es pas estat modificat.
 The RetroArch program itself.=Lo programa RetroArch eu-meteis.
 The Store is not installed=La Botiga es pas installada
+The theme zip could not be unpacked.=Lo zip del tèma a pas pogut èsser descomprimit.
+The theme zip is broken.=Lo zip del tèma es corromput.
 The update is downloaded - the installer is opening...=La mesa a jorn es telecargada - l'installador se dobrís...
 Theme Hospital data=Donadas Theme Hospital
+Theme not found, using the default theme.=Tèma pas trobat, lo tèma per defaut es utilizat.
 Theme switched to the default (CRT 4:3)=Tèma remplaçat pel tèma per defaut (CRT 4:3)
 There is no network connection=Cap de connexion al malhum
 There is not enough free space=Pas pro d'espaci liure

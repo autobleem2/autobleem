@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 726
+# Untranslated: 0 / Total: 730
 
 %1 needs game data it can run: %2.=%1 har brug for spildata, den kan køre: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunne ikke læses og blev skrevet som nuller.
@@ -215,6 +215,7 @@ Needs the CRT (raster) filter=Kræver filteret CRT (raster)
 no card yet=intet kort endnu
 Not available for a disc in the drive=Ikke tilgængelig for en disk i drevet
 Not enough room in Games: the copy needs %1, %2 is free.=Ikke plads nok i Games: kopien skal bruge %1, %2 er ledig.
+Not enough space to unpack the theme.=Der er ikke plads nok til at pakke temaet ud.
 Not saved: this game has no pcsx.cfg=Ikke gemt: spillet har ingen pcsx.cfg
 Opening the downloaded packages onto the stick.=De hentede pakker pakkes ud på stikket.
 Overlays=Overlays
@@ -586,8 +587,11 @@ The parts downloaded so far are kept. Choose Install again to carry on. RetroArc
 The parts downloaded so far are kept. Choose Update again to carry on. RetroArch was not changed.=De dele, der er downloadet indtil nu, er gemt. Vælg Opdater igen for at fortsætte. RetroArch blev ikke ændret.
 The RetroArch program itself.=Selve RetroArch-programmet.
 The Store is not installed=Store er ikke installeret
+The theme zip could not be unpacked.=Temaets zip-fil kunne ikke pakkes ud.
+The theme zip is broken.=Temaets zip-fil er beskadiget.
 The update is downloaded - the installer is opening...=Opdateringen er hentet - installationsprogrammet åbnes...
 Theme Hospital data=Theme Hospital-data
+Theme not found, using the default theme.=Temaet blev ikke fundet, standardtemaet bruges.
 Theme switched to the default (CRT 4:3)=Tema skiftet til standardtemaet (CRT 4:3)
 There is no network connection=Ingen netværksforbindelse
 There is not enough free space=Der er ikke nok ledig plads
