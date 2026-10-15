@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunde inte läsas och skrevs som nollor.
@@ -512,6 +512,7 @@ Select slot to save state=VÄLJ PLATS ATT SPARA TILL
 SERIAL=SERIENUMMER
 Serial:=Serienummer:
 Settings=INSTÄLLNINGAR
+Settings (stays)=Inställningar
 Shaders=Shaders
 Shadow Warrior data=Shadow Warrior-data
 Share memory card=Dela minneskort
@@ -552,6 +553,7 @@ Startup:=Uppstart:
 Stays on the stick=Finns kvar på minnet
 Step %s of %s=Steg %s av %s
 Stop keeps everything downloaded so far - Install carries on later.=Stopp behåller allt som hittills laddats ner - Installera fortsätter senare.
+Stop keeps everything downloaded so far - Update carries on later.=Stopp behåller allt som hittills laddats ner - Uppdatera fortsätter senare.
 Stop?=Stoppa?
 Stopped - run it again to carry on where it left off=Stoppad - kör igen för att fortsätta där den slutade
 stopped AutoBleem and was disabled=stoppade AutoBleem och inaktiverades
@@ -618,6 +620,7 @@ cannot write pending.json=kan inte skriva pending.json
 Update RetroArch=Uppdatera RetroArch
 Update stopped=Uppdateringen stoppad
 Updating RetroArch=Uppdaterar RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Det tar cirka 10-15 minuter att uppdatera RetroArch på konsolen: cirka 400 MB ska laddas ner och tiotusentals små filer ska skrivas.
 Version %s is ready - start it from the System menu.=Version %s är klar - starta den från Systemmenyn.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Version %s är klar - starta den från Systemmenyn. Ledigt på sticket: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Vi behåller din retroarch.cfg och lägger till den här versionens nycklar och AutoBleem-temat.

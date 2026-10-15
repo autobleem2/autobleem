@@ -1160,42 +1160,63 @@ void GuiLauncher::loop_raManager() {
     if (updateConfig.networkUp)
         networkUp = updateConfig.networkUp();
 #endif
-    RaChoice choice;
-    {
-        GuiRaManager panel(*gui);
-        panel.installed = Env::retroArchInstalled();
-        panel.networkUp = networkUp;
-        if (panel.installed)
-            panel.version = RaJobService::installedVersion();
-        panel.spaceKnown = RaJobService::stickSpace(panel.freeBytes, panel.totalBytes); // one statvfs, no tree walk
-        panel.show();
-        choice = panel.result;
-    }
-    if (choice == RaChoice::None)
-        return;
+    RaChoice choice = RaChoice::None;
+    rajob::Op op = rajob::Op::Install;
+    rajob::RowAction keptRow = rajob::RowAction::Install;
+    bool keepRow = false;
+    // the panel, then the box for its choice; a Cancel in the box comes back to the panel with the same row selected
+    for (;;) {
+        {
+            GuiRaManager panel(*gui);
+            panel.installed = Env::retroArchInstalled();
+            panel.networkUp = networkUp;
+            if (panel.installed)
+                panel.version = RaJobService::installedVersion();
+            panel.spaceKnown = RaJobService::stickSpace(panel.freeBytes, panel.totalBytes); // one statvfs, no tree walk
+            panel.keepRow = keepRow;
+            panel.startRow = keptRow;
+            panel.show();
+            choice = panel.result;
+            keptRow = panel.chosenRow;
+        }
+        if (choice == RaChoice::None)
+            return;
+        keepRow = true;
 
-    const rajob::Op op = choice == RaChoice::Install  ? rajob::Op::Install
-                         : choice == RaChoice::Update ? rajob::Op::Update
-                                                      : rajob::Op::Remove;
-    if (rajob::noticeFirst(op)) {
-        GuiRaNotice notice(*gui);
-        notice.title = _("Before you start");
-        notice.label = _("Installing RetroArch takes about 10-15 minutes on the console: about 400 MB to download and "
-                         "tens of thousands of small files to write.");
-        notice.bullets = {_("Keep the console on and the stick in."),
-                          _("Stop keeps everything downloaded so far - Install carries on later.")};
-        notice.accent = _("A good moment to go and make a coffee.");
-        notice.confirmLabel = _("Start");
-        notice.cancelLabel = _("Cancel");
-        notice.show();
-        if (!notice.result)
-            return;
-    } else {
-        GuiRaRemoveConfirm confirm(*gui);
-        confirm.withBios = choice == RaChoice::RemoveWithBios;
-        confirm.show();
-        if (!confirm.result)
-            return;
+        op = choice == RaChoice::Install  ? rajob::Op::Install
+             : choice == RaChoice::Update ? rajob::Op::Update
+                                          : rajob::Op::Remove;
+        bool confirmed = false;
+        if (rajob::noticeFirst(op)) {
+            const bool update = op == rajob::Op::Update;
+            GuiRaNotice notice(*gui);
+            notice.title = _("Before you start");
+            if (update) {
+                notice.label =
+                    _("Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and "
+                      "tens of thousands of small files to write.");
+                notice.bullets = {_("Keep the console on and the stick in."),
+                                  _("Stop keeps everything downloaded so far - Update carries on later.")};
+            } else {
+                notice.label =
+                    _("Installing RetroArch takes about 10-15 minutes on the console: about 400 MB to download and "
+                      "tens of thousands of small files to write.");
+                notice.bullets = {_("Keep the console on and the stick in."),
+                                  _("Stop keeps everything downloaded so far - Install carries on later.")};
+            }
+            notice.accent = _("A good moment to go and make a coffee.");
+            notice.confirmLabel = _("Start");
+            notice.cancelLabel = _("Cancel");
+            notice.show();
+            confirmed = notice.result;
+        } else {
+            GuiRaRemoveConfirm confirm(*gui);
+            confirm.withBios = choice == RaChoice::RemoveWithBios;
+            confirm.show();
+            confirmed = confirm.result;
+        }
+        if (confirmed)
+            break;
     }
 
     RaJobService job;
@@ -1239,7 +1260,8 @@ void GuiLauncher::loop_raManager() {
                 version = "?";
             if (RaJobService::stickSpace(freeBytes, totalBytes))
                 message = fill(_("Version %s is ready - start it from the System menu. Free on the stick: %s"),
-                               {version, rajob::humanSpace(freeBytes)});
+                               {version, rajob::withDecimal(rajob::humanSpace(freeBytes),
+                                                            _("decimal point") == "," ? ',' : '.')});
             else
                 message = fill(_("Version %s is ready - start it from the System menu."), {version});
         }

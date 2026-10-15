@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 需要它能运行的游戏数据：%2。
 %1 sectors could not be read and were written as zeros.=有 %1 个扇区无法读取，已写入为零。
@@ -512,6 +512,7 @@ Select slot to save state=选择保存状态的槽位
 SERIAL=序列号
 Serial:=序列号：
 Settings=设置
+Settings (stays)=设置
 Shaders=着色器
 Shadow Warrior data=Shadow Warrior 数据
 Share memory card=共享记忆卡
@@ -552,6 +553,7 @@ Startup:=启动脚本：
 Stays on the stick=保留在U盘上
 Step %s of %s=第 %s 步，共 %s 步
 Stop keeps everything downloaded so far - Install carries on later.=停止会保留已下载的所有内容 - 之后继续安装即可。
+Stop keeps everything downloaded so far - Update carries on later.=停止会保留已下载的所有内容 - 之后继续更新即可。
 Stop?=停止？
 Stopped - run it again to carry on where it left off=已停止 - 再次运行即可从中断处继续
 stopped AutoBleem and was disabled=导致 AutoBleem 停止运行，已被禁用
@@ -618,6 +620,7 @@ cannot write pending.json=无法写入 pending.json
 Update RetroArch=更新 RetroArch
 Update stopped=更新已停止
 Updating RetroArch=正在更新 RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=在主机上更新 RetroArch 大约需要 10-15 分钟:需要下载约 400 MB,并写入数万个小文件。
 Version %s is ready - start it from the System menu.=版本 %s 已就绪 - 请从“系统”菜单启动。
 Version %s is ready - start it from the System menu. Free on the stick: %s=版本 %s 已就绪 - 请从“系统”菜单启动。U 盘可用空间:%s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=保留你的 retroarch.cfg，并加入此版本的新设置项和 AutoBleem 主题。

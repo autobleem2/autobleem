@@ -311,10 +311,69 @@ inline std::string displayName(const std::string &item) {
 
 // What a package line calls the package: a plain description. A file name (it has a '.') is never shown - the phase's
 // description stands for it; a plain name (cheats, Retroarch_themes) is shown with spaces for '_'.
-inline std::string packageWhat(const std::string &description, const std::string &item) {
-    if (item.empty() || item.find('.') != std::string::npos)
+// An item that is the phase's own key (check-space, remove-files) is no name either.
+inline std::string packageWhat(const std::string &description, const std::string &item, const std::string &key = "") {
+    if (item.empty() || item.find('.') != std::string::npos || (!key.empty() && item == key))
         return description;
     return displayName(item);
+}
+
+// A number written with the language's decimal sign: every '.' of `text` becomes `decimal` ("30.3 GB" -> "30,3 GB")
+inline std::string withDecimal(const std::string &text, char decimal) {
+    std::string out = text;
+    for (char &c : out)
+        if (c == '.')
+            c = decimal;
+    return out;
+}
+
+// `text` broken at spaces into at most `maxLines` lines, each at most `maxWidth` wide by `measure` (a word wider than
+// a line is cut in letters). Whatever does not fit in the last line is cut off and ends with "...".
+template <typename Measure>
+std::vector<std::string> wrapLines(const std::string &text, int maxWidth, int maxLines, Measure measure) {
+    std::vector<std::string> lines;
+    std::string line;
+    size_t at = 0;
+    bool cut = false;
+    while (at < text.size() && !cut) {
+        size_t end = text.find(' ', at);
+        if (end == std::string::npos)
+            end = text.size();
+        std::string word = text.substr(at, end - at);
+        at = end + 1;
+        if (word.empty())
+            continue;
+        const std::string joined = line.empty() ? word : line + " " + word;
+        if (measure(joined) <= maxWidth) {
+            line = joined;
+            continue;
+        }
+        if (!line.empty()) {
+            lines.push_back(line);
+            line.clear();
+        }
+        // a word of its own: cut in letters while it is wider than a line
+        while (measure(word) > maxWidth && word.size() > 1) {
+            size_t n = word.size() - 1;
+            while (n > 1 && measure(word.substr(0, n)) > maxWidth)
+                n--;
+            lines.push_back(word.substr(0, n));
+            word = word.substr(n);
+        }
+        line = word;
+        if (static_cast<int>(lines.size()) >= maxLines)
+            cut = true;
+    }
+    if (!line.empty() && !cut)
+        lines.push_back(line);
+    if (static_cast<int>(lines.size()) > maxLines || cut) {
+        lines.resize(maxLines);
+        std::string &last = lines.back();
+        while (!last.empty() && measure(last + "...") > maxWidth)
+            last.pop_back();
+        last += "...";
+    }
+    return lines;
 }
 
 // The unit of a phase's numbers: the runner's, or - on an old 4-field line - bytes for a download, items otherwise.

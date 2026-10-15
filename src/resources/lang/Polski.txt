@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 potrzebuje danych gry, które potrafi uruchomić: %2.
 %1 sectors could not be read and were written as zeros.=Nie udało się odczytać %1 sektorów - zapisano je jako zera.
@@ -512,6 +512,7 @@ Select slot to save state=WYBIERZ SLOT DO ZAPISU
 SERIAL=SERIAL
 Serial:=Serial:
 Settings=USTAWIENIA
+Settings (stays)=Ustawienia
 Shaders=Shadery
 Shadow Warrior data=Dane Shadow Warrior
 Share memory card=Udostępnij kartę pamięci
@@ -552,6 +553,7 @@ Startup:=Uruchomienie:
 Stays on the stick=Zostaje na pendrive'ie
 Step %s of %s=Krok %s z %s
 Stop keeps everything downloaded so far - Install carries on later.=Zatrzymanie zachowuje to, co już pobrane - instalacja dokończy później.
+Stop keeps everything downloaded so far - Update carries on later.=Zatrzymanie zachowuje to, co już pobrane - aktualizacja dokończy później.
 Stop?=Zatrzymać?
 Stopped - run it again to carry on where it left off=Zatrzymano - uruchom ponownie, aby kontynuować od miejsca przerwania
 stopped AutoBleem and was disabled=zatrzymało AutoBleem i zostało wyłączone
@@ -618,6 +620,7 @@ cannot write pending.json=nie można zapisać pending.json
 Update RetroArch=Aktualizuj RetroArch
 Update stopped=Aktualizacja zatrzymana
 Updating RetroArch=Aktualizowanie RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Aktualizacja RetroArch trwa na konsoli około 10-15 minut: około 400 MB do pobrania i dziesiątki tysięcy małych plików do zapisania.
 Version %s is ready - start it from the System menu.=Wersja %s jest gotowa - uruchom ją z menu System.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Wersja %s jest gotowa - uruchom ją z menu System. Wolne na pendrivie: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Zachowujemy Twój retroarch.cfg i dodajemy klucze tej wersji oraz motyw AutoBleem.

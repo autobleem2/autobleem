@@ -457,6 +457,44 @@ TEST_CASE("an item's '_' is shown as a space, a file name is replaced by the pha
     CHECK(packageWhat("Downloading emulator cores", "") == "Downloading emulator cores");
 }
 
+TEST_CASE("an item that is the phase's own key is no name: the phase's description is shown") {
+    CHECK(packageWhat("Checking free space", "check-space", "check-space") == "Checking free space");
+    CHECK(packageWhat("Removing files", "remove-files", "remove-files") == "Removing files");
+    CHECK(packageWhat("Downloading emulator cores", "cheats", "download-cores") == "cheats");
+    CHECK(packageWhat("Unpacking", "check-space") == "check-space"); // no key given: the name stays
+}
+
+TEST_CASE("a size is written with the language's decimal sign") {
+    CHECK(withDecimal(humanSpace(30300000000ULL), ',') == "30,3 GB");
+    CHECK(withDecimal(humanSpace(30300000000ULL), '.') == "30.3 GB");
+    CHECK(withDecimal(humanSpace(512000000ULL), ',') == "512,0 MB");
+    CHECK(withDecimal(amountFor(3800000, 8000000, "bytes").done, ',') == "3,8");
+    CHECK(withDecimal("128", ',') == "128");
+    CHECK(withDecimal("", ',') == "");
+}
+
+TEST_CASE("a why line wraps to at most two lines and is cut with an ellipsis only when it must") {
+    const auto measure = [](const std::string &s) { return static_cast<int>(s.size()); }; // one unit a letter
+    const std::string why = "We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.";
+    CHECK(wrapLines("", 40, 2, measure).empty());
+    CHECK(wrapLines("Short line.", 40, 2, measure) == std::vector<std::string>{"Short line."});
+    const std::vector<std::string> two = wrapLines(why, 52, 2, measure);
+    REQUIRE(two.size() == 2);
+    CHECK(two[0] == "We keep your retroarch.cfg, add this version's keys");
+    CHECK(two[1] == "and the AutoBleem theme.");
+    // too long for two lines: the second ends with "..." and still fits
+    const std::vector<std::string> cut = wrapLines(why, 30, 2, measure);
+    REQUIRE(cut.size() == 2);
+    CHECK(cut[1].size() <= 30);
+    CHECK(cut[1].substr(cut[1].size() - 3) == "...");
+    CHECK(wrapLines(why, 30, 3, measure).size() == 3);
+    // a word wider than a line is cut in letters
+    const std::vector<std::string> word = wrapLines("abcdefghijkl", 5, 3, measure);
+    REQUIRE(word.size() == 3);
+    CHECK(word[0] == "abcde");
+    CHECK(word[2] == "kl");
+}
+
 TEST_CASE("a bar that stood still for more than a second sweeps over its real value") {
     const Progress p = parseLine("phase 3/9|download-cores|0|1|items|cores|1|9").progress;
     Bar b = barWithStall(p, 5000, 900);

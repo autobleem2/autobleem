@@ -107,9 +107,15 @@ string fill(string format, const vector<string> &args) {
     return format;
 }
 
+// the language's decimal sign: the `decimal point` key is "," or "."
+char decimalSign() {
+    return _("decimal point") == "," ? ',' : '.';
+}
+
 // "128 of 289 MB" / "1200 of 5400 files" / "2 of 4"
 string amountText(const rajob::Amount &amount) {
-    const vector<string> numbers = {amount.done, amount.total};
+    const vector<string> numbers = {rajob::withDecimal(amount.done, decimalSign()),
+                                    rajob::withDecimal(amount.total, decimalSign())};
     switch (amount.kind) {
     case rajob::Amount::Kind::MB:
         return fill(_("%s of %s MB"), numbers);
@@ -153,7 +159,7 @@ string removeItemText(rajob::RemoveItem item) {
     case rajob::RemoveItem::SaveStates:
         return _("Save states");
     case rajob::RemoveItem::Settings:
-        return _("Settings");
+        return _("Settings (stays)");
     }
     return "";
 }
@@ -228,7 +234,7 @@ void GuiRaNotice::draw() {
     if (!accent.empty()) {
         rows.push_back({"", style.text});
         for (const string &row : abgui::wrapText(accent, width, measure))
-            rows.push_back({row, style.secondary});
+            rows.push_back({row, style.selectionBand}); // the colour of the selection / the progress fill
     }
     const int textHeight = static_cast<int>(rows.size()) * font.lineHeight();
     const abgui::Panel panel(panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth),
@@ -275,7 +281,8 @@ string GuiRaManager::summary(bool installed, const string &version) {
 }
 
 string GuiRaManager::spaceLine(uint64_t freeBytes, uint64_t totalBytes) {
-    return fill(_("%s free of %s"), {rajob::humanSpace(freeBytes), rajob::humanSpace(totalBytes)});
+    return fill(_("%s free of %s"), {rajob::withDecimal(rajob::humanSpace(freeBytes), decimalSign()),
+                                     rajob::withDecimal(rajob::humanSpace(totalBytes), decimalSign())});
 }
 
 string GuiRaManager::titleOf(rajob::RowAction action) const {
@@ -329,6 +336,13 @@ void GuiRaManager::init() {
             break;
         }
     rebuild();
+    if (keepRow) {
+        // the row the user came back from - the BIOS row exists only while Remove is the chosen one
+        rows_ = rajob::panelRows(installed, networkUp, startRow);
+        for (int i = 0; i < static_cast<int>(rows_.size()); i++)
+            if (rows_[i].action == startRow)
+                selected = i;
+    }
     result = RaChoice::None;
     style = gui->panelStyle();
 }
@@ -422,6 +436,7 @@ void GuiRaManager::loop() {
                         break;
                     }
                     app.audio().cursor.play();
+                    chosenRow = row.action;
                     switch (row.action) {
                     case rajob::RowAction::Install:
                         result = RaChoice::Install;
@@ -583,7 +598,7 @@ void GuiRaProgress::draw() {
     // the package line (bold): "<what> - 128 of 289 MB", "Package 3 of 9" at its right
     string package;
     if (p.phase > 0) {
-        package = rajob::packageWhat(phaseTitle(p.key), p.item);
+        package = rajob::packageWhat(phaseTitle(p.key), p.item, p.key);
         if (p.total > 0)
             package += " - " + amountText(rajob::amountFor(p));
     }
@@ -596,13 +611,13 @@ void GuiRaProgress::draw() {
     if (op == rajob::Op::Remove)
         meterLine = _("Please wait - this takes about half a minute");
     else if (downloading && meter.known()) {
-        const char decimal = _("decimal point") == "," ? ',' : '.';
+        const char decimal = decimalSign();
         const double secondsLeft = meter.secondsLeft(p.total - min(p.done, p.total));
         const string timeLeft = fill(_("About %s left"), {rajob::roughDuration(secondsLeft)});
         meterLine = timeLeft + " \xC2\xB7 " + rajob::speedText(meter.bytesPerSecond(), decimal);
     }
 
-    const int bodyHeight = 12 + LineHeight + 34 + 36 + 34 + 2 * LineHeight + 12;
+    const int bodyHeight = 12 + LineHeight + 34 + 36 + 34 + 3 * LineHeight + 12; // the why takes up to two lines
     const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
     ableem::Rect panel = drawPanel(
         *gui, style, panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], jobLine}}), panelHeight);
@@ -649,8 +664,15 @@ void GuiRaProgress::draw() {
         style.plate(gui->uiContext(), ableem::Rect(markX, packageBar.y + 2, markWidth, packageBar.h - 4), mark);
     }
     y += 34;
-    put(fonts[FONT_22_MED], why, left, y, inner, style.description);
-    y += LineHeight;
+    // the why wraps to two lines of the panel; the meter keeps its place under both
+    const int whyTop = y;
+    const ableem::Font &whyFont = fonts[FONT_22_MED];
+    const auto measure = [&](const string &s) { return gui->text().textWidth(whyFont, s); };
+    for (const string &line : rajob::wrapLines(why, inner, 2, measure)) {
+        put(whyFont, line, left, y, inner, style.description);
+        y += LineHeight;
+    }
+    y = whyTop + 2 * LineHeight;
     put(fonts[FONT_22_MED], meterLine, left, y, inner, style.description);
 
     const bool canStop = rajob::stopAllowed(op) && !stopping;

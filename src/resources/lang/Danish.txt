@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 har brug for spildata, den kan køre: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunne ikke læses og blev skrevet som nuller.
@@ -512,6 +512,7 @@ Select slot to save state=VÆLG SLOT AT GEMME I
 SERIAL=SERIENUMMER
 Serial:=Serienummer:
 Settings=INDSTILLINGER
+Settings (stays)=Indstillinger
 Shaders=Shaders
 Shadow Warrior data=Shadow Warrior-data
 Share memory card=Del memory card
@@ -552,6 +553,7 @@ Startup:=Opstart:
 Stays on the stick=Bliver på stikket
 Step %s of %s=Trin %s af %s
 Stop keeps everything downloaded so far - Install carries on later.=Stop beholder alt, der er downloadet indtil nu - Installer fortsætter senere.
+Stop keeps everything downloaded so far - Update carries on later.=Stop beholder alt, der er downloadet indtil nu - Opdater fortsætter senere.
 Stop?=Stop?
 Stopped - run it again to carry on where it left off=Stoppet - kør igen for at fortsætte, hvor den slap
 stopped AutoBleem and was disabled=stoppede AutoBleem og blev deaktiveret
@@ -618,6 +620,7 @@ cannot write pending.json=kan ikke skrive pending.json
 Update RetroArch=Opdater RetroArch
 Update stopped=Opdateringen er stoppet
 Updating RetroArch=Opdaterer RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Det tager cirka 10-15 minutter at opdatere RetroArch på konsollen: cirka 400 MB skal downloades, og titusindvis af små filer skal skrives.
 Version %s is ready - start it from the System menu.=Version %s er klar - start den fra Systemmenuen.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Version %s er klar - start den fra Systemmenuen. Ledigt på stikket: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Vi beholder din retroarch.cfg og tilføjer denne versions nøgler og AutoBleem-temaet.

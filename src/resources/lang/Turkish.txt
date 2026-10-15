@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektör okunamadı ve sıfır olarak yazıldı.
@@ -512,6 +512,7 @@ Select slot to save state=KAYDETMEK İÇİN SLOT SEÇİN
 SERIAL=SERİ NO
 Serial:=Seri no:
 Settings=AYARLAR
+Settings (stays)=Ayarlar
 Shaders=Gölgelendiriciler
 Shadow Warrior data=Shadow Warrior verisi
 Share memory card=Hafıza kartını paylaş
@@ -552,6 +553,7 @@ Startup:=Başlatma:
 Stays on the stick=Bellekte kalır
 Step %s of %s=Adım %s / %s
 Stop keeps everything downloaded so far - Install carries on later.=Durdur, şimdiye kadar indirilenlerin hepsini saklar - Kur daha sonra devam eder.
+Stop keeps everything downloaded so far - Update carries on later.=Durdur, şimdiye kadar indirilenlerin hepsini saklar - Güncelle daha sonra devam eder.
 Stop?=Durdurulsun mu?
 Stopped - run it again to carry on where it left off=Durduruldu - kaldığı yerden devam etmek için tekrar çalıştırın
 stopped AutoBleem and was disabled=AutoBleem'i durdurdu ve devre dışı bırakıldı
@@ -618,6 +620,7 @@ cannot write pending.json=pending.json yazılamıyor
 Update RetroArch=RetroArch'ı güncelle
 Update stopped=Güncelleme durduruldu
 Updating RetroArch=RetroArch güncelleniyor
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=RetroArch'ın konsolda güncellenmesi yaklaşık 10-15 dakika sürer: yaklaşık 400 MB indirilecek ve on binlerce küçük dosya yazılacak.
 Version %s is ready - start it from the System menu.=%s sürümü hazır - Sistem menüsünden başlatın.
 Version %s is ready - start it from the System menu. Free on the stick: %s=%s sürümü hazır - Sistem menüsünden başlatın. Bellekte boş alan: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=retroarch.cfg dosyanızı koruyoruz; bu sürümün anahtarlarını ve AutoBleem temasını ekliyoruz.

@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 needs game data it can run: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors could not be read and were written as zeros.
@@ -512,6 +512,7 @@ Select slot to save state=Select slot to save state
 SERIAL=SERIAL
 Serial:=Serial:
 Settings=Settings
+Settings (stays)=Settings (stays)
 Shaders=Shaders
 Shadow Warrior data=Shadow Warrior data
 Share memory card=Share memory card
@@ -552,6 +553,7 @@ Startup:=Startup:
 Stays on the stick=Stays on the stick
 Step %s of %s=Step %s of %s
 Stop keeps everything downloaded so far - Install carries on later.=Stop keeps everything downloaded so far - Install carries on later.
+Stop keeps everything downloaded so far - Update carries on later.=Stop keeps everything downloaded so far - Update carries on later.
 Stop?=Stop?
 Stopped - run it again to carry on where it left off=Stopped - run it again to carry on where it left off
 stopped AutoBleem and was disabled=stopped AutoBleem and was disabled
@@ -618,6 +620,7 @@ cannot write pending.json=cannot write pending.json
 Update RetroArch=Update RetroArch
 Update stopped=Update stopped
 Updating RetroArch=Updating RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.
 Version %s is ready - start it from the System menu.=Version %s is ready - start it from the System menu.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Version %s is ready - start it from the System menu. Free on the stick: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.

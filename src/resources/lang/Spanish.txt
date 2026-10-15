@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 necesita datos de juego que pueda ejecutar: %2.
 %1 sectors could not be read and were written as zeros.=No se pudieron leer %1 sectores y se escribieron como ceros.
@@ -512,6 +512,7 @@ Select slot to save state=ELIGE LA RANURA PARA GUARDAR
 SERIAL=SERIAL
 Serial:=Serial:
 Settings=AJUSTES
+Settings (stays)=Ajustes
 Shaders=Shaders
 Shadow Warrior data=Datos de Shadow Warrior
 Share memory card=Compartir memory card
@@ -552,6 +553,7 @@ Startup:=Inicio:
 Stays on the stick=Se queda en la memoria
 Step %s of %s=Paso %s de %s
 Stop keeps everything downloaded so far - Install carries on later.=Detener conserva todo lo descargado hasta ahora - Instalar continúa más tarde.
+Stop keeps everything downloaded so far - Update carries on later.=Detener conserva todo lo descargado hasta ahora - Actualizar continúa más tarde.
 Stop?=¿Detener?
 Stopped - run it again to carry on where it left off=Detenido - ejecútalo de nuevo para continuar donde se quedó
 stopped AutoBleem and was disabled=detuvo AutoBleem y se desactivó
@@ -618,6 +620,7 @@ cannot write pending.json=no se puede escribir pending.json
 Update RetroArch=Actualizar RetroArch
 Update stopped=Actualización detenida
 Updating RetroArch=Actualizando RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Actualizar RetroArch en la consola tarda unos 10-15 minutos: unos 400 MB que descargar y decenas de miles de archivos pequeños que escribir.
 Version %s is ready - start it from the System menu.=La versión %s está lista - inícialo desde el menú Sistema.
 Version %s is ready - start it from the System menu. Free on the stick: %s=La versión %s está lista - inícialo desde el menú Sistema. Libre en la memoria USB: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Conservamos tu retroarch.cfg y añadimos las claves de esta versión y el tema de AutoBleem.

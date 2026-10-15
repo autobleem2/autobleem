@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 723
+# Untranslated: 1 / Total: 726
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors an pas pogut èsser legits e son estats escrits coma zèros.
@@ -512,6 +512,7 @@ Select slot to save state=CAUSISSÈTZ UN EMPLAÇAMENT PER ENREGISTRAR L'ESTAT
 SERIAL=NUMÈRO DE SERIA
 Serial:=Numèro de seria :
 Settings=PARAMÈTRES
+Settings (stays)=Paramètres
 Shaders=Shaders
 Shadow Warrior data=Donadas Shadow Warrior
 Share memory card=Partejar la carta memòria
@@ -552,6 +553,7 @@ Startup:=Aviada
 Stays on the stick=Demòra sus la clau
 Step %s of %s=Etapa %s sus %s
 Stop keeps everything downloaded so far - Install carries on later.=Arrèst conserva tot çò ja telecargat - Installar contunha mai tard.
+Stop keeps everything downloaded so far - Update carries on later.=Arrèst conserva tot çò ja telecargat - Metre a jorn contunha mai tard.
 Stop?=Arrestar ?
 Stopped - run it again to carry on where it left off=Arrestat - relançatz per tornar préner ont s'èra arrestat
 stopped AutoBleem and was disabled=a arrestat AutoBleem e es estada desactivada
@@ -618,6 +620,7 @@ cannot write pending.json=impossible d'escriure pending.json
 Update RetroArch=Metre a jorn RetroArch
 Update stopped=Mesa a jorn arrestada
 Updating RetroArch=Mesa a jorn de RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=La mesa a jorn de RetroArch dura environ 10-15 minutas sus la consòla : environ 400 Mo de telecargar e de desenas de miliers de pichons fichièrs d'escriure.
 Version %s is ready - start it from the System menu.=La version %s es prèsta - lançatz-la dempuèi lo menut Sistèma.
 Version %s is ready - start it from the System menu. Free on the stick: %s=La version %s es prèsta - lançatz-la dempuèi lo menut Sistèma. Liure sus la clau : %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Gardam vòstre retroarch.cfg e apondèm las claus d'aquesta version e lo tèma AutoBleem.

@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoare nu au putut fi citite și au fost scrise ca zerouri.
@@ -512,6 +512,7 @@ Select slot to save state=Selectează SLOT pentru a salva starea curentă
 SERIAL=SERIE
 Serial:=Serie:
 Settings=SETĂRI
+Settings (stays)=Setări
 Shaders=Shadere
 Shadow Warrior data=Date Shadow Warrior
 Share memory card=Partajează cardul de memorie
@@ -552,6 +553,7 @@ Startup:=Pornire:
 Stays on the stick=Rămâne pe stick
 Step %s of %s=Pasul %s din %s
 Stop keeps everything downloaded so far - Install carries on later.=Oprirea păstrează tot ce s-a descărcat până acum - Instalează continuă mai târziu.
+Stop keeps everything downloaded so far - Update carries on later.=Oprirea păstrează tot ce s-a descărcat până acum - Actualizează continuă mai târziu.
 Stop?=Oprești?
 Stopped - run it again to carry on where it left off=Oprit - rulează din nou pentru a continua de unde a rămas
 stopped AutoBleem and was disabled=a oprit AutoBleem și a fost dezactivată
@@ -618,6 +620,7 @@ cannot write pending.json=nu se poate scrie pending.json
 Update RetroArch=Actualizează RetroArch
 Update stopped=Actualizare oprită
 Updating RetroArch=Se actualizează RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Actualizarea RetroArch durează aproximativ 10-15 minute pe consolă: aproximativ 400 MB de descărcat și zeci de mii de fișiere mici de scris.
 Version %s is ready - start it from the System menu.=Versiunea %s este gata - pornește-o din meniul Sistem.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Versiunea %s este gata - pornește-o din meniul Sistem. Liber pe stick: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Păstrăm retroarch.cfg-ul tău și adăugăm cheile acestei versiuni și tema AutoBleem.

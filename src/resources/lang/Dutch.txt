@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 heeft gamedata nodig die het kan uitvoeren: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoren konden niet gelezen worden en zijn als nullen geschreven.
@@ -512,6 +512,7 @@ Select slot to save state=SELECTEER SLOT OM OP TE SLAAN
 SERIAL=SERIENUMMER
 Serial:=Serienummer:
 Settings=INSTELLINGEN
+Settings (stays)=Instellingen
 Shaders=Shaders
 Shadow Warrior data=Shadow Warrior-data
 Share memory card=Memory card delen
@@ -552,6 +553,7 @@ Startup:=Opstarten:
 Stays on the stick=Blijft op de stick
 Step %s of %s=Stap %s van %s
 Stop keeps everything downloaded so far - Install carries on later.=Stop bewaart alles wat tot nu toe is gedownload - Installeren gaat later verder.
+Stop keeps everything downloaded so far - Update carries on later.=Stop bewaart alles wat tot nu toe is gedownload - Bijwerken gaat later verder.
 Stop?=Stoppen?
 Stopped - run it again to carry on where it left off=Gestopt - voer het opnieuw uit om verder te gaan waar het bleef
 stopped AutoBleem and was disabled=heeft AutoBleem gestopt en is uitgeschakeld
@@ -618,6 +620,7 @@ cannot write pending.json=kan pending.json niet schrijven
 Update RetroArch=RetroArch bijwerken
 Update stopped=Update gestopt
 Updating RetroArch=RetroArch wordt bijgewerkt
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Het bijwerken van RetroArch duurt op de console ongeveer 10-15 minuten: ongeveer 400 MB downloaden en tienduizenden kleine bestanden schrijven.
 Version %s is ready - start it from the System menu.=Versie %s is klaar - start het via het Systeemmenu.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Versie %s is klaar - start het via het Systeemmenu. Vrij op de stick: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=We houden je retroarch.cfg en voegen de sleutels van deze versie en het AutoBleem-thema toe.

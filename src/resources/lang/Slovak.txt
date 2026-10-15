@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 potrebuje herné dáta, ktoré vie spustiť: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorov sa nepodarilo prečítať a boli zapísané ako nuly.
@@ -512,6 +512,7 @@ Select slot to save state=VYBERTE POZÍCIU, NA KTORÚ SA ULOŽÍ ROZOHRANÁ HRA
 SERIAL=SERIAL
 Serial:=Serial:
 Settings=NASTAVENIA
+Settings (stays)=Nastavenia
 Shaders=Shadery
 Shadow Warrior data=Dáta Shadow Warrior
 Share memory card=Zdieľať pamäťovú kartu
@@ -552,6 +553,7 @@ Startup:=Spúšťací skript:
 Stays on the stick=Zostane na disku
 Step %s of %s=Krok %s z %s
 Stop keeps everything downloaded so far - Install carries on later.=Zastavenie zachová všetko doteraz stiahnuté - Inštalácia pokračuje neskôr.
+Stop keeps everything downloaded so far - Update carries on later.=Zastavenie zachová všetko doteraz stiahnuté - Aktualizácia pokračuje neskôr.
 Stop?=Zastaviť?
 Stopped - run it again to carry on where it left off=Zastavené - spustite znova a bude sa pokračovať, kde sa skončilo
 stopped AutoBleem and was disabled=zastavilo AutoBleem a bolo vypnuté
@@ -618,6 +620,7 @@ cannot write pending.json=nedá sa zapísať pending.json
 Update RetroArch=Aktualizovať RetroArch
 Update stopped=Aktualizácia zastavená
 Updating RetroArch=Aktualizácia RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Aktualizácia RetroArch na konzole trvá asi 10-15 minút: treba stiahnuť asi 400 MB a zapísať desaťtisíce malých súborov.
 Version %s is ready - start it from the System menu.=Verzia %s je pripravená - spustite ju z ponuky Systém.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Verzia %s je pripravená - spustite ju z ponuky Systém. Voľné na disku: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Váš retroarch.cfg zostane, pridáme kľúče tejto verzie a tému AutoBleem.

@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 tarvitsee pelitiedot, joita se osaa ajaa: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektoria ei voitu lukea, ja ne kirjoitettiin nollina.
@@ -512,6 +512,7 @@ Select slot to save state=VALITSE PAIKKA JATKOPISTEELLE
 SERIAL=SARJA
 Serial:=Sarja:
 Settings=ASETUKSET
+Settings (stays)=Asetukset
 Shaders=Varjostimet
 Shadow Warrior data=Shadow Warrior -data
 Share memory card=Jaa muistikortti
@@ -552,6 +553,7 @@ Startup:=Käynnistys:
 Stays on the stick=Säilyy tikulla
 Step %s of %s=Vaihe %s / %s
 Stop keeps everything downloaded so far - Install carries on later.=Pysäytys säilyttää kaiken tähän mennessä ladatun - Asenna jatkaa myöhemmin.
+Stop keeps everything downloaded so far - Update carries on later.=Pysäytys säilyttää kaiken tähän mennessä ladatun - Päivitä jatkaa myöhemmin.
 Stop?=Pysäytetäänkö?
 Stopped - run it again to carry on where it left off=Pysäytetty - suorita uudelleen jatkaaksesi siitä, mihin jäi
 stopped AutoBleem and was disabled=pysäytti AutoBleemin ja poistettiin käytöstä
@@ -618,6 +620,7 @@ cannot write pending.json=pending.json-tiedostoa ei voi kirjoittaa
 Update RetroArch=Päivitä RetroArch
 Update stopped=Päivitys pysäytetty
 Updating RetroArch=Päivitetään RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=RetroArchin päivitys kestää konsolilla noin 10-15 minuuttia: noin 400 Mt ladataan ja kymmeniä tuhansia pieniä tiedostoja kirjoitetaan.
 Version %s is ready - start it from the System menu.=Versio %s on valmis - käynnistä se Järjestelmä-valikosta.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Versio %s on valmis - käynnistä se Järjestelmä-valikosta. Tikulla vapaana: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Säilytämme retroarch.cfg-tiedostosi ja lisäämme tämän version avaimet sekä AutoBleem-teeman.

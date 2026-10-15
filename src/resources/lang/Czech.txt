@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 723
+# Untranslated: 0 / Total: 726
 
 %1 needs game data it can run: %2.=%1 potřebuje herní data, která umí spustit: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorů nešlo přečíst a byly zapsány jako nuly.
@@ -512,6 +512,7 @@ Select slot to save state=VYBERTE POZICI, NA KTEROU SE ULOŽÍ ROZEHRANÁ HRA
 SERIAL=SERIAL
 Serial:=Serial:
 Settings=NASTAVENÍ
+Settings (stays)=Nastavení
 Shaders=Shadery
 Shadow Warrior data=Data Shadow Warrior
 Share memory card=Sdílet paměťovou kartu
@@ -552,6 +553,7 @@ Startup:=Spouštěcí skript:
 Stays on the stick=Zůstane na disku
 Step %s of %s=Krok %s z %s
 Stop keeps everything downloaded so far - Install carries on later.=Zastavení zachová vše dosud stažené - Instalace pokračuje později.
+Stop keeps everything downloaded so far - Update carries on later.=Zastavení zachová vše dosud stažené - Aktualizace pokračuje později.
 Stop?=Zastavit?
 Stopped - run it again to carry on where it left off=Zastaveno - spusťte znovu a pokračuje se, kde to skončilo
 stopped AutoBleem and was disabled=zastavilo AutoBleem a bylo vypnuto
@@ -618,6 +620,7 @@ cannot write pending.json=nelze zapsat pending.json
 Update RetroArch=Aktualizovat RetroArch
 Update stopped=Aktualizace zastavena
 Updating RetroArch=Aktualizace RetroArch
+Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small files to write.=Aktualizace RetroArch na konzoli trvá asi 10-15 minut: je třeba stáhnout asi 400 MB a zapsat desetitisíce malých souborů.
 Version %s is ready - start it from the System menu.=Verze %s je připravena - spusťte ji z menu Systém.
 Version %s is ready - start it from the System menu. Free on the stick: %s=Verze %s je připravena - spusťte ji z menu Systém. Volné místo na disku: %s
 We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.=Váš retroarch.cfg zůstane, přidáme klíče této verze a motiv AutoBleem.

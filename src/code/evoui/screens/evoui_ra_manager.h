@@ -70,6 +70,11 @@ public:
     uint64_t totalBytes = 0;
 
     RaChoice result = RaChoice::None;
+    // the row that was chosen (set when result is not None); give it back as `startRow` with `keepRow` to open the panel
+    // with that row selected again (a Cancel in the box that follows returns here)
+    rajob::RowAction chosenRow = rajob::RowAction::Install;
+    rajob::RowAction startRow = rajob::RowAction::Install;
+    bool keepRow = false;
 
     explicit GuiRaManager(ableem::GuiBase &g) : GuiScreen(g) {}
 
