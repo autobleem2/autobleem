@@ -32,6 +32,7 @@ class Pool(unittest.TestCase):
             mock.patch.object(abvm, 'LOCAL', True),
             mock.patch.object(abvm, 'WHO', 'alice'),
             mock.patch.object(abvm, 'LEASE_KEY', 'vm'),
+            mock.patch.object(abvm, 'vm_prepare', lambda cmd, args: None),  # no VM to wake here
             mock.patch.object(abvm, 'sb_open_modes', lambda p: None),
             mock.patch.object(abvm.subprocess, 'run', side_effect=self.fake_run),
             mock.patch.object(abvm, 'sb_running', lambda n: {'port': 1} if n in self.running else None),

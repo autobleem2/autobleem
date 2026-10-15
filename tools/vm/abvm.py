@@ -93,6 +93,31 @@ of them hung the VM twice, 2026-10-02). ABVM_SANDBOX_SLOTS may only lower it (1)
 that really run in the guest (state files and the guest's own process list) and refuses a third: exit 3, naming the
 running ones - `sandbox stop <name>` (with its lease) frees a slot.
 
+The VM sleeps when nobody uses it (it and the launchers in it kept ~2 CPUs busy for nothing):
+  python tools/vm/abvm.py vm idle-check [--minutes N] [--dry-run]   (N default 20) SUSPENDS the VM (`virsh suspend`: the
+                                                         vCPUs stop, memory stays, `virsh resume` is instant) when ALL
+                                                         hold: no pool slot has a lease, the VM's own lease (the stick
+                                                         launcher) is free, no launcher of a sandbox runs in the guest
+                                                         (orphans count), and nothing used abvm for N minutes. One line:
+                                                         `suspended: ...` | `would suspend: ...` (--dry-run) |
+                                                         `not idle: <the first reason>` | `already suspended` |
+                                                         `not running: <virsh state>`. Exit 0 whatever it decided
+                                                         (a timer must not see a failure for "not idle"); 1 = it could
+                                                         not tell (virsh/ssh error; the VM is then left alone); 2 = usage.
+                                                         The first call with no last-use record only starts the clock.
+  python tools/vm/abvm.py vm ensure-running              resumes a suspended VM ("resuming the VM...") and waits up to
+                                                         60 s for the guest to answer ssh; one line: `running` |
+                                                         `resumed (guest answered after N s)`. Exit 0; 1 = the VM is
+                                                         not there (shut off) or the guest did not answer in 60 s.
+                                                         Every command that needs the guest (status, install, restore,
+                                                         restart, update, remount, clip, pad, run, drive,
+                                                         padsim-install, guest, every sandbox one) calls it first.
+  python tools/vm/abvm.py vm status                      the VM's state, when it was suspended, the last use
+The last use (epoch seconds) is ~/.local/state/abvm/last-use on the test machine, written by every command that takes a
+lease or drives (lock take, the commands needing the lease, every sandbox one but list/logs) and by a resume; the
+suspend is recorded in ~/.local/state/abvm/vm-suspended.json. Run by a timer on the test machine every 5 minutes:
+  ABVM_WHO=keeper python3 ~/.local/share/abvm/abvm.py --local vm idle-check
+
 Scripts: steps separated by ';'. Pad steps: press/release <btn>, hold <btn> <ms>, tap <btn> (a 120 ms hold),
 stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile
 <x360|ds4|ds3|ps3pad|psc|generic> [usb|bt] (the pad replugged as that pad - ds4 over bt is a Bluetooth DualShock 4,
@@ -2101,6 +2126,194 @@ def sb_drive_remote(name, script, out_dir):
         raise failure
 
 
+# ------------------------------------------------------------------ the VM sleeps when unused
+
+STATE_DIR = '~/.local/state/abvm'           # on the test machine, next to the lease
+LAST_USE_FILE = STATE_DIR + '/last-use'     # epoch seconds of the last command that took a lease or drove
+SUSPENDED_FILE = STATE_DIR + '/vm-suspended.json'
+IDLE_MINUTES = 20
+RESUME_WAIT = 60                            # seconds the guest has to answer ssh after a resume
+# commands that need the guest awake; sandbox, pad and run delegate to the test machine's copy, which resumes it there
+GUEST_COMMANDS = {'status', 'install', 'restore', 'restart', 'update', 'remount', 'clip', 'pad', 'run', 'drive',
+                  'padsim-install', 'guest', 'sandbox'}
+DELEGATING = {'sandbox', 'pad', 'run'}
+SANDBOX_NO_USE = ('list', 'logs')           # the sandbox subcommands that are not a "use"
+
+
+def state_path(name):
+    return os.path.expanduser(f'{STATE_DIR}/{name}')
+
+
+def touch_last_use():
+    path = state_path('last-use')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path + '.tmp', 'w') as f:
+        f.write(str(int(time.time())))
+    os.replace(path + '.tmp', path)
+
+
+def last_use():
+    """epoch seconds of the last use, or None when never recorded"""
+    try:
+        with open(state_path('last-use')) as f:
+            return float(f.read().strip())
+    except (OSError, ValueError):
+        return None
+
+
+def counts_as_use(cmd, args):
+    if cmd in NEEDS_LEASE:
+        return True
+    if cmd == 'lock':
+        return args[:1] == ['take']
+    if cmd == 'sandbox':
+        return (args[0] if args else 'list') not in SANDBOX_NO_USE
+    return False
+
+
+def vm_state():
+    return host_run(f'{VIRSH} domstate {shlex.quote(DOMAIN)}', check=False).strip() or 'unknown'
+
+
+def vm_guest_answers():
+    try:
+        return host_run(f'{guest_ssh()} true', full=True).returncode == 0
+    except Fail:  # libvirt reports no address (yet)
+        return False
+
+
+def vm_ensure_running(wait=RESUME_WAIT):
+    """a suspended (paused) VM is resumed and the guest awaited; returns the one line to print"""
+    state = vm_state()
+    if state == 'running':
+        return 'running'
+    if state != 'paused':
+        raise Fail(f'the VM {DOMAIN} is {state}, not running or suspended - start it ({VIRSH} start {DOMAIN})')
+    print('abvm: resuming the VM...', file=sys.stderr)
+    start = time.time()
+    host_run(f'{VIRSH} resume {shlex.quote(DOMAIN)}')
+    try:
+        os.remove(state_path('vm-suspended.json'))
+    except OSError:
+        pass
+    touch_last_use()  # woken for a reason: the idle clock starts now
+    while not vm_guest_answers():
+        if time.time() - start > wait:
+            raise Fail(f'the VM was resumed but the guest did not answer ssh in {wait} s')
+        time.sleep(2)
+    return f'resumed (guest answered after {int(time.time() - start)} s)'
+
+
+def vm_prepare(cmd, args):
+    """before a command: wake the VM if it needs the guest, and record the use. On a PC the test machine's copy does it
+    (state files live there)."""
+    use = counts_as_use(cmd, args)
+    if LOCAL:
+        if cmd in GUEST_COMMANDS:
+            vm_ensure_running()
+        if use:
+            touch_last_use()
+    elif cmd in GUEST_COMMANDS and cmd not in DELEGATING:
+        remote_tool(['vm', 'ensure-running'] + (['--touch'] if use else []))
+
+
+def idle_blocker(minutes, now=None):
+    """why the VM must stay awake (the first reason found), or None when it is idle. Raises Fail when it cannot tell."""
+    global LEASE_KEY
+    now = now or time.time()
+    saved = LEASE_KEY
+    try:
+        LEASE_KEY = 'vm'
+        holder = lease_op('show')
+        if holder != 'free':
+            return f'the stick launcher is in use: the VM lease {holder}'
+        for n in SB_POOL:
+            LEASE_KEY = f'sb-{n}'
+            holder = lease_op('show')
+            if holder != 'free':
+                return f'sandbox slot {n} has a lease: {holder}'
+    finally:
+        LEASE_KEY = saved
+    used = last_use()
+    if used is None:
+        touch_last_use()
+        return 'no last-use record - the idle clock starts now'
+    if now - used < minutes * 60:
+        return f'used {int((now - used) / 60)} min ago (less than {minutes})'
+    r = host_run(guest_ssh() + ' ' + shlex.quote('for p in $(pidof autobleem-gui); do tr "\\0" " " < '
+                                                 '/proc/$p/cmdline 2>/dev/null; echo; done; true'), full=True)
+    if r.returncode != 0:
+        raise Fail(f'cannot look into the guest (exit {r.returncode}): {r.stderr.strip()} - the VM is left alone')
+    running = sorted(sb_names_in_cmdlines(r.stdout) | {n for n in sb_names() if sb_running(n)})
+    if running:
+        return f'a launcher runs in the guest: {", ".join(running)} (an orphan too)'
+    return None
+
+
+def vm_idle_check(minutes, dry_run):
+    import json
+    state = vm_state()
+    if state == 'paused':
+        return 'already suspended'
+    if state != 'running':
+        return f'not running: {state}'
+    why = idle_blocker(minutes)
+    if why:
+        return f'not idle: {why}'
+    if dry_run:
+        return f'would suspend: idle for {minutes} min'
+    host_run(f'{VIRSH} suspend {shlex.quote(DOMAIN)}')
+    path = state_path('vm-suspended.json')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w') as f:
+        json.dump({'at': time.time(), 'how': 'virsh suspend', 'idle_minutes': minutes}, f)
+    return f'suspended: idle for {minutes} min'
+
+
+def vm_command(args):
+    op = args[0] if args else ''
+    if not LOCAL:  # the state files and the leases are the test machine's
+        print(remote_tool(['vm'] + args), end='')
+        return 0
+    if op == 'idle-check':
+        rest, minutes = args[1:], IDLE_MINUTES
+        if '--minutes' in rest:
+            i = rest.index('--minutes')
+            try:
+                minutes = float(rest[i + 1])
+            except (IndexError, ValueError):
+                raise UsageError('vm idle-check [--minutes N] [--dry-run]')
+            del rest[i:i + 2]
+        if minutes < 0 or [a for a in rest if a != '--dry-run']:
+            raise UsageError('vm idle-check [--minutes N] [--dry-run]')
+        minutes = int(minutes) if minutes == int(minutes) else minutes
+        print(vm_idle_check(minutes, '--dry-run' in rest))
+    elif op == 'ensure-running':
+        print(vm_ensure_running())
+        if '--touch' in args:
+            touch_last_use()
+    elif op == 'touch':
+        touch_last_use()
+    elif op == 'status':
+        import json
+        used = last_use()
+        print(f'vm        {DOMAIN}: {vm_state()}')
+        print('last use  ' + (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(used)) if used else 'never recorded'))
+        try:
+            with open(state_path('vm-suspended.json')) as f:
+                at = json.load(f)['at']
+            print('suspended since ' + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(at)))
+        except (OSError, ValueError, KeyError):
+            pass
+    else:
+        raise UsageError('vm idle-check [--minutes N] [--dry-run] | ensure-running | status')
+    return 0
+
+
+class UsageError(Fail):
+    pass
+
+
 # ------------------------------------------------------------------ status, setup, padsim
 
 def status():
@@ -2177,8 +2390,11 @@ def main(argv):
     try:
         if cmd in NEEDS_LEASE:
             lease('check')
+        vm_prepare(cmd, args)
         if cmd == 'status':
             return status()
+        elif cmd == 'vm':
+            return vm_command(args)
         elif cmd == 'lock':
             lock_command(args)
         elif cmd == 'sandbox':
@@ -2213,6 +2429,9 @@ def main(argv):
             print(f'abvm: unknown command {cmd!r}', file=sys.stderr)
             print(__doc__, file=sys.stderr)
             return 2
+    except UsageError as e:
+        print(f'abvm: {e}', file=sys.stderr)
+        return 2
     except Busy as e:
         print(f'abvm: {e}', file=sys.stderr)
         return 3
