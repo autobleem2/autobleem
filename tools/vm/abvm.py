@@ -50,7 +50,11 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          machine, a URL, or `nightly` (the site's newest pcusb nightly,
                                                          sha256 checked). _template/TEMPLATE_SOURCE records source,
                                                          version and date; `sandbox list` prints it
-  python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease (release stops a launcher left running)
+ONLY the pool sb1..sb4 exists (ABVM_SB_POOL); any other name is refused, except `rm` of an old folder:
+  python tools/vm/abvm.py sandbox take-free <task> [min] [--who W]   the first free slot, laid fresh from the template;
+                                                         last line `slot: <name>`; none free: exit 3 "busy: ..."
+  python tools/vm/abvm.py sandbox rm-legacy [--dry-run]  remove the stopped, unleased folders outside the pool
+  python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the slot's lease (take lays it fresh; release stops a launcher left running)
   python tools/vm/abvm.py sandbox new <name> [--build <dir>] [--ext <zip|dir>]...   made from the template (not started)
                                                          (with Mods/ and System/Extensions/store/{cache,cache/pictures,downloads,staging,sources})
   python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--ext <zip|dir>]... [--size WxH]   made from the
@@ -1036,6 +1040,10 @@ try:
     SB_SLOTS = max(1, min(SB_MAX_SLOTS, int(os.environ.get('ABVM_SANDBOX_SLOTS', SB_MAX_SLOTS))))
 except ValueError:
     SB_SLOTS = SB_MAX_SLOTS
+# the ONLY sandboxes there are: a fixed pool, laid fresh from the template on every take (ABVM_SB_POOL: comma list)
+SB_POOL = tuple(n.strip() for n in os.environ.get('ABVM_SB_POOL', 'sb1,sb2,sb3,sb4').split(',')
+                if re.fullmatch(r'[a-z0-9][a-z0-9-]{0,30}', n.strip())) or ('sb1', 'sb2', 'sb3', 'sb4')
+SB_PROTECTED = ('_template', '_template.old', '_template.new', '_shared', 'TEMPLATE_SOURCE')
 STICK = '/media/autobleem'
 MOUNT_UNIT = 'mnt-abvm.mount'
 
@@ -1047,6 +1055,16 @@ def sb_host(name=''):
 def sb_name(name):
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,30}', name or ''):
         raise Fail(f'a sandbox name is lowercase letters, digits and dashes: {name!r}')
+    return name
+
+
+def sb_pool_text():
+    return f'{SB_POOL[0]}..{SB_POOL[-1]}' if len(SB_POOL) > 1 else SB_POOL[0]
+
+
+def sb_pool_check(name):
+    if name not in SB_POOL:
+        raise Fail(f'sandbox {name}: not in the pool {sb_pool_text()} - use take-free')
     return name
 
 
@@ -1554,6 +1572,54 @@ def sb_new(name, **lay):
     print(f'sandbox {name} made' + (f' with {lay["build"]}' if lay.get('build') else ''))
 
 
+def sb_relay(name):
+    """the slot laid FRESH from the current template - what `new` does, after the launcher is stopped and the old
+    folder is gone: a slot never carries the last user's state. Keeps the slot's name."""
+    if not os.path.isdir(sb_host('_template')):
+        raise Fail('no template yet: abvm.py sandbox template')
+    sb_stop(name)  # also kills an orphan launcher of the slot
+    if os.path.exists(sb_host(name)):
+        sb_remove(name)
+    sb_new(name)
+
+
+def sb_take(name, task, minutes):
+    """a pool slot's lease, and the slot laid fresh from the template. A holder who takes its own slot again only
+    extends the lease: its work is not wiped."""
+    global LEASE_KEY
+    LEASE_KEY = f'sb-{name}'
+    if not os.path.isdir(sb_host('_template')):
+        raise Fail('no template yet: abvm.py sandbox template')
+    mine = bool(WHO) and lease_op('show').startswith(f'held by {WHO} (')
+    print(lease_op('take', WHO, task, minutes))
+    if not mine:
+        try:
+            sb_relay(name)
+        except BaseException:
+            lease_op('release', WHO)
+            raise
+
+
+def sb_take_free(task, minutes):
+    """the first pool slot with a free lease, laid fresh and leased to WHO; Busy when every slot is held"""
+    global LEASE_KEY
+    held = []
+    for n in SB_POOL:
+        LEASE_KEY = f'sb-{n}'
+        holder = lease_op('show')
+        if holder != 'free':
+            held.append(f'{n} {holder.replace("held by ", "", 1)}')
+            continue
+        try:
+            sb_take(n, task, minutes)  # a launcher left running there (orphan or not) is killed by the re-lay
+        except Busy:  # taken by someone else between the check and now
+            held.append(f'{n} taken just now')
+            continue
+        print(f'slot: {n}')
+        return
+    raise Busy(f'busy: no free sandbox slot ({sb_pool_text()}: {"; ".join(held)})')
+
+
 def sb_forward(port):
     """the test machine's 127.0.0.1:<port> -> the guest's own loopback (the driver never listens on a network)"""
     r = subprocess.run(['ssh', '-f', '-N', '-o', 'ExitOnForwardFailure=yes', '-o', 'BatchMode=yes', '-i',
@@ -1853,12 +1919,9 @@ def sb_remove(name):
 
 def sb_list():
     print(f'template: {sb_template_source() or "none, or made before it was recorded"}')
-    names = sb_names()
-    if not names:
-        print('no sandboxes')
     global LEASE_KEY
     orphans = sb_orphans()
-    for n in names + sorted(set(orphans) - set(names)):
+    for n in SB_POOL:
         st = sb_running(n)
         LEASE_KEY = f'sb-{n}'
         holder = lease_op('show')
@@ -1866,6 +1929,54 @@ def sb_list():
                  f'orphan (pid {", ".join(map(str, orphans[n]))})' if n in orphans else 'stopped')
         print(f'{n:16} {state:18} lease: {holder}')
     LEASE_KEY = 'vm'
+    legacy = sb_legacy()
+    if legacy:
+        print(f'legacy folders: {len(legacy)} (abvm sandbox rm-legacy removes the stopped, unleased ones; '
+              f'_template and _shared stay)')
+
+
+def sb_legacy():
+    """the sandbox folders outside the pool (made before the pool rule); _template, _shared and the like never count"""
+    return [n for n in sb_names() if n not in SB_POOL and n not in SB_PROTECTED]
+
+
+def sb_tree_bytes(path):
+    total = 0
+    for d, _, files in os.walk(path):
+        for f in files:
+            try:
+                total += os.lstat(os.path.join(d, f)).st_size
+            except OSError:
+                pass
+    return total
+
+
+def sb_rm_legacy(dry_run=False):
+    """remove the legacy folders that are stopped and have no lease; a pool slot, _template, _template.old, _shared
+    and TEMPLATE_SOURCE are never touched. Prints what went and the GB freed."""
+    global LEASE_KEY
+    orphans = sb_orphans()
+    freed, removed = 0, 0
+    try:
+        for n in sb_legacy():
+            LEASE_KEY = f'sb-{n}'
+            holder = lease_op('show')
+            if holder != 'free':
+                print(f'kept {n}: {holder}')
+            elif sb_running(n) or n in orphans:
+                print(f'kept {n}: its launcher runs')
+            else:
+                size = sb_tree_bytes(sb_host(n))
+                if dry_run:
+                    print(f'would remove {n} ({size / 1e9:.2f} GB)')
+                else:
+                    sb_remove(n)
+                    print(f'removed {n} ({size / 1e9:.2f} GB)')
+                freed += size
+                removed += 1
+    finally:
+        LEASE_KEY = 'vm'
+    print(f'{"would free" if dry_run else "freed"} {freed / 1e9:.2f} GB in {removed} folders')
 
 
 SANDBOX_FLAGS = ('--build', '--ext', '--package', '--games', '--set', '--size')
@@ -1885,9 +1996,12 @@ def check_sandbox_flags(rest):
 def sandbox_command(args, out_dir):
     global LEASE_KEY
     sub = args[0] if args else 'list'
+    name = (sb_name(args[1]) if len(args) > 1 and sub not in ('list', 'setup', 'template', 'take-free', 'rm-legacy')
+            else '')
+    if name and sub != 'rm':  # only `rm` may name an old folder outside the pool (the clean-up)
+        sb_pool_check(name)
     if sub in ('new', 'start', 'reset'):
         check_sandbox_flags(args[2:])
-    name = sb_name(args[1]) if len(args) > 1 and sub not in ('list', 'setup', 'template') else ''
     if not LOCAL:
         if sub == 'drive':
             sb_drive_remote(name, _script_from_args(args[2:]), out_dir)
@@ -1911,13 +2025,20 @@ def sandbox_command(args, out_dir):
                 sb_template()
         finally:
             lease_op('release', WHO)
+    elif sub == 'take-free':
+        if len(args) < 2:
+            raise Fail('sandbox take-free <task> [minutes] [--who <name>]')
+        sb_take_free(args[1], int(args[2]) if len(args) > 2 else LOCK_MINUTES)
+    elif sub == 'rm-legacy':
+        if args[1:] not in ([], ['--dry-run']):
+            raise Fail('sandbox rm-legacy [--dry-run]')
+        sb_rm_legacy(dry_run=bool(args[1:]))
     elif sub in ('take', 'release'):
         if not name:
             raise Fail(f'sandbox {sub} <name>' + (' <task> [minutes]' if sub == 'take' else ''))
         LEASE_KEY = f'sb-{name}'
         if sub == 'take':
-            minutes = int(args[3]) if len(args) > 3 else LOCK_MINUTES
-            print(lease_op('take', WHO, args[2] if len(args) > 2 else '', minutes))
+            sb_take(name, args[2] if len(args) > 2 else '', int(args[3]) if len(args) > 3 else LOCK_MINUTES)
         else:
             sb_release(name)
     elif sub == 'logs':
@@ -1957,7 +2078,8 @@ def sandbox_command(args, out_dir):
             lease_op('release', WHO)
             print(f'sandbox {name} removed')
     else:
-        raise Fail('sandbox list | setup | template [--package <pcusb package|nightly>] | take <name> <task> [min] | release <name> | '
+        raise Fail('sandbox list | setup | template [--package <pcusb package|nightly>] | take-free <task> [min] | '
+                   'take <name> <task> [min] | release <name> | rm-legacy [--dry-run] | '
                    'new|start <name> [--build <dist dir>] [--ext <zip|dir>]... | drive <name> "<script>" | logs <name> [n] | '
                    'stop|reset|rm <name>')
 
