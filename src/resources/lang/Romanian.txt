@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 661
+# Untranslated: 0 / Total: 684
 
 %1 needs game data it can run: %2.=%1 are nevoie de date de joc pe care le poate rula: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoare nu au putut fi citite și au fost scrise ca zerouri.
@@ -26,6 +26,7 @@ Already installed=Deja instalat
 Also delete the BIOS files=Șterge și fișierele BIOS
 Always=Mereu
 Animations:=Animații:
+Aperture=Grilă
 app=aplicație
 Applying settings...=Se aplică setările...
 Apps=Aplicații
@@ -110,6 +111,7 @@ CRT (fast)=CRT (rapid)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Margine CRT:
+CRT mask:=Mască CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=Fișierul CUE nu a fost găsit
 Custom=Personalizat
@@ -133,6 +135,7 @@ Delete the !SaveState folder of %s?=Ștergi dosarul !SaveState al jocului %s?
 Delete the folder %s?=Ștergi dosarul %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Ștergi setările salvate în emulator și folosești din nou setările AutoBleem?
 Deleting RetroArch's files. Your games, saves and settings stay.=Fișierele RetroArch sunt șterse. Jocurile, salvările și setările tale rămân.
+Delta=Delta
 DEMO=DEMO
 Description=Descriere
 Diagnostics=Diagnosticare
@@ -189,6 +192,7 @@ Libraries, apps and menu assets=Biblioteci, aplicații și resursele meniului
 Making sure the stick has room for everything.=Verificăm dacă stick-ul are loc pentru tot.
 Merging the settings=Se îmbină setările
 Merging your settings=Se îmbină setările tale
+Needs the CRT (raster) filter=Necesită filtrul CRT (raster)
 no card yet=niciun card încă
 Not available for a disc in the drive=Indisponibil pentru un disc din unitate
 Not enough room in Games: the copy needs %1, %2 is free.=Nu este destul loc în Games: copia are nevoie de %1, sunt liberi %2.

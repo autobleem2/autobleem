@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 661
+# Untranslated: 1 / Total: 684
 
 %1 needs game data it can run: %2.=%1 a besonh de donadas de jòc que pòt executar : %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors an pas pogut èsser legits e son estats escrits coma zèros.
@@ -26,6 +26,7 @@ Already installed=Ja installat
 Also delete the BIOS files=Escafar tanben los fichièrs BIOS
 Always=Totjorn
 Animations:=Animacions:
+Aperture=Grasilha
 app=aplicacion
 Applying settings...=Aplicacion dels reglatges...
 Apps=Aplicacions
@@ -110,6 +111,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Marge CRT :
+CRT mask:=Masca CRT :
 CRT-Pi=CRT-Pi
 Cue file not found=Fichièr CUE introbable
 Custom=Personalizada
@@ -133,6 +135,7 @@ Delete the !SaveState folder of %s?=Suprimir lo dorsièr !SaveState de %s ?
 Delete the folder %s?=Suprimir lo dorsièr %s ?
 Delete the settings saved in the emulator and use AutoBleem's again?=Suprimir los paramètres enregistrats dins l'emulador e tornar prendre los d'AutoBleem ?
 Deleting RetroArch's files. Your games, saves and settings stay.=Los fichièrs de RetroArch son suprimits. Vòstres jòcs, salvaments e reglatges demoran.
+Delta=Delta
 DEMO=DEMO
 Description=Descripcion
 Diagnostics=Diagnostic
@@ -189,6 +192,7 @@ Libraries, apps and menu assets=Bibliotècas, aplicacions e recursas del menut
 Making sure the stick has room for everything.=Verificam que la clau a pro d'espaci per tot.
 Merging the settings=Fusion dels reglatges
 Merging your settings=Fusion de vòstres reglatges
+Needs the CRT (raster) filter=Requerís lo filtre CRT (raster)
 no card yet=pas encara de carta
 Not available for a disc in the drive=Pas disponible per un disc dins lo lector
 Not enough room in Games: the copy needs %1, %2 is free.=Pas pro de plaça dins Games : la còpia ten besonh de %1, %2 son liures.

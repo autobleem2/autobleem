@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 661
+# Untranslated: 0 / Total: 684
 
 %1 needs game data it can run: %2.=%1 braucht Spieldaten, die es ausführen kann: %2.
 %1 sectors could not be read and were written as zeros.=%1 Sektoren konnten nicht gelesen werden und wurden als Nullen geschrieben.
@@ -26,6 +26,7 @@ Already installed=Bereits installiert
 Also delete the BIOS files=Auch die BIOS-Dateien löschen
 Always=Immer
 Animations:=Animationen:
+Aperture=Streifen
 app=App
 Applying settings...=Einstellungen werden übernommen...
 Apps=Apps
@@ -110,6 +111,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-Rand:
+CRT mask:=CRT-Maske:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-Datei nicht gefunden
 Custom=Benutzer
@@ -133,6 +135,7 @@ Delete the !SaveState folder of %s?=!SaveState-Ordner von %s löschen?
 Delete the folder %s?=Ordner %s löschen?
 Delete the settings saved in the emulator and use AutoBleem's again?=Die im Emulator gespeicherten Einstellungen löschen und wieder die von AutoBleem verwenden?
 Deleting RetroArch's files. Your games, saves and settings stay.=Die Dateien von RetroArch werden gelöscht. Deine Spiele, Spielstände und Einstellungen bleiben.
+Delta=Delta
 DEMO=DEMO
 Description=Beschreibung
 Diagnostics=Diagnose
@@ -189,6 +192,7 @@ Libraries, apps and menu assets=Bibliotheken, Apps und Menü-Grafiken
 Making sure the stick has room for everything.=Wir prüfen, ob auf dem Stick genug Platz für alles ist.
 Merging the settings=Einstellungen werden zusammengeführt
 Merging your settings=Deine Einstellungen werden zusammengeführt
+Needs the CRT (raster) filter=Benötigt den Filter CRT (raster)
 no card yet=noch keine Karte
 Not available for a disc in the drive=Nicht verfügbar für eine Disc im Laufwerk
 Not enough room in Games: the copy needs %1, %2 is free.=Zu wenig Platz in Games: Die Kopie braucht %1, frei sind %2.

@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 661
+# Untranslated: 0 / Total: 684
 
 %1 needs game data it can run: %2.=%1 needs game data it can run: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectors could not be read and were written as zeros.
@@ -26,6 +26,7 @@ Already installed=Already installed
 Also delete the BIOS files=Also delete the BIOS files
 Always=Always
 Animations:=Animations:
+Aperture=Aperture
 app=app
 Applying settings...=Applying settings...
 Apps=Apps
@@ -110,6 +111,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT margin:
+CRT mask:=CRT mask:
 CRT-Pi=CRT-Pi
 Cue file not found=Cue file not found
 Custom=Custom
@@ -133,6 +135,7 @@ Delete the !SaveState folder of %s?=Delete the !SaveState folder of %s?
 Delete the folder %s?=Delete the folder %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Delete the settings saved in the emulator and use AutoBleem's again?
 Deleting RetroArch's files. Your games, saves and settings stay.=Deleting RetroArch's files. Your games, saves and settings stay.
+Delta=Delta
 DEMO=DEMO
 Description=Description
 Diagnostics=Diagnostics
@@ -189,6 +192,7 @@ Libraries, apps and menu assets=Libraries, apps and menu assets
 Making sure the stick has room for everything.=Making sure the stick has room for everything.
 Merging the settings=Merging the settings
 Merging your settings=Merging your settings
+Needs the CRT (raster) filter=Needs the CRT (raster) filter
 no card yet=no card yet
 Not available for a disc in the drive=Not available for a disc in the drive
 Not enough room in Games: the copy needs %1, %2 is free.=Not enough room in Games: the copy needs %1, %2 is free.

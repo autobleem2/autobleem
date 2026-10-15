@@ -66,6 +66,25 @@ bool crtFilter(int filter) {
     return filter == 5 || filter == 6 || filter == 7;
 }
 
+// the CRT (raster) filter, the only one with a mask
+bool rasterFilter(int filter) {
+    return filter == 7;
+}
+
+// the mask's names, in the order of GameSettingsService::CrtMaskNames
+string crtMaskName(int mask) {
+    switch (mask) {
+    case 0:
+        return _("Aperture");
+    case 1:
+        return _("Slot");
+    case 2:
+        return _("Delta");
+    default:
+        return _("Off");
+    }
+}
+
 } // namespace
 
 //*******************************
@@ -161,6 +180,9 @@ void GuiEditor::buildRows() {
     // the classic pcsx-ab and RetroArch have nearest and bilinear only: every filter but Linear is nearest
     // there (LaunchService)
     valueRow(_("Filter:"), filterName(pcsx.filter), OPT_FILTER);
+    // the phosphor mask of the CRT (raster) filter: pcsx-abnxt only, and the emulator greys it with any other filter
+    if (nxt)
+        valueRow(_("CRT mask:"), crtMaskName(pcsx.crtMask), OPT_CRTMASK, !rasterFilter(pcsx.filter));
     valueRow(_("Scanlines:"), pcsx.scanlines == 0 ? _("Off") : to_string(pcsx.scanlines), OPT_SCANLINES, crt);
     valueRow(_("Scanline brightness:"), to_string(pcsx.scanlineLevel), OPT_SCANLINELV, crt);
 
@@ -354,6 +376,10 @@ void GuiEditor::processOptionChange(bool direction, bool repeat) {
     case OPT_FILTER: // this platform's filters
         svc.setFilter(settings, nextIn(GameSettingsService::filtersFor(platform), pcsx.filter));
         break;
+
+    case OPT_CRTMASK: // Aperture / Slot / Delta / Off
+        svc.setCrtMask(settings, next(pcsx.crtMask, GameSettingsService::CrtMaskCount));
+        break;
     }
 }
 
@@ -486,6 +512,8 @@ void GuiEditor::draw() {
         guiMenu = _("Not saved: this game has no pcsx.cfg");
     else if (greyedForDisc(gameData->physicalDisc, selOption))
         guiMenu = _("Not available for a disc in the drive");
+    else if (selOption == OPT_CRTMASK && !rasterFilter(settings.pcsx.filter))
+        guiMenu = _("Needs the CRT (raster) filter");
     gui->renderStatus(guiMenu);
 }
 

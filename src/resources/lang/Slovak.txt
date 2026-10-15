@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 661
+# Untranslated: 0 / Total: 684
 
 %1 needs game data it can run: %2.=%1 potrebuje herné dáta, ktoré vie spustiť: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorov sa nepodarilo prečítať a boli zapísané ako nuly.
@@ -26,6 +26,7 @@ Already installed=Už nainštalované
 Also delete the BIOS files=Odstrániť aj súbory BIOS
 Always=Vždy
 Animations:=Animácie:
+Aperture=Mriežková
 app=aplikácie
 Applying settings...=Aplikujú sa nastavenia...
 Apps=Aplikácie
@@ -110,6 +111,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Okraj CRT:
+CRT mask:=Maska CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=Súbor CUE sa nenašiel
 Custom=Vlastné
@@ -133,6 +135,7 @@ Delete the !SaveState folder of %s?=Odstrániť priečinok !SaveState hry %s?
 Delete the folder %s?=Odstrániť priečinok %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Vymazať nastavenia uložené v emulátore a znova použiť nastavenia AutoBleemu?
 Deleting RetroArch's files. Your games, saves and settings stay.=Mažú sa súbory RetroArch. Vaše hry, uložené pozície a nastavenia zostanú.
+Delta=Delta
 DEMO=UKÁŽKA
 Description=Popis
 Diagnostics=Diagnostika
@@ -189,6 +192,7 @@ Libraries, apps and menu assets=Knižnice, aplikácie a prvky ponuky
 Making sure the stick has room for everything.=Overujeme, že je na disku dosť miesta na všetko.
 Merging the settings=Zlučovanie nastavení
 Merging your settings=Zlúčenie vášho nastavenia
+Needs the CRT (raster) filter=Vyžaduje filter CRT (raster)
 no card yet=zatiaľ žiadna karta
 Not available for a disc in the drive=Nie je k dispozícii pre disk v mechanike
 Not enough room in Games: the copy needs %1, %2 is free.=V Games nie je dosť miesta: kópia potrebuje %1, voľných je %2.

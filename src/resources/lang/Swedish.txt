@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 661
+# Untranslated: 0 / Total: 684
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunde inte läsas och skrevs som nollor.
@@ -26,6 +26,7 @@ Already installed=Redan installerat
 Also delete the BIOS files=Ta även bort BIOS-filerna
 Always=Alltid
 Animations:=Animationer:
+Aperture=Galler
 app=app
 Applying settings...=Tillämpar inställningar...
 Apps=Appar
@@ -110,6 +111,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-marginal:
+CRT mask:=CRT-mask:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-filen hittades inte
 Custom=Anpassad
@@ -133,6 +135,7 @@ Delete the !SaveState folder of %s?=Radera !SaveState-mappen för %s?
 Delete the folder %s?=Radera mappen %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Radera inställningarna som sparats i emulatorn och använd AutoBleems igen?
 Deleting RetroArch's files. Your games, saves and settings stay.=RetroArchs filer raderas. Dina spel, sparfiler och inställningar finns kvar.
+Delta=Delta
 DEMO=DEMO
 Description=Beskrivning
 Diagnostics=Diagnostik
@@ -189,6 +192,7 @@ Libraries, apps and menu assets=Bibliotek, appar och menyresurser
 Making sure the stick has room for everything.=Vi kontrollerar att det finns plats för allt på minnet.
 Merging the settings=Slår ihop inställningarna
 Merging your settings=Slår ihop dina inställningar
+Needs the CRT (raster) filter=Kräver filtret CRT (raster)
 no card yet=inget kort än
 Not available for a disc in the drive=Inte tillgängligt för en skiva i enheten
 Not enough room in Games: the copy needs %1, %2 is free.=Inte tillräckligt med utrymme i Games: kopian behöver %1, %2 är ledigt.
