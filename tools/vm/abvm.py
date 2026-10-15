@@ -1110,6 +1110,61 @@ def sb_running_names(exclude=''):
     return sorted(names)
 
 
+def sb_guest_ports():
+    """the TCP ports something in the guest listens on (a launcher without a state file is not in any state file)"""
+    out = guest_run('ss -ltn', check=False) or ''
+    return {int(p) for p in re.findall(r':(\d+)\s', out)}
+
+
+def sb_guest_launchers():
+    """{sandbox name: [launcher pids]} from the guest's process list"""
+    out = guest_run('for p in $(pidof autobleem-gui); do echo "$p $(tr "\\0" " " < /proc/$p/cmdline 2>/dev/null)"; '
+                    'done; true', check=False) or ''
+    found = {}
+    for line in out.splitlines():
+        m = re.match(r'\s*(\d+) (.*)', line)
+        if m:
+            for n in sb_names_in_cmdlines(m.group(2)):
+                found.setdefault(n, []).append(int(m.group(1)))
+    return found
+
+
+def sb_orphans():
+    """{name: [pids]}: launchers in the guest whose sandbox has no state file naming a live pid"""
+    return {n: pids for n, pids in sb_guest_launchers().items() if not sb_running(n)}
+
+
+def sb_port_owner(name, pid, out):
+    """the pid of THIS sandbox's launcher that owns the listener the start script saw (`listen <ss -ltnp line>`), else
+    None: a listener of someone else's launcher (an orphan on the same port) is not this one's"""
+    m = re.search(r'^listen (.*)$', out, re.M)
+    if not m:
+        return None
+    for p in (int(x) for x in re.findall(r'pid=(\d+)', m.group(1))):
+        if sb_guest_pid_alive(name, p):
+            return p
+    return None
+
+
+def sb_kill_pids(pids):
+    pids = sorted({int(p) for p in pids})
+    if not pids:
+        return
+    ps = ' '.join(map(str, pids))
+    guest_run(f'kill -TERM {ps} 2>/dev/null; for i in $(seq 30); do '
+              f'n=0; for p in {ps}; do kill -0 $p 2>/dev/null && n=1; done; [ $n = 0 ] && break; sleep 0.1; done; '
+              f'kill -KILL {ps} 2>/dev/null; true', check=False)
+
+
+def sb_kill_launcher(name, pid=None):
+    """kill the launcher(s) of `name`: the launched pid and whatever the process list shows for the sandbox's root"""
+    pids = set(sb_guest_launchers().get(name, []))
+    if pid and sb_guest_pid_alive(name, pid):
+        pids.add(pid)
+    sb_kill_pids(pids)
+    return sorted(pids)
+
+
 def sb_open_modes(path):
     """the guest checks permissions itself against the host's owner, so a sandbox tree is open to everyone - it is a
     disposable test tree on a test machine; the ACLs give this user and QEMU the rest"""
@@ -1571,7 +1626,7 @@ def sb_start(name, size=None, **lay):
     running = sb_running_names(exclude=name)
     if len(running) >= SB_SLOTS:
         raise Busy(sb_full_message(running))
-    used = {sb_state(n).get('port') for n in running}
+    used = {sb_state(n).get('port') for n in running} | sb_guest_ports()  # an orphan has no state file
 
     def free_here(p):
         s = socket.socket()
@@ -1605,15 +1660,23 @@ def sb_start(name, size=None, **lay):
     sb_open_modes(os.path.join(sb_host(name), '.abvm'))
     sb_share_group()  # a VM set up before the group existed gets it here
     sb_open_tree(name, acl=True)  # the whole tree, what an earlier run's guest made too
+    # the redirect below fails (and no launcher starts, no log is written) when System/Logs is missing
+    os.makedirs(os.path.join(sb_host(name), 'System', 'Logs'), exist_ok=True)
+    sb_open_modes(os.path.join(sb_host(name), 'System'))
     out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; mkdir -p {rt}; '
                     f'cd {g}/Autobleem/bin/autobleem; umask 000; '
                     f'{env} setsid nohup ./autobleem-gui {g} > {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
-                    f'echo pid $!; for i in $(seq 100); do ss -ltn | grep -q "127.0.0.1:{port} " && '
-                    f'{{ echo ready; break; }}; sleep 0.1; done')
+                    f'echo pid $!; for i in $(seq 100); do '
+                    f'l=$(ss -ltnp | grep "127.0.0.1:{port} " || true); '
+                    f'if [ -n "$l" ]; then echo "listen $l"; break; fi; sleep 0.1; done')
     pid = int(re.search(r'pid (\d+)', out).group(1))
-    if 'ready' not in out:
-        raise Fail(f'sandbox {name} did not open its driver port in 10 s - see {sb_host(name)}/System/Logs/'
-                   'abvm-out.txt')
+    owner = sb_port_owner(name, pid, out)
+    if not owner:
+        sb_kill_launcher(name, pid)  # never an orphan: no state file would ever name it
+        sb_save_state(name, {})
+        raise Fail(f'sandbox {name}: its launcher did not open its driver port {port} in 10 s (or the port is held by '
+                   f'another process) - launcher stopped, see {sb_host(name)}/System/Logs/abvm-out.txt')
+    pid = owner
     st = {'pid': pid, 'port': port, 'since': time.time()}
     sb_save_state(name, st)  # saved before the forward, so a failure below never leaves an orphan behind
     try:
@@ -1760,6 +1823,10 @@ def sb_stop(name, use_driver=True):
     sb_stop_forward(st)
     if st:
         sb_save_state(name, {})
+    orphan = sb_orphans().get(name)
+    if orphan:  # a launcher of this sandbox with no state file: found by the process list
+        sb_kill_pids(orphan)
+        print(f'sandbox {name}: orphan launcher (pid {", ".join(map(str, orphan))}) killed')
     print(f'sandbox {name} stopped')
 
 
@@ -1790,11 +1857,14 @@ def sb_list():
     if not names:
         print('no sandboxes')
     global LEASE_KEY
-    for n in names:
+    orphans = sb_orphans()
+    for n in names + sorted(set(orphans) - set(names)):
         st = sb_running(n)
         LEASE_KEY = f'sb-{n}'
         holder = lease_op('show')
-        print(f'{n:16} {"running on " + str(st["port"]) if st else "stopped":18} lease: {holder}')
+        state = (f'running on {st["port"]}' if st else
+                 f'orphan (pid {", ".join(map(str, orphans[n]))})' if n in orphans else 'stopped')
+        print(f'{n:16} {state:18} lease: {holder}')
     LEASE_KEY = 'vm'
 
 
