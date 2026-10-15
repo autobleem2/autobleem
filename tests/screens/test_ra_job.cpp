@@ -403,8 +403,8 @@ TEST_CASE("the panel's stick line: free space of the total and a thin used bar")
     CHECK(humanSpace(58200000000ULL) == "58.2 GB");
     CHECK(humanSpace(512000000ULL) == "512.0 MB");
     CHECK(usedFraction(18400000000ULL, 58200000000ULL) == doctest::Approx(0.6838).epsilon(0.001));
-    CHECK(usedFraction(0, 0) == 0);              // not asked / not known
-    CHECK(usedFraction(100, 50) == 0);           // free above total: nonsense, an empty bar
+    CHECK(usedFraction(0, 0) == 0);    // not asked / not known
+    CHECK(usedFraction(100, 50) == 0); // free above total: nonsense, an empty bar
     CHECK(usedFraction(0, 1000) == 1.0);
 }
 

@@ -46,8 +46,8 @@ public:
     // filled in by the caller before show()
     bool installed = false;
     bool networkUp = true;
-    std::string version;       // the VERSION stamp
-    bool spaceKnown = false;   // the stick's free / total space (one statvfs); no size of RetroArch is shown
+    std::string version;     // the VERSION stamp
+    bool spaceKnown = false; // the stick's free / total space (one statvfs); no size of RetroArch is shown
     uint64_t freeBytes = 0;
     uint64_t totalBytes = 0;
 

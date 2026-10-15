@@ -238,10 +238,9 @@ void GuiRaManager::draw() {
                                      gui->text().elide(fonts[FONT_22_MED], head, panel.w - 2 * TextInset),
                                      panel.x + TextInset, panel.y + 66, style.description, XALIGN_LEFT);
     if (spaceKnown) {
-        gui->text().renderText_WithColor(fonts[FONT_22_MED],
-                                         gui->text().elide(fonts[FONT_22_MED], space, panel.w - 2 * TextInset),
-                                         panel.x + TextInset, panel.y + 66 + LineHeight, style.description,
-                                         XALIGN_LEFT);
+        gui->text().renderText_WithColor(
+            fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], space, panel.w - 2 * TextInset),
+            panel.x + TextInset, panel.y + 66 + LineHeight, style.description, XALIGN_LEFT);
         ableem::Rect bar(panel.x + TextInset, panel.y + 66 + 2 * LineHeight + 2, panel.w - 2 * TextInset, 8);
         style.progressBox(gui->uiContext(), bar, rajob::usedFraction(freeBytes, totalBytes));
     }
@@ -359,8 +358,8 @@ void GuiRaRemoveConfirm::draw() {
         deleted.push_back(_("BIOS files"));
     else
         stays.push_back(_("BIOS files"));
-    const string warning = withBios ? _("Without the BIOS files some games will not start until you add them again.")
-                                    : "";
+    const string warning =
+        withBios ? _("Without the BIOS files some games will not start until you add them again.") : "";
     const int rows = static_cast<int>(max(deleted.size(), stays.size()));
     const int bodyHeight = LineHeight + 12 + rows * LineHeight + (withBios ? LineHeight + 16 : 0) + 12;
     const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
@@ -395,10 +394,9 @@ void GuiRaRemoveConfirm::draw() {
         }
     }
     if (withBios)
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD],
-                                         gui->text().elide(fonts[FONT_15_BOLD], warning, panel.w - 2 * TextInset),
-                                         panel.x + TextInset, top + LineHeight + 8 + rows * LineHeight + 8,
-                                         style.text, XALIGN_LEFT);
+        gui->text().renderText_WithColor(
+            fonts[FONT_15_BOLD], gui->text().elide(fonts[FONT_15_BOLD], warning, panel.w - 2 * TextInset),
+            panel.x + TextInset, top + LineHeight + 8 + rows * LineHeight + 8, style.text, XALIGN_LEFT);
     style.footer(*gui,
                  ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
                  {{{"X"}, _("Remove")}, {{"O"}, _("Cancel")}}, "", false);
@@ -432,9 +430,9 @@ void GuiRaProgress::draw() {
     Fonts &fonts = gui->assets().themeFonts;
     const rajob::Progress &p = shown.progress;
     const string phaseName = p.phase > 0 ? phaseTitle(p.key) : _("Loading ... Please Wait ...");
-    const string title =
-        p.phase > 0 ? fill(_("Step %s of %s"), {to_string(p.phase), to_string(p.phases)}) + " - " + phaseName
-                    : phaseName;
+    const string title = p.phase > 0
+                             ? fill(_("Step %s of %s"), {to_string(p.phase), to_string(p.phases)}) + " - " + phaseName
+                             : phaseName;
     const int percent = static_cast<int>(rajob::jobFraction(p) * 100.0);
     const string percentText = to_string(percent) + "%";
 
@@ -474,9 +472,8 @@ void GuiRaProgress::draw() {
 
     const int bodyHeight = 16 + 3 * LineHeight + 2 * 34 + LineHeight + 12;
     const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
-    ableem::Rect panel = drawPanel(*gui, style,
-                                   panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], numbers}}),
-                                   panelHeight);
+    ableem::Rect panel = drawPanel(
+        *gui, style, panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], numbers}}), panelHeight);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
@@ -509,9 +506,9 @@ void GuiRaProgress::draw() {
                                      panel.x + TextInset, y, style.description, XALIGN_LEFT);
 
     const bool canStop = rajob::stopAllowed(op) && !stopping;
-    style.footer(
-        *gui, ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
-        canStop ? vector<PanelStyle::HintItem>{{{"O"}, _("Stop")}} : vector<PanelStyle::HintItem>{}, "", true);
+    style.footer(*gui,
+                 ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
+                 canStop ? vector<PanelStyle::HintItem>{{{"O"}, _("Stop")}} : vector<PanelStyle::HintItem>{}, "", true);
     gui->text().setShadow(classicShadow);
 }
 
