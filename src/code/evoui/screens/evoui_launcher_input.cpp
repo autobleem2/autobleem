@@ -44,15 +44,6 @@ void GuiLauncher::loop() {
         ableem::StartupTimer::milestone("menu-loop-entered");
     }
 
-    // UIREV-50/54: the start-up load fell back to the default theme (the picked zip was not used): said once
-    static bool startupThemeToldAbout = false;
-    if (!startupThemeToldAbout) {
-        startupThemeToldAbout = true;
-        const string why = GuiOptions::themeFallbackText(Theme::fallbackReason());
-        if (!why.empty())
-            notificationLines[1].setText(why, 2 * DefaultShowingTimeout);
-    }
-
     while (menuVisible) {
         retranslateMenu(); // Options may have changed the language on the way back into this loop
 
