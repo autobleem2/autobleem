@@ -86,7 +86,8 @@ class SelfHeal(unittest.TestCase):
 class Strict(unittest.TestCase):
     def run_main(self, argv):
         out, err = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                mock.patch.object(abvm, 'vm_prepare', lambda cmd, args: None):  # no VM to wake here
             rc = abvm.main(argv)
         return rc, out.getvalue(), err.getvalue()
 
