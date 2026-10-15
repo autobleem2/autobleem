@@ -142,6 +142,21 @@ for n in names:
     rm -rf "$tmp"
 }
 
+# emulator_fonts NAME DEST [LOCAL_DIST]: pcsx-abnxt draws Chinese from a fonts/ folder next to its exe. The
+# build's own fonts/ wins (local dist, or what the site's zip already carried); otherwise the launcher's
+# bundled Chinese font and its licence
+emulator_fonts() {
+    local name="$1" dest="$2" local_dist="$3"
+    [ "$name" = "pcsx-abnxt" ] && [ -f "$dest/pcsx-ab.exe" ] || return 0
+    if [ -n "$local_dist" ] && [ -d "$local_dist/fonts" ]; then
+        cp -a "$local_dist/fonts" "$dest/"
+    fi
+    if [ ! -d "$dest/fonts" ]; then
+        mkdir -p "$dest/fonts"
+        cp "$REPO/src/resources/fonts/NotoSansSC-Regular.otf" "$REPO/src/resources/fonts/OFL.txt" "$dest/fonts/"
+    fi
+}
+
 mkdir -p "$OUT"
 
 # --- the product ---------------------------------------------------------------------------------------------
@@ -181,6 +196,7 @@ if [ -n "$PRODUCT_DIR" ]; then
     # the two PS1 emulators: a local Windows build, else the site's package of each
     emulator "pcsx-ab" "emu" "${AB_PCSX_WIN_DIST:-}"
     emulator "pcsx-abnxt" "emunxt" "${AB_PCSXNXT_WIN_DIST:-}"
+    emulator_fonts "pcsx-abnxt" "$APP/emunxt" "${AB_PCSXNXT_WIN_DIST:-}"
     cat > "$APP/dataroot.txt.example" <<'EOF'
 # A portable copy of AutoBleem: rename this file to dataroot.txt and put on its first line the folder that
 # holds the games (Games\), the settings (System\) and the themes - a folder on this stick, say. Without
