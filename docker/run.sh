@@ -60,6 +60,9 @@ if [ -z "${AB_NO_SCCACHE:-}" ]; then
     cache="${AB_SCCACHE_DIR:-$HOME/.cache/autobleem-sccache}"
     mkdir -p "$cache"
     OPTS+=(-v "$cache:/tmp/sccache" -e SCCACHE_DIR=/tmp/sccache -e SCCACHE_CACHE_SIZE="${AB_SCCACHE_SIZE:-10G}")
+    # docker run -u uid:gid drops the supplementary groups, so a cache dir that is group-writable for a group
+    # the calling user belongs to (the host's shared one) would be read-only in the container: add its group back
+    [ -d "$cache" ] && OPTS+=(--group-add "$(stat -c %g "$cache")")
 fi
 # the crates cache (lib_ableem's text engine is Rust; cargo runs --locked against autobleem-core's Cargo.lock): a
 # directory of the host's, so crates are downloaded once per host, not once per container - AB_CARGO_HOME names it
