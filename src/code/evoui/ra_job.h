@@ -5,14 +5,21 @@
 // on a Pi / PC stick) with  install|remove [--bios] --progress <FILE>.  The runner rewrites <FILE> atomically, one
 // UTF-8 line:
 //
-//     phase <i>/<n>|<key>|<done>|<total>        a phase of n running (total 0 = unknown)
+//     phase <i>/<n>|<key>|<done>|<total>|<unit>|<item>|<item_i>|<item_n>
 //     end|ok   end|stopped   end|error|<code>   the last content, written once
+//
+// phase line: a phase i of n; <done>/<total> count <unit> = bytes | files | items within the phase (a runner
+// writes a total above 0 in every phase; a 0 is still read as "unknown" and shown as a sweeping bar). <item> is
+// the package the phase is on (cores-psc-20261003.tar.gz, cheats; may be empty), <item_i>/<item_n> which package
+// of how many in this phase (0/0 = none). The old 4-field form  phase <i>/<n>|<key>|<done>|<total>  still parses
+// (unit "", item "", 0/0). Fields never contain '|' or a line end. The appliance's runner writes this very syntax.
 //
 // and exits 0 / 3 / 1. These are the parts that need no process or screen: the line's parser, the job's status
 // machine, the runner's command line, the keys' and codes' mapping and the panel's row logic - so they can be tested.
 //
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -37,8 +44,13 @@ struct Progress {
     std::string key;
     uint64_t done = 0;
     uint64_t total = 0; // 0 = unknown
+    std::string unit;   // bytes | files | items; "" on an old 4-field line
+    std::string item;   // the current package's name, may be empty
+    int itemIndex = 0;  // which package of itemCount in this phase; 0/0 = none
+    int itemCount = 0;
     bool operator==(const Progress &o) const {
-        return phase == o.phase && phases == o.phases && key == o.key && done == o.done && total == o.total;
+        return phase == o.phase && phases == o.phases && key == o.key && done == o.done && total == o.total &&
+               unit == o.unit && item == o.item && itemIndex == o.itemIndex && itemCount == o.itemCount;
     }
 };
 
@@ -100,13 +112,22 @@ inline Line parseLine(const std::string &text) {
         }
         return line;
     }
-    if (f.size() != 4 || f[0].compare(0, 6, "phase ") != 0 || f[1].empty())
+    if ((f.size() != 4 && f.size() != 8) || f[0].compare(0, 6, "phase ") != 0 || f[1].empty())
         return line;
     const std::vector<std::string> of = detail::split(f[0].substr(6), '/');
-    uint64_t i = 0, n = 0, done = 0, total = 0;
+    uint64_t i = 0, n = 0, done = 0, total = 0, itemIndex = 0, itemCount = 0;
     if (of.size() != 2 || !detail::number(of[0], i) || !detail::number(of[1], n) || i < 1 || n < i || n > 99 ||
         !detail::number(f[2], done) || !detail::number(f[3], total))
         return line;
+    if (f.size() == 8) {
+        if (!(f[4] == "bytes" || f[4] == "files" || f[4] == "items") || !detail::number(f[6], itemIndex) ||
+            !detail::number(f[7], itemCount) || itemIndex > itemCount || itemCount > 99999)
+            return line;
+        line.progress.unit = f[4];
+        line.progress.item = f[5];
+        line.progress.itemIndex = static_cast<int>(itemIndex);
+        line.progress.itemCount = static_cast<int>(itemCount);
+    }
     line.kind = Line::Kind::Phase;
     line.progress.phase = static_cast<int>(i);
     line.progress.phases = static_cast<int>(n);
@@ -215,8 +236,16 @@ inline double fraction(const Progress &p) {
 // and sweeps to and fro from the phase's start (phaseAgeMs = time since the phase began), never a carried-over value.
 struct Bar {
     bool indeterminate = false;
-    double value = 0; // 0..1
+    double value = 0;      // 0..1
+    bool overReal = false; // a stalled bar: `value` is the real fraction and `sweep` a moving mark over it
+    double sweep = 0;      // 0..1, where the mark is (overReal only)
 };
+
+// the to-and-fro position of a sweep, 0..1, 2 s for a round
+inline double sweepPosition(unsigned ageMs) {
+    const unsigned t = ageMs % 2000;
+    return (t < 1000 ? t : 2000 - t) / 1000.0;
+}
 
 inline Bar barFor(const Progress &p, unsigned phaseAgeMs) {
     Bar bar;
@@ -228,9 +257,130 @@ inline Bar barFor(const Progress &p, unsigned phaseAgeMs) {
         return bar;
     }
     bar.indeterminate = true;
-    const unsigned t = phaseAgeMs % 2000;
-    bar.value = (t < 1000 ? t : 2000 - t) / 1000.0;
+    bar.value = sweepPosition(phaseAgeMs);
     return bar;
+}
+
+// Movement must always be visible: a bar whose phase, package and count have not changed for more than StallMs shows a
+// sweep over its real value (a runner's single long step writes nothing in between).
+constexpr unsigned StallMs = 1000;
+
+inline Bar barWithStall(const Progress &p, unsigned phaseAgeMs, unsigned stalledMs) {
+    Bar bar = barFor(p, phaseAgeMs);
+    if (p.phase > 0 && !bar.indeterminate && stalledMs > StallMs) {
+        bar.indeterminate = true;
+        bar.overReal = true;
+        bar.sweep = sweepPosition(stalledMs - StallMs);
+    }
+    return bar;
+}
+
+// When (phase, item, done) last changed: feed it the progress every frame, ask how long it has stood still.
+class StallClock {
+public:
+    void feed(unsigned nowMs, const Progress &p) {
+        if (!seen_ || p.phase != phase_ || p.item != item_ || p.itemIndex != itemIndex_ || p.done != done_) {
+            seen_ = true;
+            phase_ = p.phase;
+            item_ = p.item;
+            itemIndex_ = p.itemIndex;
+            done_ = p.done;
+            changedMs_ = nowMs;
+        }
+    }
+    unsigned stalledMs(unsigned nowMs) const { return seen_ && nowMs > changedMs_ ? nowMs - changedMs_ : 0; }
+    void reset() { *this = StallClock(); }
+
+private:
+    bool seen_ = false;
+    int phase_ = 0;
+    std::string item_;
+    int itemIndex_ = 0;
+    uint64_t done_ = 0;
+    unsigned changedMs_ = 0;
+};
+
+// An item's name for the screen: the runner's '_' is a space (Retroarch_themes -> Retroarch themes). Display only.
+inline std::string displayName(const std::string &item) {
+    std::string out = item;
+    for (char &c : out)
+        if (c == '_')
+            c = ' ';
+    return out;
+}
+
+// What a package line calls the package: a plain description. A file name (it has a '.') is never shown - the phase's
+// description stands for it; a plain name (cheats, Retroarch_themes) is shown with spaces for '_'.
+// An item that is the phase's own key (check-space, remove-files) is no name either.
+inline std::string packageWhat(const std::string &description, const std::string &item, const std::string &key = "") {
+    if (item.empty() || item.find('.') != std::string::npos || (!key.empty() && item == key))
+        return description;
+    return displayName(item);
+}
+
+// A number written with the language's decimal sign: every '.' of `text` becomes `decimal` ("30.3 GB" -> "30,3 GB")
+inline std::string withDecimal(const std::string &text, char decimal) {
+    std::string out = text;
+    for (char &c : out)
+        if (c == '.')
+            c = decimal;
+    return out;
+}
+
+// `text` broken at spaces into at most `maxLines` lines, each at most `maxWidth` wide by `measure` (a word wider than
+// a line is cut in letters). Whatever does not fit in the last line is cut off and ends with "...".
+template <typename Measure>
+std::vector<std::string> wrapLines(const std::string &text, int maxWidth, int maxLines, Measure measure) {
+    std::vector<std::string> lines;
+    std::string line;
+    size_t at = 0;
+    bool cut = false;
+    while (at < text.size() && !cut) {
+        size_t end = text.find(' ', at);
+        if (end == std::string::npos)
+            end = text.size();
+        std::string word = text.substr(at, end - at);
+        at = end + 1;
+        if (word.empty())
+            continue;
+        const std::string joined = line.empty() ? word : line + " " + word;
+        if (measure(joined) <= maxWidth) {
+            line = joined;
+            continue;
+        }
+        if (!line.empty()) {
+            lines.push_back(line);
+            line.clear();
+        }
+        // a word of its own: cut in letters while it is wider than a line
+        while (measure(word) > maxWidth && word.size() > 1) {
+            size_t n = word.size() - 1;
+            while (n > 1 && measure(word.substr(0, n)) > maxWidth)
+                n--;
+            lines.push_back(word.substr(0, n));
+            word = word.substr(n);
+        }
+        line = word;
+        if (static_cast<int>(lines.size()) >= maxLines)
+            cut = true;
+    }
+    if (!line.empty() && !cut)
+        lines.push_back(line);
+    if (static_cast<int>(lines.size()) > maxLines || cut) {
+        lines.resize(maxLines);
+        std::string &last = lines.back();
+        while (!last.empty() && measure(last + "...") > maxWidth)
+            last.pop_back();
+        last += "...";
+    }
+    return lines;
+}
+
+// The unit of a phase's numbers: the runner's, or - on an old 4-field line - bytes for a download, items otherwise.
+inline std::string effectiveUnit(const Progress &p) {
+    if (!p.unit.empty())
+        return p.unit;
+    return p.key.compare(0, 8, "download") == 0 ? "bytes" : "items";
 }
 
 // "42.1 MB"
@@ -243,6 +393,200 @@ inline std::string humanBytes(uint64_t bytes) {
     else
         snprintf(buf, sizeof(buf), "%u B", static_cast<unsigned>(bytes));
     return buf;
+}
+
+// "18.4 GB" / "512.0 MB" (a stick's free space: always one decimal)
+inline std::string humanSpace(uint64_t bytes) {
+    char buf[32];
+    if (bytes >= 1000000000ULL)
+        snprintf(buf, sizeof(buf), "%.1f GB", static_cast<double>(bytes) / 1e9);
+    else
+        snprintf(buf, sizeof(buf), "%.1f MB", static_cast<double>(bytes) / 1e6);
+    return buf;
+}
+
+// the used part of the stick, 0..1 (the thin bar of the panel); 0 when the size is unknown
+inline double usedFraction(uint64_t freeBytes, uint64_t totalBytes) {
+    if (totalBytes == 0 || freeBytes >= totalBytes)
+        return 0;
+    return static_cast<double>(totalBytes - freeBytes) / static_cast<double>(totalBytes);
+}
+
+// "128 of 289 MB" / "1200 of 5400 files" / "2 of 4", as the numbers and what they count (the screen puts the words
+// around them). Bytes are MB (a total under 10 MB with one decimal) or KB (under 1 MB): never a raw byte count.
+struct Amount {
+    enum class Kind { MB, KB, Files, Items };
+    Kind kind = Kind::Items;
+    std::string done;
+    std::string total;
+};
+
+inline Amount amountFor(uint64_t done, uint64_t total, const std::string &unit) {
+    Amount a;
+    char buf[32];
+    if (unit == "bytes") {
+        if (total < 1000000) {
+            a.kind = Amount::Kind::KB;
+            snprintf(buf, sizeof(buf), "%.0f", static_cast<double>(done) / 1e3);
+            a.done = buf;
+            snprintf(buf, sizeof(buf), "%.0f", static_cast<double>(total) / 1e3);
+            a.total = buf;
+        } else {
+            a.kind = Amount::Kind::MB;
+            const char *format = total < 10000000 ? "%.1f" : "%.0f";
+            snprintf(buf, sizeof(buf), format, static_cast<double>(done) / 1e6);
+            a.done = buf;
+            snprintf(buf, sizeof(buf), format, static_cast<double>(total) / 1e6);
+            a.total = buf;
+        }
+        return a;
+    }
+    a.kind = unit == "files" ? Amount::Kind::Files : Amount::Kind::Items;
+    a.done = std::to_string(done);
+    a.total = std::to_string(total);
+    return a;
+}
+
+// an empty unit (an old 4-field line) is read by the phase's key
+inline Amount amountFor(const Progress &p) {
+    return amountFor(p.done, p.total, effectiveUnit(p));
+}
+
+// what the Remove confirm lists: the lines as ids, the screen gives them their words
+enum class RemoveItem {
+    // deleted
+    RetroArch,
+    Cores,
+    MenuAssets,
+    Databases,
+    Cheats,
+    Overlays,
+    Shaders,
+    Bios,
+    // stays
+    Games,
+    Playlists,
+    Covers,
+    Saves,
+    SaveStates,
+    Settings,
+};
+
+struct RemoveLists {
+    std::vector<RemoveItem> deleted;
+    std::vector<RemoveItem> stays;
+};
+
+inline RemoveLists removeLists(bool withBios) {
+    RemoveLists lists;
+    lists.deleted = {RemoveItem::RetroArch, RemoveItem::Cores,    RemoveItem::MenuAssets, RemoveItem::Databases,
+                     RemoveItem::Cheats,    RemoveItem::Overlays, RemoveItem::Shaders};
+    if (withBios)
+        lists.deleted.push_back(RemoveItem::Bios);
+    lists.stays = {RemoveItem::Games, RemoveItem::Playlists,  RemoveItem::Covers,
+                   RemoveItem::Saves, RemoveItem::SaveStates, RemoveItem::Settings};
+    return lists;
+}
+
+// "2.4 MB/s" (decimal is '.' or ',' as the language writes it); "" while the speed is not known
+inline std::string speedText(double bytesPerSecond, char decimal) {
+    char buf[32];
+    if (bytesPerSecond >= 1e6)
+        snprintf(buf, sizeof(buf), "%.1f MB/s", bytesPerSecond / 1e6);
+    else
+        snprintf(buf, sizeof(buf), "%.0f KB/s", bytesPerSecond / 1e3);
+    std::string out = buf;
+    for (char &c : out)
+        if (c == '.')
+            c = decimal;
+    return out;
+}
+
+// the time left as the meter says it: "About 1 min left" is rounded to whole minutes from 60 s, to 5 s below
+inline std::string roughDuration(double seconds) {
+    if (seconds < 0)
+        return "";
+    char buf[32];
+    if (seconds >= 60)
+        snprintf(buf, sizeof(buf), "%ld min", static_cast<long>(seconds / 60.0 + 0.5));
+    else
+        snprintf(buf, sizeof(buf), "%ld s", std::max(5L, static_cast<long>(seconds / 5.0 + 0.5) * 5));
+    return buf;
+}
+
+// the whole job, 0..1, in equal steps: phase i of n at fraction f is (i - 1 + f) / n
+inline double jobFraction(const Progress &p) {
+    if (p.phase <= 0 || p.phases <= 0)
+        return 0;
+    const double f = fraction(p) < 0 ? 0 : fraction(p);
+    return (static_cast<double>(p.phase - 1) + f) / static_cast<double>(p.phases);
+}
+
+// "3 min 20 s" / "45 s"; "" when it is not known
+inline std::string humanDuration(double seconds) {
+    if (seconds < 0)
+        return "";
+    const long s = static_cast<long>(seconds + 0.5);
+    char buf[32];
+    if (s >= 60)
+        snprintf(buf, sizeof(buf), "%ld min %02ld s", s / 60, s % 60);
+    else
+        snprintf(buf, sizeof(buf), "%ld s", s);
+    return buf;
+}
+
+// The speed of a download, smoothed over a few seconds: feed it (time, bytes done) every frame; it keeps an
+// exponentially weighted rate, so one stalled or quick read does not make the numbers jump. A new phase or package
+// (done going back) starts it again.
+class RateMeter {
+public:
+    void feed(unsigned nowMs, uint64_t done) {
+        if (!started_ || done < lastDone_ || nowMs < lastMs_) {
+            started_ = true;
+            rate_ = 0;
+            haveRate_ = false;
+            samples_ = 0;
+            lastMs_ = nowMs;
+            lastDone_ = done;
+            return;
+        }
+        const unsigned dt = nowMs - lastMs_;
+        if (dt < 250)
+            return; // too short to tell
+        const double instant = static_cast<double>(done - lastDone_) * 1000.0 / dt;
+        const double weight = dt >= 4000 ? 1.0 : dt / 4000.0; // a window of about 4 s
+        rate_ = haveRate_ ? rate_ + (instant - rate_) * weight : instant;
+        haveRate_ = true;
+        samples_++;
+        lastMs_ = nowMs;
+        lastDone_ = done;
+    }
+    void reset() { *this = RateMeter(); }
+    // a number is shown only from MinSamples readings on: the first ones swing too much to be believed
+    static constexpr int MinSamples = 3;
+    bool known() const { return haveRate_ && rate_ > 0 && samples_ >= MinSamples; }
+    double bytesPerSecond() const { return rate_; }
+    // seconds left for `remaining` bytes, -1 when the speed is not known yet
+    double secondsLeft(uint64_t remaining) const { return known() ? static_cast<double>(remaining) / rate_ : -1; }
+
+private:
+    bool started_ = false;
+    bool haveRate_ = false;
+    int samples_ = 0;
+    double rate_ = 0;
+    unsigned lastMs_ = 0;
+    uint64_t lastDone_ = 0;
+};
+
+// Stop (Circle) is for Install / Update only: a Remove runs to the end (half of it undone would leave RetroArch
+// broken); a Remove left half-done by a power loss is finished by the next Install or Remove.
+inline bool stopAllowed(Op op) {
+    return op != Op::Remove;
+}
+
+// the notice before Install / Update (10-15 minutes, ~400 MB); Remove has its own confirm
+inline bool noticeFirst(Op op) {
+    return op != Op::Remove;
 }
 
 //******************

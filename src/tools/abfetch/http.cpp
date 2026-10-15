@@ -129,8 +129,8 @@ string resolveLocation(const Url &base, const string &location) {
 //*******************************
 // buildRequest
 //*******************************
-string buildRequest(const Url &url, unsigned long long rangeFrom) {
-    return "GET " + url.target + " HTTP/1.1\r\n" + "Host: " + url.authority() + "\r\n" +
+string buildRequest(const Url &url, unsigned long long rangeFrom, bool headOnly) {
+    return string(headOnly ? "HEAD " : "GET ") + url.target + " HTTP/1.1\r\n" + "Host: " + url.authority() + "\r\n" +
            "User-Agent: abfetch/1 (AutoBleem)\r\n" + "Accept: */*\r\n" + "Accept-Encoding: identity\r\n" +
            (rangeFrom > 0 ? "Range: bytes=" + to_string(rangeFrom) + "-\r\n" : string()) + "Connection: close\r\n\r\n";
 }

@@ -374,7 +374,7 @@ Result fetch(const Options &options, string &error) {
     }
     // --continue: the size of what is already there is where the request starts
     unsigned long long already = 0;
-    const bool resume = options.resume && options.output != "-";
+    const bool resume = options.resume && options.output != "-" && !options.head;
     if (resume) {
         FILE *existing = fopen(options.output.c_str(), "rb");
         if (existing != nullptr) {
@@ -396,7 +396,7 @@ Result fetch(const Options &options, string &error) {
         Result result = connection.open(url, options, trust.get(), error);
         if (result != Ok)
             return result;
-        if ((result = connection.sendAll(buildRequest(url, already), error)) != Ok)
+        if ((result = connection.sendAll(buildRequest(url, options.head ? 0 : already, options.head), error)) != Ok)
             return result;
 
         // the head (skipping any 1xx interim response)
@@ -442,6 +442,21 @@ Result fetch(const Options &options, string &error) {
         if (head.status < 200 || head.status >= 300) {
             error = "the server answered " + to_string(head.status) + " for " + url.str();
             return HttpError;
+        }
+
+        if (options.head) {
+            unsigned long long size = 0;
+            if (!head.contentLength(size)) {
+                error = url.host + " did not say how large " + url.str() + " is";
+                return Incomplete;
+            }
+            Sink sizeSink(options.output, false, false);
+            const string text = to_string(size) + "\n";
+            if (!sizeSink.open() || !sizeSink.write(text.data(), text.size()) || !sizeSink.close()) {
+                error = "cannot write " + options.output + ": " + strerror(errno);
+                return WriteError;
+            }
+            return Ok;
         }
 
         // the body: after what is there (206, the rest), or the whole file again (200, the server does not

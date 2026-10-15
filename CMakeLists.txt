@@ -147,6 +147,17 @@ endif()
 
 find_package(Threads REQUIRED)
 
+# Sanitizers, opt-in: -DAB_SANITIZE=address,undefined (ci/build.sh native takes AB_SANITIZE=address,undefined) compiles
+# and links every C/C++ target of this build, the launcher's, the core's and their tests, with -fsanitize=<list>.
+# Empty, the default, adds nothing.
+set(AB_SANITIZE "" CACHE STRING "comma-separated -fsanitize= list, e.g. address,undefined (empty: none)")
+if (NOT AB_SANITIZE STREQUAL "")
+    message(STATUS "Sanitizers: -fsanitize=${AB_SANITIZE}")
+    add_compile_options(-fsanitize=${AB_SANITIZE} -fno-omit-frame-pointer -g)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${AB_SANITIZE}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${AB_SANITIZE}")
+endif()
+
 # lib_ableem: the portable SDL2 wrapper (own SDL discovery, own demo). autobleem-gui links it and does not
 # touch SDL directly at all - see CLAUDE.md. The console and the two appliances are embedded targets (no
 # cursor grab, keyboard-as-pad off); a dev host and the Windows product keep lib_ableem's dev-host behaviour.
