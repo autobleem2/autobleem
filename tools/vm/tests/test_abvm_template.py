@@ -128,12 +128,12 @@ class TemplateFromPackage(unittest.TestCase):
         self.assertEqual(lines[0], 'source: autobleem-pcusb-i386-v2.0.0-alpha3.tar.gz')
         self.assertEqual(lines[1], 'version: v2.0.0-alpha3')
         self.assertRegex(lines[2], r'^made: \d{4}-\d\d-\d\d \d\d:\d\d$')
-        with mock.patch('builtins.print') as shown:
+        with mock.patch('builtins.print') as shown, mock.patch.object(abvm, 'sb_orphans', return_value={}):
             abvm.sb_list()
         self.assertIn('autobleem-pcusb-i386-v2.0.0-alpha3.tar.gz, v2.0.0-alpha3', shown.call_args_list[0][0][0])
 
     def test_list_without_a_record_says_so(self):
-        with mock.patch('builtins.print') as shown:
+        with mock.patch('builtins.print') as shown, mock.patch.object(abvm, 'sb_orphans', return_value={}):
             abvm.sb_list()
         self.assertIn('template: none', shown.call_args_list[0][0][0])
 
