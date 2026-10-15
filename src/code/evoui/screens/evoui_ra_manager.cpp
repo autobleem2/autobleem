@@ -234,7 +234,7 @@ void GuiRaNotice::draw() {
     if (!accent.empty()) {
         rows.push_back({"", style.text});
         for (const string &row : abgui::wrapText(accent, width, measure))
-            rows.push_back({row, style.selectionBand}); // the colour of the selection / the progress fill
+            rows.push_back({row, style.heading}); // the colour of the cyan headings
     }
     const int textHeight = static_cast<int>(rows.size()) * font.lineHeight();
     const abgui::Panel panel(panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth),
