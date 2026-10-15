@@ -18,11 +18,17 @@ name: publish-launcher
 on:
   push:
     tags: ['v*']
-    # develop too, for the rolling `nightly` pre-release the appliance's development build is assembled from
-    branches: [develop]
-    paths-ignore: ['docs/**', '**.md']
+  # develop no longer publishes on every push (FOUNDRY-129: four merges in two minutes loaded the build laptop for
+  # an hour): the rolling `nightly` pre-release the appliance's development build is assembled from is built once a
+  # night, and only when develop moved since the last nightly that was published (plan's "changed since" step)
+  schedule:
+    - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
+      platforms:
+        description: 'platforms to build (all, or space separated: rpi rpi64 pcusb psc win); overrides targets'
+        type: string
+        default: 'all'
       targets:
         description: launcher targets (space separated; rpi rpi64 pcusb psc win)
         type: string
@@ -47,17 +53,38 @@ jobs:
   plan:
     if: vars.AB_CI_ENABLED == 'true'
     runs-on: ubuntu-24.04
+    permissions: { contents: read, actions: read }
     outputs:
       targets: ${{ steps.t.outputs.json }}
       full: ${{ steps.t.outputs.full }}
       version: ${{ steps.v.outputs.version }}
       channel: ${{ steps.c.outputs.channel }}
+      skip: ${{ steps.s.outputs.skip }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, submodules: recursive }
+      # the nightly's schedule run: nothing to do when develop's head is the commit of the last run whose `nightly`
+      # job succeeded (that job is what publishes the nightly and starts the appliance's assembly; a failed or
+      # partial run has no successful `nightly` job and does not count). No other record is kept - the run list is it.
+      - id: s
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          skip=false
+          if [ "${{ github.event_name }}" = schedule ]; then
+            for id in $(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/publish-launcher.yml/runs?branch=develop&status=success&per_page=20" --jq '.workflow_runs[].id'); do
+              if [ "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/jobs" --jq '[.jobs[] | select(.name == "nightly" and .conclusion == "success")] | length')" != 0 ]; then
+                last=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id" --jq .head_sha)
+                echo "last published nightly: run $id at $last; develop is at $GITHUB_SHA"
+                [ "$last" = "$GITHUB_SHA" ] && skip=true
+                break
+              fi
+            done
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
       - id: t
         run: |
-          t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb psc win"
+          t="${{ inputs.platforms }}"; { [ -n "$t" ] && [ "$t" != all ]; } || t="${{ inputs.targets }}"
+          [ -n "$t" ] || t="rpi rpi64 pcusb psc win"
           echo "json=$(printf '%s\n' $t | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
           # every target built: what may replace the rolling nightly (a partial run would leave some out)
           full=true
@@ -91,7 +118,8 @@ jobs:
   # a GitHub limitation - see ROUTE-report.md). plan/sign-win/release/nightly don't
   # compile and stay on ubuntu-24.04 untouched.
   route:
-    if: vars.AB_CI_ENABLED == 'true'
+    needs: plan
+    if: vars.AB_CI_ENABLED == 'true' && needs.plan.outputs.skip != 'true'
     uses: autobleem2/autobleem-build/.github/workflows/route.yml@develop
     with:
       force_fallback: ${{ inputs.force_fallback == true }}
@@ -349,7 +377,7 @@ jobs:
   nightly:
     if: >-
       !cancelled() && github.ref == 'refs/heads/develop' && inputs.channel != 'preview' &&
-      (github.event_name == 'push' || needs.plan.outputs.full == 'true') &&
+      (github.event_name == 'schedule' || needs.plan.outputs.full == 'true') &&
       needs.build.result == 'success' && (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
     needs: [plan, build, sign-win]
     runs-on: ubuntu-24.04
