@@ -160,6 +160,9 @@ if [ -n "$PRODUCT_DIR" ]; then
     if [ -f "$PRODUCT_DIR/ab_render_gles3.dll" ]; then
         cp "$PRODUCT_DIR/ab_render_gles3.dll" "$APP/"
         "$STRIP" "$APP/ab_render_gles3.dll"
+    elif [ "${AB_RENDER_GL:-1}" != 0 ]; then
+        echo "no $PRODUCT_DIR/ab_render_gles3.dll - the GLES 3 backend is on by default (AB_RENDER_GL=0 builds without it)" >&2
+        exit 1
     fi
     runtime_dlls "$APP"
     # the setup helper: the data tree from the download repository (the NSIS installer runs it, and the
@@ -206,6 +209,9 @@ cp "$BUILD_DIR/autobleem-gui.exe" "$APP/"
 if [ -f "$BUILD_DIR/ab_render_gles3.dll" ]; then
     cp "$BUILD_DIR/ab_render_gles3.dll" "$APP/"
     "$STRIP" "$APP/ab_render_gles3.dll"
+elif [ "${AB_RENDER_GL:-1}" != 0 ]; then
+    echo "no $BUILD_DIR/ab_render_gles3.dll - the GLES 3 backend is on by default (AB_RENDER_GL=0 builds without it)" >&2
+    exit 1
 fi
 # winpthread: the one GCC runtime DLL the exe still needs (libgcc/libstdc++ are linked in)
 runtime_dlls "$APP"

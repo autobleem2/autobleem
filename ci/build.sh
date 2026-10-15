@@ -267,6 +267,9 @@ stage_launcher() { # stage_launcher DIR TARGET - dist/<target>/Autobleem/bin/{au
     # the loadable renderer (unless AB_RENDER_GL=0), where the launcher looks for it: next to the program
     if [ -f "$dir/ab_render_gles3.so" ]; then
         cp "$dir/ab_render_gles3.so" "$bin/autobleem/"
+    elif [ "$AB_RENDER_GL" != 0 ]; then
+        echo "no $dir/ab_render_gles3.so - the GLES 3 backend is on by default; the package would draw with SDL_Renderer (AB_RENDER_GL=0 builds without it)" >&2
+        exit 1
     fi
     cp -a src/resources/. "$bin/autobleem/"
     rm -f "$bin/autobleem/internal.db"   # an appliance has no built-in games (AB_HAS_INTERNAL_GAMES is psc/dev only)

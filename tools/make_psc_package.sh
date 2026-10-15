@@ -87,6 +87,9 @@ cp -a "$BUILD_DIR/autobleem-gui" "$APP/autobleem-gui"
 # the loadable GLES 3 renderer, when the build has it (ci/build.sh default; none with AB_RENDER_GL=0): next to the program, not UPX-packed
 if [ -f "$BUILD_DIR/ab_render_gles3.so" ]; then
     cp -a "$BUILD_DIR/ab_render_gles3.so" "$APP/ab_render_gles3.so"
+elif [ "${AB_RENDER_GL:-1}" != 0 ]; then
+    echo "no $BUILD_DIR/ab_render_gles3.so - the GLES 3 backend is on by default; the package would draw with SDL_Renderer (AB_RENDER_GL=0 builds without it)" >&2
+    exit 1
 fi
 # absplash: the full-screen picture the launch scripts show around RetroArch (src/tools/absplash.cpp;
 # its pictures are src/resources/splash/, copied with the resources above)
