@@ -112,13 +112,13 @@ LAUNCHER=()
 if [ -z "${AB_NO_SCCACHE:-}" ] && command -v sccache >/dev/null 2>&1; then
     LAUNCHER=(-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache)
     export AB_SCCACHE=1
-    sccache --start-server >/dev/null 2>&1 || true
-    sccache --zero-stats >/dev/null 2>&1 || true
+    timeout 60 sccache --start-server >/dev/null 2>&1 || true
+    timeout 60 sccache --zero-stats >/dev/null 2>&1 || true
 fi
 sccache_stats() {
     [ -n "${AB_SCCACHE:-}" ] || return 0
     banner "sccache"
-    sccache --show-stats 2>/dev/null | grep -E "Compile requests|Cache hits|Cache misses|Non-cacheable|Cache size|Cache location" || true
+    timeout 60 sccache --show-stats 2>/dev/null | grep -E "Compile requests|Cache hits|Cache misses|Non-cacheable|Cache size|Cache location" || true
 }
 # --- extensions built with the launcher (BUG-10) ---------------------------------------------------------------
 # The Store (ext_store) is a plugin compiled against the launcher's SDK headers; one built earlier fails in dlopen
