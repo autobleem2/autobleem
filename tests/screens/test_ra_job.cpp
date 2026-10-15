@@ -773,6 +773,33 @@ TEST_CASE("RaJobService with the fake runner: stop() ends with end|stopped, the 
     unsetenv("AB_FAKE_RA_STEPS");
 }
 
+TEST_CASE("RaJobService: destroyed while the fake runner still works (the shutdown path)") {
+    TempDir tmp("rajob_shutdown");
+    setenv("AB_FAKE_RA_STEPS", "10", 1);
+    const std::string fake = AB_TOOLS_DIR "/fake_ra_runner.sh";
+    const std::string file = tmp.at("p");
+    {
+        RaJobService job;
+        REQUIRE(job.startCommand({fake, "install", "--progress", file}, file));
+        job.poll();
+        CHECK(job.running());
+        // out of scope with the child alive: SIGTERM, no wait
+    }
+    {
+        RaJobService job; // the same, after a Stop was asked and a few polls
+        REQUIRE(job.startCommand({fake, "install", "--progress", file}, file));
+        job.stop();
+        job.poll();
+    }
+    {
+        RaJobService idle; // never started
+        CHECK_FALSE(idle.running());
+        CHECK(idle.poll().state == State::Idle);
+        CHECK_FALSE(idle.startCommand({}, file));
+    }
+    unsetenv("AB_FAKE_RA_STEPS");
+}
+
 TEST_CASE("RaJobService with the fake runner: its failure knobs") {
     TempDir tmp("rajob_knobs");
     setenv("AB_FAKE_RA_STEPS", "4", 1);
