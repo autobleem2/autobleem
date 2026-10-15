@@ -97,7 +97,7 @@ configure() { # configure BUILD_DIR ARGS...
     # sanitizers: AB_SANITIZE=address,undefined (native only; the CMake cache keeps the last value, so an empty
     # value is passed on to switch them off again)
     local san=()
-    [ "$dir" = build_sys ] && san=("-DAB_SANITIZE=${AB_SANITIZE:-}")
+    [ "$dir" = build_sys ] && san=("-DAB_SANITIZE=${AB_SANITIZE-address,undefined}")
     cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "${tests[@]}" "${gl[@]}" ${san[@]+"${san[@]}"} "$@"
     # (a build directory reused from an ON run must not ship its backend file in an OFF package)
     if [ ${#gl[@]} -eq 0 ] || [ "${gl[0]}" = -DABLEEM_RENDER_GL=OFF ]; then
