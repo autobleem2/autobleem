@@ -32,6 +32,45 @@ TEST_CASE("the progress line: a phase") {
     CHECK(phaseCounter(line.progress) == "3/9");
 }
 
+TEST_CASE("the progress line: the old 4-field form has no unit, item or package count") {
+    const Line line = parseLine("phase 3/9|download-cores|10|20\n");
+    REQUIRE(line.kind == Line::Kind::Phase);
+    CHECK(line.progress.unit == "");
+    CHECK(line.progress.item == "");
+    CHECK(line.progress.itemIndex == 0);
+    CHECK(line.progress.itemCount == 0);
+}
+
+TEST_CASE("the progress line: the 8-field form carries unit, package name and package i of n") {
+    const Line line = parseLine("phase 3/9|download-cores|1048576|20971520|bytes|cores-psc-20261003.tar.gz|2|5\n");
+    REQUIRE(line.kind == Line::Kind::Phase);
+    CHECK(line.progress.phase == 3);
+    CHECK(line.progress.phases == 9);
+    CHECK(line.progress.key == "download-cores");
+    CHECK(line.progress.done == 1048576);
+    CHECK(line.progress.total == 20971520);
+    CHECK(line.progress.unit == "bytes");
+    CHECK(line.progress.item == "cores-psc-20261003.tar.gz");
+    CHECK(line.progress.itemIndex == 2);
+    CHECK(line.progress.itemCount == 5);
+    // an empty item and 0/0 are fine
+    const Line bare = parseLine("phase 9/9|install-binary|0|2|items||0|0");
+    REQUIRE(bare.kind == Line::Kind::Phase);
+    CHECK(bare.progress.unit == "items");
+    CHECK(bare.progress.item == "");
+    CHECK(bare.progress.itemCount == 0);
+    CHECK(parseLine("phase 7/9|unpack|3|900|files|cheats.zip|11|11").kind == Line::Kind::Phase);
+}
+
+TEST_CASE("the progress line: a bad unit, a package index past the count or a wrong field count is garbled") {
+    CHECK(parseLine("phase 3/9|unpack|1|2|kilobytes|x|1|1").kind == Line::Kind::Garbled);
+    CHECK(parseLine("phase 3/9|unpack|1|2||x|1|1").kind == Line::Kind::Garbled);
+    CHECK(parseLine("phase 3/9|unpack|1|2|bytes|x|3|2").kind == Line::Kind::Garbled);
+    CHECK(parseLine("phase 3/9|unpack|1|2|bytes|x|a|2").kind == Line::Kind::Garbled);
+    CHECK(parseLine("phase 3/9|unpack|1|2|bytes|x|1").kind == Line::Kind::Garbled);
+    CHECK(parseLine("phase 3/9|unpack|1|2|bytes|x|1|2|9").kind == Line::Kind::Garbled);
+}
+
 TEST_CASE("the progress line: CRLF and a missing newline are fine, only the first line counts") {
     CHECK(parseLine("phase 1/2|check-space|0|0\r\n").kind == Line::Kind::Phase);
     CHECK(parseLine("phase 1/2|check-space|0|0").kind == Line::Kind::Phase);
