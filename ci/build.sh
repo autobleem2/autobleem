@@ -4,7 +4,8 @@
 # CI workflows call nothing else. Every target configures into the build directory the make_*.sh scripts
 # use, so the two are interchangeable, builds incrementally, validates, and leaves what ships in dist/<target>/.
 #
-#   native   build_sys/     Debug + -Wall -Wextra, ctest, the language files, clang-format --check, clang-tidy
+#   native   build_sys/     the language files and clang-format --check first (before any compile), then Debug +
+#                           -Wall -Wextra, ctest, clang-tidy
 #   psc      build_psc/     the PlayStation Classic (toolchains/psc, AB_PSC_TOOLCHAIN) -> autobleem-psc-<v>.zip
 #   rpi      build_rpi/     Raspberry Pi 32-bit (toolchains/rpi) -> dist/rpi/ (binary + abpad + resources, staged
 #                           the way .github/workflows/publish-launcher.yml does; no install.sh, no package - see below)
@@ -191,16 +192,18 @@ build_pcsx() { # build_pcsx psc|rpi|rpi64|pcusb DEST [nxt] - pcsx-ab (or pcsx-ab
 }
 
 # --- native: the gate --------------------------------------------------------------------------------------
+precheck() { # the checks that need no compile, run first so a format or language error fails in seconds (set -e)
+    banner "native: language files"
+    python3 tools/lang_tools.py validate
+    banner "native: clang-format"
+    bash tools/format.sh --check
+}
 build_native() {
     banner "native: configure + build (build_sys)"
     configure build_sys -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DAB_ENABLE_CHD=ON
     ninja -C build_sys -j "$JOBS"
     banner "native: tests"
     run_ctest --test-dir build_sys --output-on-failure -j "$JOBS"
-    banner "native: language files"
-    python3 tools/lang_tools.py validate
-    banner "native: clang-format"
-    bash tools/format.sh --check
     if [ -z "${AB_NO_LINT:-}" ]; then
         banner "native: clang-tidy"
         bash tools/lint.sh -p build_sys
@@ -395,6 +398,9 @@ for t in "$@"; do
 done
 echo "AutoBleem $VERSION - targets: ${targets[*]} - $JOBS jobs"
 start=$(date +%s)
+for t in "${targets[@]}"; do
+    if [ "$t" = native ]; then precheck; break; fi
+done
 for t in "${targets[@]}"; do
     t0=$(date +%s)
     case "$t" in
