@@ -550,14 +550,15 @@ void GuiRaProgress::draw() {
     Fonts &fonts = gui->assets().themeFonts;
     const rajob::Progress &p = shown.progress;
     // the panel's title: what the run is
-    const string title = op == rajob::Op::Remove   ? _("Removing RetroArch")
-                         : op == rajob::Op::Update ? _("Updating RetroArch")
-                                                   : _("Installing RetroArch");
+    string title = _("Installing RetroArch");
+    if (op == rajob::Op::Remove)
+        title = _("Removing RetroArch");
+    else if (op == rajob::Op::Update)
+        title = _("Updating RetroArch");
     // the job line: "Step 3 of 9 - Downloading cores", the percent at its right
-    const string phaseName = p.phase > 0 ? stepTitle(p.key) : _("Loading ... Please Wait ...");
-    const string jobLine =
-        p.phase > 0 ? fill(_("Step %s of %s"), {to_string(p.phase), to_string(p.phases)}) + " - " + phaseName
-                    : phaseName;
+    string jobLine = _("Loading ... Please Wait ...");
+    if (p.phase > 0)
+        jobLine = fill(_("Step %s of %s"), {to_string(p.phase), to_string(p.phases)}) + " - " + stepTitle(p.key);
     const string percentText = to_string(static_cast<int>(rajob::jobFraction(p) * 100.0)) + "%";
 
     // the bar belongs to one phase: a new phase starts it again, it never keeps the previous phase's fraction. When
@@ -586,18 +587,19 @@ void GuiRaProgress::draw() {
         if (p.total > 0)
             package += " - " + amountText(rajob::amountFor(p));
     }
-    const string packageCount =
-        p.itemCount > 0 ? fill(_("Package %s of %s"), {to_string(p.itemIndex), to_string(p.itemCount)}) : "";
+    string packageCount;
+    if (p.itemCount > 0)
+        packageCount = fill(_("Package %s of %s"), {to_string(p.itemIndex), to_string(p.itemCount)});
     const string why = stopping ? _("Stopping...") : phaseWhy(p.key);
     // the meter: nothing until the speed has three readings; a Remove has no speed, it has the wait
     string meterLine;
     if (op == rajob::Op::Remove)
         meterLine = _("Please wait - this takes about half a minute");
     else if (downloading && meter.known()) {
-        const string decimal = _("decimal point");
-        const string left = fill(_("About %s left"),
-                                 {rajob::roughDuration(meter.secondsLeft(p.total - min(p.done, p.total)))});
-        meterLine = left + " \xC2\xB7 " + rajob::speedText(meter.bytesPerSecond(), decimal == "," ? ',' : '.');
+        const char decimal = _("decimal point") == "," ? ',' : '.';
+        const double secondsLeft = meter.secondsLeft(p.total - min(p.done, p.total));
+        const string timeLeft = fill(_("About %s left"), {rajob::roughDuration(secondsLeft)});
+        meterLine = timeLeft + " \xC2\xB7 " + rajob::speedText(meter.bytesPerSecond(), decimal);
     }
 
     const int bodyHeight = 12 + LineHeight + 34 + 36 + 34 + 2 * LineHeight + 12;
@@ -611,46 +613,45 @@ void GuiRaProgress::draw() {
     gui->text().setShadow(shadow);
 
     const int inner = panel.w - 2 * TextInset;
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], gui->text().elide(fonts[FONT_28_BOLD], title, inner),
-                                     panel.x + TextInset, panel.y + 18, style.text, XALIGN_LEFT);
+    const int left = panel.x + TextInset;
+    const int right = panel.x + panel.w - TextInset;
+    // a line of text at (x, y), elided to maxWidth
+    const auto put = [&](const ableem::Font &font, const string &text, int x, int y, int maxWidth,
+                         const ableem::Color &color) {
+        gui->text().renderText_WithColor(font, gui->text().elide(font, text, maxWidth), x, y, color, XALIGN_LEFT);
+    };
+    put(fonts[FONT_28_BOLD], title, left, panel.y + 18, inner, style.text);
     style.rule(gui->uiContext(), panel, panel.y + PanelStyle::HeaderHeight - 8);
     int y = panel.y + PanelStyle::HeaderHeight + 12;
     // the whole job
     const int percentWidth = gui->text().textWidth(fonts[FONT_22_MED], percentText);
-    gui->text().renderText_WithColor(fonts[FONT_22_MED],
-                                     gui->text().elide(fonts[FONT_22_MED], jobLine, inner - percentWidth - 16),
-                                     panel.x + TextInset, y, style.text, XALIGN_LEFT);
-    gui->text().renderText_WithColor(fonts[FONT_22_MED], percentText, panel.x + panel.w - TextInset - percentWidth, y,
-                                     style.text, XALIGN_LEFT);
+    put(fonts[FONT_22_MED], jobLine, left, y, inner - percentWidth - 16, style.text);
+    put(fonts[FONT_22_MED], percentText, right - percentWidth, y, percentWidth, style.text);
     y += LineHeight;
-    style.progressBox(gui->uiContext(), ableem::Rect(panel.x + TextInset, y, inner, 22),
-                      min(1.0, rajob::jobFraction(p)));
+    const ableem::Rect jobBar(left, y, inner, 22);
+    style.progressBox(gui->uiContext(), jobBar, min(1.0, rajob::jobFraction(p)));
     y += 34;
     // the current package
     const int countWidth = gui->text().textWidth(fonts[FONT_22_MED], packageCount);
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD],
-                                     gui->text().elide(fonts[FONT_28_BOLD], package, inner - countWidth - 16),
-                                     panel.x + TextInset, y, style.text, XALIGN_LEFT);
-    gui->text().renderText_WithColor(fonts[FONT_22_MED], packageCount, panel.x + panel.w - TextInset - countWidth,
-                                     y + 4, style.description, XALIGN_LEFT);
+    put(fonts[FONT_28_BOLD], package, left, y, inner - countWidth - 16, style.text);
+    put(fonts[FONT_22_MED], packageCount, right - countWidth, y + 4, countWidth, style.description);
     y += 36;
-    const ableem::Rect packageBar(panel.x + TextInset, y, inner, 22);
+    const ableem::Rect packageBar(left, y, inner, 22);
     style.progressBox(gui->uiContext(), packageBar, min(1.0, bar.value));
     if (bar.overReal) {
         // the sweep: a mark running to and fro over the bar - dark over the fill, light over the empty part
         const int markWidth = inner / 6;
         const int markX = packageBar.x + static_cast<int>(bar.sweep * (inner - markWidth));
         const bool overFill = markX + markWidth / 2 < packageBar.x + static_cast<int>(bar.value * inner);
-        const ableem::Color mark = overFill ? ableem::Color(0, 0, 0, 120)
-                                            : ableem::Color(style.text.r, style.text.g, style.text.b, 150);
+        ableem::Color mark(style.text.r, style.text.g, style.text.b, 150);
+        if (overFill)
+            mark = ableem::Color(0, 0, 0, 120);
         style.plate(gui->uiContext(), ableem::Rect(markX, packageBar.y + 2, markWidth, packageBar.h - 4), mark);
     }
     y += 34;
-    gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], why, inner),
-                                     panel.x + TextInset, y, style.description, XALIGN_LEFT);
+    put(fonts[FONT_22_MED], why, left, y, inner, style.description);
     y += LineHeight;
-    gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], meterLine, inner),
-                                     panel.x + TextInset, y, style.description, XALIGN_LEFT);
+    put(fonts[FONT_22_MED], meterLine, left, y, inner, style.description);
 
     const bool canStop = rajob::stopAllowed(op) && !stopping;
     style.footer(*gui,
