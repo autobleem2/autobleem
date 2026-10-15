@@ -45,6 +45,11 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          boot, the cover DBs shared read-only (_shared/db)
   python tools/vm/abvm.py sandbox template               _template from the stick: its launcher, themes, extensions,
                                                          Apps; no games, empty databases
+  python tools/vm/abvm.py sandbox template --package <P> the same from a pcusb release package instead of the stick (which
+                                                         is older than the product): P = a .tar.gz or folder on the test
+                                                         machine, a URL, or `nightly` (the site's newest pcusb nightly,
+                                                         sha256 checked). _template/TEMPLATE_SOURCE records source,
+                                                         version and date; `sandbox list` prints it
   python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease (release stops a launcher left running)
   python tools/vm/abvm.py sandbox new <name> [--build <dir>] [--ext <zip|dir>]...   made from the template (not started)
                                                          (with Mods/ and System/Extensions/store/{cache,cache/pictures,downloads,staging,sources})
@@ -1200,9 +1205,94 @@ def sb_setup():
     print(f'sandboxes: {SB_GUEST} in the guest = {sb_host()} here; covers in _shared/db')
 
 
-def sb_template():
-    """_template: what every new sandbox starts from - the stick's launcher, themes, extensions and Apps, no games,
-    empty databases; the covers linked from _shared"""
+def sb_template_source_write(source, version):
+    with open(os.path.join(sb_host('_template'), 'TEMPLATE_SOURCE'), 'w') as f:
+        f.write(f'source: {source}\nversion: {version}\nmade: {time.strftime("%Y-%m-%d %H:%M")}\n')
+
+
+def sb_template_source():
+    """the one-line "source, version, date" _template recorded, or '' when it has none"""
+    try:
+        with open(os.path.join(sb_host('_template'), 'TEMPLATE_SOURCE')) as f:
+            return ', '.join(line.split(': ', 1)[-1].strip() for line in f if line.strip())
+    except OSError:
+        return ''
+
+
+def sb_nightly_package(dest):
+    """the newest pcusb nightly of the site (what `update` installs on the stick) downloaded into dest, sha256
+    checked; returns the file"""
+    import urllib.request
+    latest = json.loads(urllib.request.urlopen(f'{SITE}/nightly/latest.json', timeout=30).read())
+    version = latest['version']
+    name = f'autobleem-pcusb-i386-{version}.tar.gz'
+    path = os.path.join(dest, name)
+    urllib.request.urlretrieve(f'{SITE}/nightly/{version}/{name}', path)
+    sha = ((latest.get('files', {}).get('pcusb') or {}).get('sha256')
+           or urllib.request.urlopen(f'{SITE}/nightly/{version}/{name}.sha256', timeout=30).read().decode().split()[0])
+    with open(path, 'rb') as f:
+        got = hashlib.sha256(f.read()).hexdigest()
+    if got != sha:
+        raise Fail(f'sha256 of the download ({got}) differs from the published {sha}')
+    return path
+
+
+def sb_template_from_package(package):
+    """_template from a pcusb release package (a .tar.gz path or URL, the folder it unpacks to, or `nightly`) in
+    place of the stick: the same parts, built here on the share's host side, swapped in whole"""
+    work = tempfile.mkdtemp(prefix='abvm-template-')
+    try:
+        src = os.path.expanduser(package[5:] if package.startswith('host:') else package)
+        if package == 'nightly':
+            src = sb_nightly_package(work)
+        elif re.match(r'https?://', package):
+            import urllib.request
+            src = os.path.join(work, os.path.basename(package))
+            urllib.request.urlretrieve(package, src)
+        if os.path.isfile(src):
+            unpacked = os.path.join(work, 'unpacked')
+            os.mkdir(unpacked)
+            subprocess.run(['tar', 'xzf', src, '-C', unpacked], check=True)
+            tops = os.listdir(unpacked)
+            src_dir = os.path.join(unpacked, tops[0]) if len(tops) == 1 else unpacked
+        else:
+            src_dir = src
+        bin_dir = os.path.join(src_dir, 'Autobleem', 'bin')
+        if not os.path.isdir(os.path.join(bin_dir, 'autobleem')):
+            raise Fail(f'--package {package}: no Autobleem/bin/autobleem in it - give a pcusb release package')
+        t = sb_host('_template')
+        new = t + '.new'
+        shutil.rmtree(new, ignore_errors=True)
+        for d in ('System/Databases', 'System/Logs', 'Games', 'Autobleem/bin'):
+            os.makedirs(os.path.join(new, d))
+        for part in ('autobleem', 'abpad'):
+            if os.path.exists(os.path.join(bin_dir, part)):
+                shutil.copytree(os.path.join(bin_dir, part), os.path.join(new, 'Autobleem', 'bin', part), symlinks=True)
+        for rel, to in (('Autobleem/rc', 'Autobleem/rc'), ('Themes', 'Themes'), ('extensions', 'Extensions'),
+                        ('Apps', 'Apps')):
+            if os.path.isdir(os.path.join(src_dir, rel)):
+                shutil.copytree(os.path.join(src_dir, rel), os.path.join(new, to), symlinks=True)
+        version = ''
+        if os.path.isfile(os.path.join(src_dir, 'VERSION')):
+            shutil.copy(os.path.join(src_dir, 'VERSION'), os.path.join(new, 'VERSION'))
+            with open(os.path.join(new, 'VERSION')) as f:
+                version = f.read().strip()
+        os.symlink('../../../_shared/db', os.path.join(new, 'Autobleem', 'bin', 'db'))
+        shutil.rmtree(t, ignore_errors=True)
+        os.rename(new, t)
+        sb_template_source_write(os.path.basename(src.rstrip('/')), version or '(no VERSION)')
+        sb_open_modes(t)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    print(f'template made from the package {package} ({sb_template_source()})')
+
+
+def sb_template(package=None):
+    """_template: what every new sandbox starts from - the stick's launcher, themes, extensions and Apps (or, with
+    `package`, a pcusb release package's: the stick is older than the product), no games, empty databases; the
+    covers linked from _shared"""
+    if package:
+        return sb_template_from_package(package)
     t = f'{SB_GUEST}/_template'
     guest_run(f'set -e; mountpoint -q {SB_GUEST} || {{ echo "{SB_GUEST} is not mounted: abvm.py sandbox setup" >&2; '
               f'exit 1; }}; sudo rm -rf {t}.new; sudo mkdir -p {t}.new/Autobleem/bin {t}.new/System/Databases '
@@ -1212,6 +1302,12 @@ def sb_template():
               f'sudo cp -r {STICK}/Themes {STICK}/Extensions {STICK}/Apps {t}.new/; sudo cp {STICK}/VERSION {t}.new/; '
               f'sudo ln -s ../../../_shared/db {t}.new/Autobleem/bin/db; sudo rm -rf {t}; sudo mv {t}.new {t}')
     sb_open_modes(sb_host('_template'))
+    try:
+        with open(os.path.join(sb_host('_template'), 'VERSION')) as f:
+            stick_version = f.read().strip()
+    except OSError:
+        stick_version = '(no VERSION)'
+    sb_template_source_write(f'stick {STICK}', stick_version)
     print(f'template made from the stick ({STICK})')
 
 
@@ -1671,6 +1767,7 @@ def sb_remove(name):
 
 
 def sb_list():
+    print(f'template: {sb_template_source() or "none, or made before it was recorded"}')
     names = sb_names()
     if not names:
         print('no sandboxes')
@@ -1718,7 +1815,12 @@ def sandbox_command(args, out_dir):
         LEASE_KEY = 'sb-_template'
         lease_op('take', WHO, 'the template', 10)
         try:
-            sb_template()
+            if args[1:2] == ['--package'] and len(args) == 3:
+                sb_template(args[2])
+            elif len(args) > 1:
+                raise Fail('sandbox template [--package <pcusb .tar.gz|URL|dir|nightly>]')
+            else:
+                sb_template()
         finally:
             lease_op('release', WHO)
     elif sub in ('take', 'release'):
@@ -1767,7 +1869,7 @@ def sandbox_command(args, out_dir):
             lease_op('release', WHO)
             print(f'sandbox {name} removed')
     else:
-        raise Fail('sandbox list | setup | template | take <name> <task> [min] | release <name> | '
+        raise Fail('sandbox list | setup | template [--package <pcusb package|nightly>] | take <name> <task> [min] | release <name> | '
                    'new|start <name> [--build <dist dir>] [--ext <zip|dir>]... | drive <name> "<script>" | logs <name> [n] | '
                    'stop|reset|rm <name>')
 
