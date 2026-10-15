@@ -5,8 +5,14 @@
 // on a Pi / PC stick) with  install|remove [--bios] --progress <FILE>.  The runner rewrites <FILE> atomically, one
 // UTF-8 line:
 //
-//     phase <i>/<n>|<key>|<done>|<total>        a phase of n running (total 0 = unknown)
+//     phase <i>/<n>|<key>|<done>|<total>|<unit>|<item>|<item_i>|<item_n>
 //     end|ok   end|stopped   end|error|<code>   the last content, written once
+//
+// phase line: a phase i of n; <done>/<total> count <unit> = bytes | files | items within the phase (a runner
+// writes a total above 0 in every phase; a 0 is still read as "unknown" and shown as a sweeping bar). <item> is
+// the package the phase is on (cores-psc-20261003.tar.gz, cheats; may be empty), <item_i>/<item_n> which package
+// of how many in this phase (0/0 = none). The old 4-field form  phase <i>/<n>|<key>|<done>|<total>  still parses
+// (unit "", item "", 0/0). Fields never contain '|' or a line end. The appliance's runner writes this very syntax.
 //
 // and exits 0 / 3 / 1. These are the parts that need no process or screen: the line's parser, the job's status
 // machine, the runner's command line, the keys' and codes' mapping and the panel's row logic - so they can be tested.
@@ -37,8 +43,13 @@ struct Progress {
     std::string key;
     uint64_t done = 0;
     uint64_t total = 0; // 0 = unknown
+    std::string unit;   // bytes | files | items; "" on an old 4-field line
+    std::string item;   // the current package's name, may be empty
+    int itemIndex = 0;  // which package of itemCount in this phase; 0/0 = none
+    int itemCount = 0;
     bool operator==(const Progress &o) const {
-        return phase == o.phase && phases == o.phases && key == o.key && done == o.done && total == o.total;
+        return phase == o.phase && phases == o.phases && key == o.key && done == o.done && total == o.total &&
+               unit == o.unit && item == o.item && itemIndex == o.itemIndex && itemCount == o.itemCount;
     }
 };
 
@@ -100,13 +111,22 @@ inline Line parseLine(const std::string &text) {
         }
         return line;
     }
-    if (f.size() != 4 || f[0].compare(0, 6, "phase ") != 0 || f[1].empty())
+    if ((f.size() != 4 && f.size() != 8) || f[0].compare(0, 6, "phase ") != 0 || f[1].empty())
         return line;
     const std::vector<std::string> of = detail::split(f[0].substr(6), '/');
-    uint64_t i = 0, n = 0, done = 0, total = 0;
+    uint64_t i = 0, n = 0, done = 0, total = 0, itemIndex = 0, itemCount = 0;
     if (of.size() != 2 || !detail::number(of[0], i) || !detail::number(of[1], n) || i < 1 || n < i || n > 99 ||
         !detail::number(f[2], done) || !detail::number(f[3], total))
         return line;
+    if (f.size() == 8) {
+        if (!(f[4] == "bytes" || f[4] == "files" || f[4] == "items") || !detail::number(f[6], itemIndex) ||
+            !detail::number(f[7], itemCount) || itemIndex > itemCount || itemCount > 99999)
+            return line;
+        line.progress.unit = f[4];
+        line.progress.item = f[5];
+        line.progress.itemIndex = static_cast<int>(itemIndex);
+        line.progress.itemCount = static_cast<int>(itemCount);
+    }
     line.kind = Line::Kind::Phase;
     line.progress.phase = static_cast<int>(i);
     line.progress.phases = static_cast<int>(n);

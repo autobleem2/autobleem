@@ -37,8 +37,9 @@ bool parseUrl(const std::string &text, Url &url);
 std::string resolveLocation(const Url &base, const std::string &location);
 
 // GET, the Host header, Connection: close (one request per connection), no compression asked for; with
-// rangeFrom > 0 a "Range: bytes=<rangeFrom>-" as well - the rest of a file that is partly there (--continue)
-std::string buildRequest(const Url &url, unsigned long long rangeFrom = 0);
+// rangeFrom > 0 a "Range: bytes=<rangeFrom>-" as well - the rest of a file that is partly there (--continue);
+// headOnly asks HEAD instead of GET (--head: only the size)
+std::string buildRequest(const Url &url, unsigned long long rangeFrom = 0, bool headOnly = false);
 
 //******************
 // ResponseHead

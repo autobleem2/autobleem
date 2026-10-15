@@ -335,6 +335,35 @@ TEST_CASE("buildRequest: a Range for the rest of a file, only when something is 
     CHECK(buildRequest(url, 12345).find("\r\nRange: bytes=12345-\r\n") != string::npos);
 }
 
+TEST_CASE("buildRequest: --head asks HEAD") {
+    Url url;
+    REQUIRE(parseUrl("http://127.0.0.1:8080/assets.zip", url));
+    CHECK(buildRequest(url, 0, true).compare(0, 28, "HEAD /assets.zip HTTP/1.1\r\nH") == 0);
+}
+
+TEST_CASE("fetch --head: the Content-Length goes to the output, no body is read") {
+    TempDir tmp("abfetch");
+    LoopbackServer server(Replies{{"HTTP/1.1 200 OK\r\nContent-Length: 6295495\r\n\r\n"}});
+    Options options = optionsFor(server.url("/assets.zip"), tmp.at("size.txt"));
+    options.head = true;
+    string error;
+    CHECK(fetch(options, error) == Ok);
+    CHECK(tmp.readFile("size.txt") == "6295495\n");
+    auto requests = server.requests();
+    REQUIRE(requests.size() == 1);
+    CHECK(requests[0].compare(0, 5, "HEAD ") == 0);
+}
+
+TEST_CASE("fetch --head: an answer without Content-Length is Incomplete") {
+    TempDir tmp("abfetch");
+    LoopbackServer server(Replies{{"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"}});
+    Options options = optionsFor(server.url("/assets.zip"), tmp.at("size.txt"));
+    options.head = true;
+    string error;
+    CHECK(fetch(options, error) == Incomplete);
+    CHECK_FALSE(exists(tmp.at("size.txt")));
+}
+
 TEST_CASE("fetch --continue: a 206 appends the rest to what is there") {
     TempDir tmp("abfetch");
     tmp.writeFile("game.part", "first half|");

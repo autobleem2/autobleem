@@ -33,6 +33,9 @@ struct Options {
     // and 416 (nothing left to send) is taken as complete. A download that stops keeps what arrived, so
     // the next --continue picks it up. Not for stdout.
     bool resume = false;
+    // --head: a HEAD request; the final answer's Content-Length is written to `output` as a decimal number and
+    // a line end (nothing else is downloaded). No Content-Length is an Incomplete result.
+    bool head = false;
 };
 
 Result fetch(const Options &options, std::string &error);

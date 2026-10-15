@@ -1,6 +1,6 @@
 // abfetch - AutoBleem's own downloader: one URL into one file over HTTP or HTTPS.
 //
-//   abfetch [-o FILE] [--continue] [--cacert FILE] [--connect-timeout S] [--stall-timeout S] [-q] URL
+//   abfetch [-o FILE] [--continue] [--head] [--cacert FILE] [--connect-timeout S] [--stall-timeout S] [-q] URL
 //
 // The console fetches its online update with it (psc.ini's update_download_command, abupdate's UpdateRoms
 // download), from the stick - so the update does not depend on what the console's kernel payload ships: a
@@ -12,7 +12,8 @@
 // Like curl -sfL: redirects are followed, an HTTP error status is a failure, nothing is printed unless it
 // fails. A download that does not complete removes its output file - unless --continue: then what arrived
 // stays, and the next --continue asks only for the rest (a Range request; the Store's big downloads over a
-// console's WiFi). Exit codes: fetch.h's Result.
+// console's WiFi). --head asks only for the size: HEAD, and the Content-Length is written to the output.
+// Exit codes: fetch.h's Result.
 #include "fetch.h"
 
 #include <cstdio>
@@ -52,7 +53,7 @@ string ownDir(const char *argv0) {
 
 int usage() {
     fprintf(stderr,
-            "usage: abfetch [-o FILE] [--continue] [--cacert FILE] [--connect-timeout S] [--stall-timeout S] [-q] URL\n");
+            "usage: abfetch [-o FILE] [--continue] [--head] [--cacert FILE] [--connect-timeout S] [--stall-timeout S] [-q] URL\n");
     return abfetch::BadUsage;
 }
 
@@ -88,6 +89,8 @@ int main(int argc, char **argv) {
             quiet = true;
         else if (arg == "--continue" || arg == "-C")
             options.resume = true;
+        else if (arg == "--head")
+            options.head = true;
         else if (!arg.empty() && arg[0] != '-' && options.url.empty())
             options.url = arg;
         else
