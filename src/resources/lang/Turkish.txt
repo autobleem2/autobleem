@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 726
+# Untranslated: 0 / Total: 730
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektör okunamadı ve sıfır olarak yazıldı.
@@ -215,6 +215,7 @@ Needs the CRT (raster) filter=CRT (raster) filtresini gerektirir
 no card yet=henüz kart yok
 Not available for a disc in the drive=Sürücüdeki disk için kullanılamaz
 Not enough room in Games: the copy needs %1, %2 is free.=Games içinde yeterli yer yok: kopya %1 gerektiriyor, %2 boş.
+Not enough space to unpack the theme.=Temayı açmak için yeterli alan yok.
 Not saved: this game has no pcsx.cfg=Kaydedilmedi: bu oyunun pcsx.cfg dosyası yok
 Opening the downloaded packages onto the stick.=İndirilen paketler belleğe açılıyor.
 Overlays=Kaplamalar
@@ -586,8 +587,11 @@ The parts downloaded so far are kept. Choose Install again to carry on. RetroArc
 The parts downloaded so far are kept. Choose Update again to carry on. RetroArch was not changed.=Şimdiye kadar indirilen parçalar saklandı. Devam etmek için tekrar Güncelle'yi seçin. RetroArch değiştirilmedi.
 The RetroArch program itself.=RetroArch programının kendisi.
 The Store is not installed=Mağaza yüklü değil
+The theme zip could not be unpacked.=Tema zip dosyası açılamadı.
+The theme zip is broken.=Tema zip dosyası bozuk.
 The update is downloaded - the installer is opening...=Güncelleme indirildi - yükleyici açılıyor...
 Theme Hospital data=Theme Hospital verisi
+Theme not found, using the default theme.=Tema bulunamadı, varsayılan tema kullanılıyor.
 Theme switched to the default (CRT 4:3)=Tema varsayılan temaya değiştirildi (CRT 4:3)
 There is no network connection=Ağ bağlantısı yok
 There is not enough free space=Yeterli boş alan yok

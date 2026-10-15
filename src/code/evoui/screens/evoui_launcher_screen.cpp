@@ -7,8 +7,10 @@
 #include "../channel_watermark.h"
 #include "../controls/hint_slots.h"
 #include "../set_banner.h"
+#include "../startup_toast.h"
 #include "ra_gates.h"
 #include "core/version.h"
+#include "core/services/theme.h"
 #include "../evoui_plural.h"
 #include "gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
@@ -1070,7 +1072,16 @@ void GuiLauncher::loadAssets() {
             networkProvided()
                 ? _("NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.")
                 : _("NOTICE: At least one connected gamepad is not recognized."),
-            10 * TicksPerSecond);
+            StartupToast::HoldTicks);
+    }
+
+    // UIREV-50/54: the theme load that just ran (start-up, or the display coming back) fell back to the default
+    // theme - the picked zip is broken or cannot be unpacked, or the theme is gone: said here, after the lines were
+    // created above, so no later load or line reset can take it away before the first frame
+    {
+        const string why = GuiOptions::themeFallbackText(Theme::takeFallbackReason());
+        if (!why.empty())
+            notificationLines[1].setText(why, StartupToast::HoldTicks); // like the gamepad notice above
     }
 
     // every element below is built at rest in the Games layout (the menu row closed, the play button shown,

@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 726
+# Untranslated: 0 / Total: 730
 
 %1 needs game data it can run: %2.=%1 heeft gamedata nodig die het kan uitvoeren: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoren konden niet gelezen worden en zijn als nullen geschreven.
@@ -215,6 +215,7 @@ Needs the CRT (raster) filter=Vereist het filter CRT (raster)
 no card yet=nog geen kaart
 Not available for a disc in the drive=Niet beschikbaar voor een schijf in het station
 Not enough room in Games: the copy needs %1, %2 is free.=Te weinig ruimte in Games: de kopie heeft %1 nodig, %2 is vrij.
+Not enough space to unpack the theme.=Niet genoeg ruimte om het thema uit te pakken.
 Not saved: this game has no pcsx.cfg=Niet opgeslagen: deze game heeft geen pcsx.cfg
 Opening the downloaded packages onto the stick.=De gedownloade pakketten worden op de stick uitgepakt.
 Overlays=Overlays
@@ -586,8 +587,11 @@ The parts downloaded so far are kept. Choose Install again to carry on. RetroArc
 The parts downloaded so far are kept. Choose Update again to carry on. RetroArch was not changed.=De tot nu toe gedownloade delen blijven bewaard. Kies opnieuw Bijwerken om verder te gaan. RetroArch is niet gewijzigd.
 The RetroArch program itself.=Het RetroArch-programma zelf.
 The Store is not installed=De Store is niet geïnstalleerd
+The theme zip could not be unpacked.=Het thema-zipbestand kon niet worden uitgepakt.
+The theme zip is broken.=Het thema-zipbestand is beschadigd.
 The update is downloaded - the installer is opening...=De update is gedownload - het installatieprogramma wordt geopend...
 Theme Hospital data=Theme Hospital-data
+Theme not found, using the default theme.=Thema niet gevonden, het standaardthema wordt gebruikt.
 Theme switched to the default (CRT 4:3)=Thema gewijzigd naar het standaardthema (CRT 4:3)
 There is no network connection=Geen netwerkverbinding
 There is not enough free space=Niet genoeg vrije ruimte

@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 726
+# Untranslated: 0 / Total: 730
 
 %1 needs game data it can run: %2.=%1 behöver speldata som den kan köra: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektorer kunde inte läsas och skrevs som nollor.
@@ -215,6 +215,7 @@ Needs the CRT (raster) filter=Kräver filtret CRT (raster)
 no card yet=inget kort än
 Not available for a disc in the drive=Inte tillgängligt för en skiva i enheten
 Not enough room in Games: the copy needs %1, %2 is free.=Inte tillräckligt med utrymme i Games: kopian behöver %1, %2 är ledigt.
+Not enough space to unpack the theme.=Det finns inte tillräckligt med utrymme för att packa upp temat.
 Not saved: this game has no pcsx.cfg=Inte sparat: spelet saknar pcsx.cfg
 Opening the downloaded packages onto the stick.=De nedladdade paketen packas upp på minnet.
 Overlays=Överlägg
@@ -586,8 +587,11 @@ The parts downloaded so far are kept. Choose Install again to carry on. RetroArc
 The parts downloaded so far are kept. Choose Update again to carry on. RetroArch was not changed.=De delar som hittills laddats ner behålls. Välj Uppdatera igen för att fortsätta. RetroArch ändrades inte.
 The RetroArch program itself.=Själva RetroArch-programmet.
 The Store is not installed=Store är inte installerad
+The theme zip could not be unpacked.=Temats zip-fil kunde inte packas upp.
+The theme zip is broken.=Temats zip-fil är trasig.
 The update is downloaded - the installer is opening...=Uppdateringen är nedladdad - installationsprogrammet öppnas...
 Theme Hospital data=Theme Hospital-data
+Theme not found, using the default theme.=Temat hittades inte, standardtemat används.
 Theme switched to the default (CRT 4:3)=Tema ändrat till standardtemat (CRT 4:3)
 There is no network connection=Ingen nätverksanslutning
 There is not enough free space=Det finns inte tillräckligt med ledigt utrymme

@@ -8,6 +8,8 @@
 #include "evoui_btn_guide.h"
 #include "evoui_cd_player.h"
 #include "core/model/timing.h"
+#include "core/services/theme.h"
+#include "gui/menus/gui_options_menu.h"
 #include "core/model/pad_assignment.h"
 
 #include <ab_gui/hold_repeat.h>
@@ -41,6 +43,7 @@ void GuiLauncher::loop() {
         loopEnteredLogged = true;
         ableem::StartupTimer::milestone("menu-loop-entered");
     }
+
     while (menuVisible) {
         retranslateMenu(); // Options may have changed the language on the way back into this loop
 
