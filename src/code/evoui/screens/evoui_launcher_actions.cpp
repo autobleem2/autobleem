@@ -1172,7 +1172,8 @@ void GuiLauncher::loop_raManager() {
             panel.networkUp = networkUp;
             if (panel.installed)
                 panel.version = RaJobService::installedVersion();
-            panel.spaceKnown = RaJobService::stickSpace(panel.freeBytes, panel.totalBytes); // one statvfs, no tree walk
+            // one statvfs, no tree walk
+            panel.spaceKnown = RaJobService::stickSpace(panel.freeBytes, panel.totalBytes);
             panel.keepRow = keepRow;
             panel.startRow = keptRow;
             panel.show();
@@ -1188,25 +1189,8 @@ void GuiLauncher::loop_raManager() {
                                           : rajob::Op::Remove;
         bool confirmed = false;
         if (rajob::noticeFirst(op)) {
-            const bool update = op == rajob::Op::Update;
             GuiRaNotice notice(*gui);
-            notice.title = _("Before you start");
-            if (update) {
-                notice.label =
-                    _("Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and "
-                      "tens of thousands of small files to write.");
-                notice.bullets = {_("Keep the console on and the stick in."),
-                                  _("Stop keeps everything downloaded so far - Update carries on later.")};
-            } else {
-                notice.label =
-                    _("Installing RetroArch takes about 10-15 minutes on the console: about 400 MB to download and "
-                      "tens of thousands of small files to write.");
-                notice.bullets = {_("Keep the console on and the stick in."),
-                                  _("Stop keeps everything downloaded so far - Install carries on later.")};
-            }
-            notice.accent = _("A good moment to go and make a coffee.");
-            notice.confirmLabel = _("Start");
-            notice.cancelLabel = _("Cancel");
+            notice.setFor(op);
             notice.show();
             confirmed = notice.result;
         } else {
@@ -1260,8 +1244,7 @@ void GuiLauncher::loop_raManager() {
                 version = "?";
             if (RaJobService::stickSpace(freeBytes, totalBytes))
                 message = fill(_("Version %s is ready - start it from the System menu. Free on the stick: %s"),
-                               {version, rajob::withDecimal(rajob::humanSpace(freeBytes),
-                                                            _("decimal point") == "," ? ',' : '.')});
+                               {version, GuiRaManager::spaceText(freeBytes)});
             else
                 message = fill(_("Version %s is ready - start it from the System menu."), {version});
         }

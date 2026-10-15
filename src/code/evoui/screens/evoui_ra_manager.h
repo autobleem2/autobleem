@@ -50,6 +50,8 @@ public:
     std::string accent; // drawn last, in the accent colour
 
     void draw() override;
+    // the title, body, bullets, accent and labels for an Install or an Update
+    void setFor(rajob::Op op);
 };
 
 //******************
@@ -70,8 +72,8 @@ public:
     uint64_t totalBytes = 0;
 
     RaChoice result = RaChoice::None;
-    // the row that was chosen (set when result is not None); give it back as `startRow` with `keepRow` to open the panel
-    // with that row selected again (a Cancel in the box that follows returns here)
+    // the row that was chosen (set when result is not None); give it back as `startRow` with `keepRow` to open the
+    // panel with that row selected again (a Cancel in the box that follows returns here)
     rajob::RowAction chosenRow = rajob::RowAction::Install;
     rajob::RowAction startRow = rajob::RowAction::Install;
     bool keepRow = false;
@@ -82,6 +84,8 @@ public:
     static std::string summary(bool installed, const std::string &version);
     // "18.4 GB free of 58.2 GB"
     static std::string spaceLine(uint64_t freeBytes, uint64_t totalBytes);
+    // "18.4 GB" with the language's decimal sign
+    static std::string spaceText(uint64_t bytes);
 
 private:
     std::vector<rajob::Row> rows_; // panelRows() for the chosen row

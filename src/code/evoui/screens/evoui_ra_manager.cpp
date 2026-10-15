@@ -253,6 +253,24 @@ void GuiRaNotice::draw() {
     ctx.setTextShadow(programShadow);
 }
 
+void GuiRaNotice::setFor(rajob::Op op) {
+    title = _("Before you start");
+    if (op == rajob::Op::Update) {
+        label = _("Updating RetroArch takes about 10-15 minutes on the console: about 400 MB to download and "
+                  "tens of thousands of small files to write.");
+        bullets = {_("Keep the console on and the stick in."),
+                   _("Stop keeps everything downloaded so far - Update carries on later.")};
+    } else {
+        label = _("Installing RetroArch takes about 10-15 minutes on the console: about 400 MB to download and "
+                  "tens of thousands of small files to write.");
+        bullets = {_("Keep the console on and the stick in."),
+                   _("Stop keeps everything downloaded so far - Install carries on later.")};
+    }
+    accent = _("A good moment to go and make a coffee.");
+    confirmLabel = _("Start");
+    cancelLabel = _("Cancel");
+}
+
 //*******************************
 // GuiRaMessage (continued)
 //*******************************
@@ -281,8 +299,11 @@ string GuiRaManager::summary(bool installed, const string &version) {
 }
 
 string GuiRaManager::spaceLine(uint64_t freeBytes, uint64_t totalBytes) {
-    return fill(_("%s free of %s"), {rajob::withDecimal(rajob::humanSpace(freeBytes), decimalSign()),
-                                     rajob::withDecimal(rajob::humanSpace(totalBytes), decimalSign())});
+    return fill(_("%s free of %s"), {spaceText(freeBytes), spaceText(totalBytes)});
+}
+
+string GuiRaManager::spaceText(uint64_t bytes) {
+    return rajob::withDecimal(rajob::humanSpace(bytes), decimalSign());
 }
 
 string GuiRaManager::titleOf(rajob::RowAction action) const {
