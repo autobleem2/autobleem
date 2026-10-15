@@ -33,12 +33,18 @@
 #   AB_NO_TESTS=1   neither build nor run the test suites (a quick build for a device check)
 #   AB_NO_UPX=1     leave the shipped binaries unpacked
 #   AB_CLEAN=1      wipe each target's build directory first
+#   AB_RENDER_GL=0  leave the loadable GLES 3 renderer out. Default (unset or 1) = built: -DABLEEM_RENDER_GL=ON, cargo
+#                   builds ab_render_gles3.so/.dll from the core's lib_ableem/rust/ab_gl for every target and it ships
+#                   next to autobleem-gui / the exe. With 0 there is no backend file and the launcher draws with
+#                   SDL_Renderer (which is also its fallback when the file is missing or fails; AB_RENDERER=sdl forces it)
 #   AB_BUILD_CHANNEL=dev|nightly|prerelease|release   the channel the launcher's corner tag names (UIREV-40); unset = dev
 #                   (a hand build says DEV + its commit); the publish workflow sets the real one
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$PWD"
 JOBS="${AB_JOBS:-$(nproc)}"
+# the GLES 3 renderer backend is part of every package (owner decision 2026-10-14); AB_RENDER_GL=0 builds without it
+AB_RENDER_GL="${AB_RENDER_GL:-1}"
 
 # --- the version the package names carry --------------------------------------------------------------------
 # What the environment says first (make_psc.sh-style AB_GIT_*: the caller's facts about a tree that has no
@@ -80,7 +86,18 @@ configure() { # configure BUILD_DIR ARGS...
     fi
     local tests=()
     [ -n "${AB_NO_TESTS:-}" ] && tests=(-DAB_BUILD_TESTS=OFF)
-    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "${tests[@]}" "$@"
+    # the loadable renderer: ON by default; AB_RENDER_GL=0 adds nothing - except to reset a cache an ON run left
+    local gl=()
+    if [ -n "${AB_RENDER_GL:-}" ] && [ "${AB_RENDER_GL}" != 0 ]; then
+        gl=(-DABLEEM_RENDER_GL=ON)
+    elif [ -f "$dir/CMakeCache.txt" ] && grep -q '^ABLEEM_RENDER_GL:BOOL=ON' "$dir/CMakeCache.txt"; then
+        gl=(-DABLEEM_RENDER_GL=OFF)
+    fi
+    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "${tests[@]}" "${gl[@]}" "$@"
+    # (a build directory reused from an ON run must not ship its backend file in an OFF package)
+    if [ ${#gl[@]} -eq 0 ] || [ "${gl[0]}" = -DABLEEM_RENDER_GL=OFF ]; then
+        rm -f "$dir"/ab_render_gles3.so "$dir"/ab_render_gles3.dll
+    fi
 }
 # sccache in front of every compiler when it is there (the image has it; docker/run.sh mounts the cache
 # from the host) - one launcher for the native, Pi, MinGW and console compilers, each keyed by its own
@@ -97,6 +114,28 @@ sccache_stats() {
     banner "sccache"
     sccache --show-stats 2>/dev/null | grep -E "Compile requests|Cache hits|Cache misses|Non-cacheable|Cache size|Cache location" || true
 }
+# --- extensions built with the launcher (BUG-10) ---------------------------------------------------------------
+# The Store (ext_store) is a plugin compiled against the launcher's SDK headers; one built earlier fails in dlopen
+# or is refused by the ABI stamp. So a package carries the Store built here, from the same SDK: the checkout next
+# to this tree (../ext_store, or AB_EXTENSION_DIRS=dir;dir, ;-separated) is built with the launcher
+# (ab_add_extension, CMakeLists.txt) and staged as dist/<target>/Extensions/<name>/ by stage_launcher.
+# No checkout = no Store in the package, said loudly. AB_NO_EXTENSIONS=1 builds none.
+EXT_ARGS=()
+if [ -z "${AB_NO_EXTENSIONS:-}" ]; then
+    ext_dirs="${AB_EXTENSION_DIRS:-}"
+    if [ -z "$ext_dirs" ] && [ -f ../ext_store/CMakeLists.txt ]; then
+        ext_dirs="$(cd ../ext_store && pwd)"
+    fi
+    if [ -n "$ext_dirs" ]; then
+        EXT_ARGS=("-DAB_EXTENSION_DIRS=$ext_dirs" -DAB_BUILD_STORE_SERVER=OFF)
+    elif [ -n "${AB_REQUIRE_EXTENSIONS:-}" ]; then
+        echo "AB_REQUIRE_EXTENSIONS: no ../ext_store checkout (and no AB_EXTENSION_DIRS) - the package would have no Store" >&2
+        exit 1
+    else
+        echo "!!!! NOTICE: no ../ext_store checkout and no AB_EXTENSION_DIRS - the packages built now carry NO Store" >&2
+        echo "!!!!         (set AB_REQUIRE_EXTENSIONS=1 to make this a failure; the publish workflows do)" >&2
+    fi
+fi
 dist_reset() { rm -rf "dist/$1"; mkdir -p "dist/$1"; }
 dist_note() { # dist_note TARGET - what was built, for the artifact
     { echo "AutoBleem $VERSION - $1"; echo "built $(date -u '+%Y-%m-%d %H:%M:%S UTC') on $(uname -m) $(cat /etc/os-release 2>/dev/null | sed -n 's/^PRETTY_NAME="\(.*\)"/\1/p')"; } \
@@ -192,6 +231,9 @@ build_psc() {
     for bin in autobleem-gui absplash abfatflag abupdate abfetch abdialog apps/abpad/abpadd apps/abpad/libabpad.so; do
         bash "$ab_check_psc_binary" "build_psc/$bin" "$toolchain"
     done
+    if [ -f build_psc/ab_render_gles3.so ]; then
+        bash "$ab_check_psc_binary" build_psc/ab_render_gles3.so "$toolchain"
+    fi
     banner "psc: package"
     dist_reset psc
     bash tools/make_psc_package.sh --build-dir build_psc --out dist/psc --version "$VERSION"
@@ -217,12 +259,28 @@ stage_launcher() { # stage_launcher DIR TARGET - dist/<target>/Autobleem/bin/{au
     if [ -f "$dir/abdialog" ]; then
         cp "$dir/abdialog" "$bin/autobleem/"
     fi
+    # the loadable renderer (unless AB_RENDER_GL=0), where the launcher looks for it: next to the program
+    if [ -f "$dir/ab_render_gles3.so" ]; then
+        cp "$dir/ab_render_gles3.so" "$bin/autobleem/"
+    fi
     cp -a src/resources/. "$bin/autobleem/"
     rm -f "$bin/autobleem/internal.db"   # an appliance has no built-in games (AB_HAS_INTERNAL_GAMES is psc/dev only)
     if [ -f "$dir/apps/abpad/abpadd" ] && [ -f "$dir/apps/abpad/libabpad.so" ]; then
         cp "$dir/apps/abpad/abpadd" "$dir/apps/abpad/libabpad.so" "$bin/abpad/"
     else
         echo "    (no abpad in $dir/apps/abpad - Apps would run without the virtual gamepad)"
+    fi
+    # the extensions built with the launcher (EXT_ARGS): the stick's Extensions/<name>/, never the Store's LAN
+    # server (extensions/store-server is a program, not an extension)
+    if [ ${#EXT_ARGS[@]} -gt 0 ] && [ -d "$dir/extensions" ]; then
+        local ext
+        for ext in "$dir"/extensions/*/; do
+            [ -f "${ext}extension.ini" ] || continue
+            mkdir -p "dist/$target/Extensions"
+            cp -a "${ext%/}" "dist/$target/Extensions/"
+        done
+    else
+        echo "    (no extension built with the launcher - no ../ext_store checkout or AB_NO_EXTENSIONS: the package has no Store)"
     fi
     dist_note "$target"
 }
@@ -235,7 +293,7 @@ build_rpi() { # build_rpi armhf|arm64
     esac
     banner "rpi $arch: configure + build ($dir)"
     configure "$dir" -DCMAKE_SYSTEM_PROCESSOR="$proc" -DCMAKE_BUILD_TYPE=Release -DAB_RPI_DEBUG=OFF \
-        -DCMAKE_TOOLCHAIN_FILE="$toolchain"
+        -DCMAKE_TOOLCHAIN_FILE="$toolchain" ${EXT_ARGS[@]+"${EXT_ARGS[@]}"}
     ninja -C "$dir" -j "$JOBS"
     banner "rpi $arch: check"
     file "$dir/autobleem-gui"
@@ -250,7 +308,7 @@ build_rpi() { # build_rpi armhf|arm64
 
 build_pcusb() {
     banner "pcusb: configure + build (build_pcusb)"
-    configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake
+    configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake ${EXT_ARGS[@]+"${EXT_ARGS[@]}"}
     ninja -C build_pcusb -j "$JOBS"
     banner "pcusb: check"
     file build_pcusb/autobleem-gui

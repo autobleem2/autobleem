@@ -204,6 +204,8 @@ public:
     void loop_openOptions();
     // an extension provides the "network" entry here: the Network & Controllers item shows
     bool networkProvided();
+    // the Store extension is installed and can run: the Quick menu's Store row
+    bool storeProvided();
     // one does, but cannot run (switched off, another AutoBleem, not built for this system): why, as the
     // greyed item's description ("PSC-Bios is switched off - enable it in Extensions"), and which one - the
     // item then opens the Extensions list at it. "" when a provider can run, or none is installed
@@ -217,6 +219,7 @@ public:
     // MENU_OPTION_UPDATE on a Pi
     void pollUpdates();
     void loop_softwareUpdate();
+    void loop_raManager(); // System menu "RetroArch...": install / update / remove (PLATFORM-24)
     void offerUpdate(bool fromMenu);
 #endif
 

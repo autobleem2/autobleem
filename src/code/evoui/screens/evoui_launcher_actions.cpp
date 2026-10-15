@@ -26,6 +26,7 @@
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
+#include "evoui_ra_manager.h"
 #include "evoui_extensions.h"
 #include "evoui_package_info.h"
 #include "evoui_package_picker.h"
@@ -648,6 +649,7 @@ void GuiLauncher::loop_openSystemMenu() {
             systemMenu.retroArchLabel = retroArchLabel;
             systemMenu.retroArchInstalled = retroArchInstalledCached();
             systemMenu.scanInProgress = app.scans().scanning();
+            systemMenu.raManager = RaJobService::available();
             systemMenu.networkUnavailable = networkUnavailable();
             systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
 #ifdef AB_ONLINE_UPDATE
@@ -682,9 +684,11 @@ void GuiLauncher::loop_openQuickMenu() {
         GuiSystemMenu quickMenu(*gui);
         quickMenu.kind = GuiSystemMenu::Kind::Quick;
         quickMenu.scanInProgress = app.scans().scanning();
+        quickMenu.raManager = RaJobService::available();
         quickMenu.retroArchInstalled = retroArchInstalledCached(); // the RetroArch cores row needs it
         quickMenu.networkUnavailable = networkUnavailable();
         quickMenu.networkProvided = networkProvided() || !quickMenu.networkUnavailable.empty();
+        quickMenu.storeProvided = storeProvided();
         quickMenu.show();
         action = quickMenu.result;
     }
@@ -702,6 +706,17 @@ void GuiLauncher::loop_openQuickMenu() {
 bool GuiLauncher::networkProvided() {
     app.extensionCatalog().scan();
     return app.extensionCatalog().findProvider(NetworkEntry) != nullptr;
+}
+
+//*******************************
+// GuiLauncher::storeProvided
+//*******************************
+// the Store is offered only while it can run: one that is not installed, switched off, or built for another SDK ABI
+// (the scan knows, BUG-10) leaves the Quick menu - the Extensions list is where the reason is shown
+bool GuiLauncher::storeProvided() {
+    app.extensionCatalog().scan();
+    const ExtensionInfo *info = app.extensionCatalog().find(StoreExtension);
+    return info != nullptr && info->runnable();
 }
 
 //*******************************
@@ -835,6 +850,10 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
 #ifdef AB_ONLINE_UPDATE
         loop_softwareUpdate();
 #endif
+        break;
+
+    case SystemMenuAction::RetroArchSetup:
+        loop_raManager();
         break;
 
     case SystemMenuAction::Extensions:
@@ -1126,3 +1145,93 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
 #endif
 }
 #endif
+
+//*******************************
+// GuiLauncher::loop_raManager
+//*******************************
+// The System menu's "RetroArch..." and the Quick menu's "Install RetroArch...": the panel (what is installed, Install /
+// Update / Remove), then the job - a RaJobService child running the platform's runner - on a progress screen. The
+// runner does all the work; this only asks, follows and reports.
+void GuiLauncher::loop_raManager() {
+    BackdropScope backdrop(*this); // the panel, the confirms and the progress draw over the launcher's snapshot
+    bool networkUp = true;
+#ifdef AB_ONLINE_UPDATE
+    const UpdateService::Config &updateConfig = app.updates().config();
+    if (updateConfig.networkUp)
+        networkUp = updateConfig.networkUp();
+#endif
+    RaChoice choice;
+    {
+        GuiRaManager panel(*gui);
+        panel.installed = Env::retroArchInstalled();
+        panel.networkUp = networkUp;
+        if (panel.installed) {
+            panel.version = RaJobService::installedVersion();
+            panel.bytes = RaJobService::sizeOnDisk();
+        }
+        panel.show();
+        choice = panel.result;
+    }
+    if (choice == RaChoice::None)
+        return;
+
+    if (choice == RaChoice::Remove || choice == RaChoice::RemoveWithBios) {
+        GuiConfirm confirm(*gui);
+        confirm.label = choice == RaChoice::RemoveWithBios
+                            ? _("Remove RetroArch and the BIOS files? Your games, saves and settings stay.")
+                            : _("Remove RetroArch? Your games, saves and settings stay.");
+        confirm.show();
+        if (!confirm.result)
+            return;
+    }
+
+    RaJobService job;
+    const rajob::Op op = choice == RaChoice::Install  ? rajob::Op::Install
+                         : choice == RaChoice::Update ? rajob::Op::Update
+                                                      : rajob::Op::Remove;
+    job.start(op, choice == RaChoice::RemoveWithBios);
+    {
+        GuiRaProgress progress(*gui);
+        progress.job = &job;
+        progress.op = op;
+        progress.show();
+    }
+
+    // what the program is now, at once - not at the cache's next 2 s
+    raCheckedAt_ = 0;
+    forgetSetCounts();
+
+    if (rajob::boxFor(job.status().state) != rajob::EndBox::Message)
+        return;
+    // the end of a run is a message with one OK, not a question
+    string message;
+    switch (job.status().state) {
+    case rajob::State::Ok:
+        message = _("Done");
+        break;
+    case rajob::State::Stopped:
+        message = _("Stopped - run it again to carry on where it left off");
+        break;
+    case rajob::State::Error: {
+        const string &code = job.status().code;
+        if (code == "no-network")
+            message = _("There is no network connection");
+        else if (code == "no-space")
+            message = _("There is not enough free space");
+        else if (code == "download")
+            message = _("A download failed - try again");
+        else if (code == "checksum")
+            message = _("A downloaded file is damaged - try again");
+        else if (code == "apt-provided")
+            message = _("RetroArch here belongs to the system's package manager, so AutoBleem leaves it alone.");
+        else
+            message = _("Something went wrong - see the log");
+        break;
+    }
+    default:
+        return;
+    }
+    GuiRaMessage box(*gui);
+    box.label = message;
+    box.show();
+}

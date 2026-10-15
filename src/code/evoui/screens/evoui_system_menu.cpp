@@ -1,5 +1,6 @@
 #include "evoui_system_menu.h"
 #include "gui/gui.h"
+#include "../ra_job.h"
 
 #include <ab_gui/panel.h>
 
@@ -72,10 +73,14 @@ void GuiSystemMenu::init() {
 
     if (kind == Kind::Quick) {
         addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
-        addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
+        if (storeProvided)
+            addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
         if (retroArchInstalled)
             addItem(SystemMenuAction::RetroArchCores, "RetroArch cores", _("RetroArch cores"),
                     _("Choose the core that plays each system"));
+        if (rajob::quickInstallRowShown(raManager, retroArchInstalled))
+            addItem(SystemMenuAction::RetroArchSetup, "Install RetroArch...", _("Install RetroArch..."),
+                    _("Download and install RetroArch"));
         addNetwork();
 #if defined(AB_PLATFORM_PSC) || defined(AB_APPLIANCE)
         addItem(SystemMenuAction::RestartLauncher, "Restart launcher", _("Restart launcher"),
@@ -98,6 +103,9 @@ void GuiSystemMenu::init() {
         addHeading(_("System"));
         addItem(SystemMenuAction::Options, "Options", _("Options"), _("Customize AutoBleem settings"));
         addNetwork();
+        if (raManager)
+            addItem(SystemMenuAction::RetroArchSetup, "RetroArch...", _("RetroArch..."),
+                    _("Install, update or remove RetroArch"));
         addItem(SystemMenuAction::HardwareInfo, "Hardware Information", _("Hardware Information"),
                 _("Controller and system information"));
         addItem(SystemMenuAction::PadDaemon, "Virtual gamepad", _("Virtual gamepad"), _("The pads Apps are given"));
