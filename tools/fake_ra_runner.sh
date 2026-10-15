@@ -80,10 +80,20 @@ i=0
 for key in $phases; do
     i=$((i + 1))
     [ "$i" -lt "$start" ] && continue
-    total=0
+    # the 8-field phase line: unit, the package's name, package i of n (no phase writes a total of 0)
+    total=$steps
+    unit=items
+    item=$key
     case "$key" in
-    download-*) total=$((steps * 1000000)) ;;
-    unpack) total=$steps ;;
+    download-*)
+        total=$((steps * 1000000))
+        unit=bytes
+        item=$key.tar.gz
+        ;;
+    unpack)
+        unit=files
+        item=cheats.zip
+        ;;
     esac
     if [ "$key" = remove-files ] && [ -n "$AB_FAKE_RA_BINARY" ]; then
         rm -f "$AB_FAKE_RA_BINARY" # the binary goes first
@@ -91,7 +101,7 @@ for key in $phases; do
     s=0
     while [ "$s" -lt "$steps" ]; do
         done_=$((s * total / steps))
-        write "phase $i/$n|$key|$done_|$total"
+        write "phase $i/$n|$key|$done_|$total|$unit|$item|1|1"
         sleep 0.2
         s=$((s + 1))
         if [ "$stopped" = 1 ]; then # the current step finished: keep what is done and go
@@ -108,7 +118,7 @@ for key in $phases; do
             kill -9 $$
         fi
     done
-    write "phase $i/$n|$key|$total|$total"
+    write "phase $i/$n|$key|$total|$total|$unit|$item|1|1"
 done
 
 if [ "$op" = install ] && [ -n "$AB_FAKE_RA_BINARY" ]; then

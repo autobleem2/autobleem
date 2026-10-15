@@ -46,9 +46,10 @@ public:
     bool running() const { return job_.state == rajob::State::Running; }
     void reset() { job_ = Status(); } // an outcome was shown: idle again (never while running)
 
-    // what is installed: the VERSION stamp's text ("" = none readable), and the space it takes (bytes)
+    // what is installed: the VERSION stamp's text ("" = none readable)
     static std::string installedVersion();
-    static uint64_t sizeOnDisk();
+    // the stick's free and total bytes by ONE statvfs (no walk over RetroArch's files); false when it cannot be asked
+    static bool stickSpace(uint64_t &freeBytes, uint64_t &totalBytes);
 
 private:
     void readFile(bool force);

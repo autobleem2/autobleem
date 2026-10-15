@@ -1165,30 +1165,40 @@ void GuiLauncher::loop_raManager() {
         GuiRaManager panel(*gui);
         panel.installed = Env::retroArchInstalled();
         panel.networkUp = networkUp;
-        if (panel.installed) {
+        if (panel.installed)
             panel.version = RaJobService::installedVersion();
-            panel.bytes = RaJobService::sizeOnDisk();
-        }
+        panel.spaceKnown = RaJobService::stickSpace(panel.freeBytes, panel.totalBytes); // one statvfs, no tree walk
         panel.show();
         choice = panel.result;
     }
     if (choice == RaChoice::None)
         return;
 
-    if (choice == RaChoice::Remove || choice == RaChoice::RemoveWithBios) {
-        GuiConfirm confirm(*gui);
-        confirm.label = choice == RaChoice::RemoveWithBios
-                            ? _("Remove RetroArch and the BIOS files? Your games, saves and settings stay.")
-                            : _("Remove RetroArch? Your games, saves and settings stay.");
+    const rajob::Op op = choice == RaChoice::Install  ? rajob::Op::Install
+                         : choice == RaChoice::Update ? rajob::Op::Update
+                                                      : rajob::Op::Remove;
+    if (rajob::noticeFirst(op)) {
+        GuiConfirm notice(*gui);
+        notice.title = op == rajob::Op::Update ? _("Update RetroArch") : _("Install RetroArch");
+        notice.label =
+            _("This takes about 10-15 minutes on the console: about 400 MB to download and tens of thousands of small "
+              "files to unpack.") +
+            "\n\n" + _("Keep the console on and the stick in. Stop keeps what is already downloaded.") + "\n\n" +
+            _("A good moment to go and make a coffee.");
+        notice.confirmLabel = _("Start");
+        notice.cancelLabel = _("Cancel");
+        notice.show();
+        if (!notice.result)
+            return;
+    } else {
+        GuiRaRemoveConfirm confirm(*gui);
+        confirm.withBios = choice == RaChoice::RemoveWithBios;
         confirm.show();
         if (!confirm.result)
             return;
     }
 
     RaJobService job;
-    const rajob::Op op = choice == RaChoice::Install  ? rajob::Op::Install
-                         : choice == RaChoice::Update ? rajob::Op::Update
-                                                      : rajob::Op::Remove;
     job.start(op, choice == RaChoice::RemoveWithBios);
     {
         GuiRaProgress progress(*gui);
@@ -1207,10 +1217,10 @@ void GuiLauncher::loop_raManager() {
     string message;
     switch (job.status().state) {
     case rajob::State::Ok:
-        message = _("Done");
+        message = op == rajob::Op::Remove ? _("RetroArch is removed.") : _("RetroArch is installed.");
         break;
     case rajob::State::Stopped:
-        message = _("Stopped - run it again to carry on where it left off");
+        message = _("The parts downloaded so far are kept. Choose Install again to carry on.");
         break;
     case rajob::State::Error: {
         const string &code = job.status().code;

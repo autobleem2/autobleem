@@ -13,9 +13,9 @@
 #include <fstream>
 
 #ifndef _WIN32
-#include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -47,28 +47,6 @@ rajob::RunnerEnv hostRunnerEnv() {
 }
 
 #ifndef _WIN32
-// bytes under `path` (files only; a link counts as itself), recursively
-uint64_t treeSize(const string &path, int depth = 0) {
-    struct stat st;
-    if (lstat(path.c_str(), &st) != 0)
-        return 0;
-    if (!S_ISDIR(st.st_mode))
-        return static_cast<uint64_t>(st.st_size);
-    if (depth > 16)
-        return 0;
-    uint64_t total = 0;
-    DIR *dir = opendir(path.c_str());
-    if (dir == nullptr)
-        return 0;
-    while (const dirent *entry = readdir(dir)) {
-        const string name = entry->d_name;
-        if (name != "." && name != "..")
-            total += treeSize(path + "/" + name, depth + 1);
-    }
-    closedir(dir);
-    return total;
-}
-
 // in the forked child: nothing above stderr may leak into the runner (sockets, the SDL/evdev devices, the log)
 void closeInheritedFds() {
 #if defined(SYS_close_range)
@@ -239,7 +217,7 @@ void RaJobService::reap(bool wait) {
 }
 
 //*******************************
-// RaJobService::installedVersion / sizeOnDisk
+// RaJobService::installedVersion / stickSpace
 //*******************************
 string RaJobService::installedVersion() {
     // the console's stamp next to the binary (and a stick laid by the PC installer), else the appliance's
@@ -260,18 +238,18 @@ string RaJobService::installedVersion() {
     return version;
 }
 
-// what Remove would delete (the binary and the folders named in the contract), not the user's roms and saves
-uint64_t RaJobService::sizeOnDisk() {
+// one statvfs of the stick (never a walk over the tree: that froze the console's screen for ~90 s)
+bool RaJobService::stickSpace(uint64_t &freeBytes, uint64_t &totalBytes) {
 #ifdef _WIN32
-    return 0;
+    (void)freeBytes;
+    (void)totalBytes;
+    return false;
 #else
-    uint64_t total = 0;
-    for (const string &binary : Env::retroArchBinaries())
-        total += treeSize(binary);
-    const string dir = Env::getPathToRetroarchDir();
-    for (const char *name : {"cores", "info", "assets", "database", "cheats", "overlays", "shaders", "downloads",
-                             "records", "Retroarch themes"})
-        total += treeSize(dir + ableem::sep + name);
-    return total;
+    struct statvfs sv;
+    if (statvfs(Env::getPathToUSBRoot().c_str(), &sv) != 0)
+        return false;
+    freeBytes = static_cast<uint64_t>(sv.f_bavail) * sv.f_frsize;
+    totalBytes = static_cast<uint64_t>(sv.f_blocks) * sv.f_frsize;
+    return true;
 #endif
 }

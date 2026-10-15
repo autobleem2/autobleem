@@ -46,15 +46,19 @@ public:
     // filled in by the caller before show()
     bool installed = false;
     bool networkUp = true;
-    std::string version; // the VERSION stamp
-    uint64_t bytes = 0;  // size on disk
+    std::string version;       // the VERSION stamp
+    bool spaceKnown = false;   // the stick's free / total space (one statvfs); no size of RetroArch is shown
+    uint64_t freeBytes = 0;
+    uint64_t totalBytes = 0;
 
     RaChoice result = RaChoice::None;
 
     explicit GuiRaManager(ableem::GuiBase &g) : GuiScreen(g) {}
 
-    // the line under the title: "Installed: v1.22.2, 120.4 MB" or "Not installed" (static: tested without a screen)
-    static std::string summary(bool installed, const std::string &version, uint64_t bytes);
+    // the line under the title: "Installed: v1.22.2" or "Not installed" (static: tested without a screen)
+    static std::string summary(bool installed, const std::string &version);
+    // "18.4 GB free of 58.2 GB"
+    static std::string spaceLine(uint64_t freeBytes, uint64_t totalBytes);
 
 private:
     std::vector<rajob::Row> rows_; // panelRows() for the chosen row
@@ -67,11 +71,33 @@ private:
 };
 
 //******************
+// GuiRaRemoveConfirm
+//******************
+// "Remove RetroArch?" in two columns: what will be deleted / what stays on the stick. With `withBios` the BIOS files
+// move to the left column and a warning line comes under them. result = Remove (Cross) or Cancel (Circle).
+class GuiRaRemoveConfirm : public GuiScreen {
+public:
+    void init() override;
+    void draw() override;
+    void loop() override;
+
+    bool withBios = false;
+    bool result = false;
+
+    explicit GuiRaRemoveConfirm(ableem::GuiBase &g) : GuiScreen(g) {}
+
+private:
+    PanelStyle style;
+};
+
+//******************
 // GuiRaProgress
 //******************
-// Polls the job every frame until it leaves Running. Circle asks "Stop?" and, on yes, SIGTERMs the runner, which
-// ends with end|stopped. The outcome's messages are the caller's (GuiLauncher::loop_raManager): it sees the final
-// state in job->status().
+// Polls the job every frame until it leaves Running. Two bars: the whole job (Step i of n, %) and the current package
+// (MB or files, its name, Package i of n, the phase's why; downloads: speed and time left). Circle asks "Stop?" and,
+// on yes, SIGTERMs the runner, which ends with end|stopped - for Install / Update only: a Remove has no Stop and runs
+// to the end. The outcome's messages are the caller's (GuiLauncher::loop_raManager): it sees the final state in
+// job->status().
 class GuiRaProgress : public GuiScreen {
 public:
     void init() override;
@@ -88,5 +114,7 @@ private:
     bool stopping = false;
     int barPhase = 0;             // the phase the bar was last drawn for; a change restarts the bar
     unsigned barPhaseStartMs = 0; // when that phase began
+    int meterItem = -1;           // the package the speed meter is following
+    rajob::RateMeter meter;       // download speed, smoothed over a few seconds
     rajob::JobState shown;        // the job's state this frame
 };

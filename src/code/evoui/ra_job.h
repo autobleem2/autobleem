@@ -265,6 +265,104 @@ inline std::string humanBytes(uint64_t bytes) {
     return buf;
 }
 
+// "18.4 GB" / "512.0 MB" (a stick's free space: always one decimal)
+inline std::string humanSpace(uint64_t bytes) {
+    char buf[32];
+    if (bytes >= 1000000000ULL)
+        snprintf(buf, sizeof(buf), "%.1f GB", static_cast<double>(bytes) / 1e9);
+    else
+        snprintf(buf, sizeof(buf), "%.1f MB", static_cast<double>(bytes) / 1e6);
+    return buf;
+}
+
+// the used part of the stick, 0..1 (the thin bar of the panel); 0 when the size is unknown
+inline double usedFraction(uint64_t freeBytes, uint64_t totalBytes) {
+    if (totalBytes == 0 || freeBytes >= totalBytes)
+        return 0;
+    return static_cast<double>(totalBytes - freeBytes) / static_cast<double>(totalBytes);
+}
+
+// "12.3 / 45.0 MB" for bytes, "1200 / 41000" for files and items (the text around it says what it counts).
+// Never a raw byte count.
+inline std::string packageAmount(uint64_t done, uint64_t total, const std::string &unit) {
+    if (unit == "bytes") {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%.1f / %.1f MB", static_cast<double>(done) / 1e6, static_cast<double>(total) / 1e6);
+        return buf;
+    }
+    return std::to_string(done) + " / " + std::to_string(total);
+}
+
+// the whole job, 0..1, in equal steps: phase i of n at fraction f is (i - 1 + f) / n
+inline double jobFraction(const Progress &p) {
+    if (p.phase <= 0 || p.phases <= 0)
+        return 0;
+    const double f = fraction(p) < 0 ? 0 : fraction(p);
+    return (static_cast<double>(p.phase - 1) + f) / static_cast<double>(p.phases);
+}
+
+// "3 min 20 s" / "45 s"; "" when it is not known
+inline std::string humanDuration(double seconds) {
+    if (seconds < 0)
+        return "";
+    const long s = static_cast<long>(seconds + 0.5);
+    char buf[32];
+    if (s >= 60)
+        snprintf(buf, sizeof(buf), "%ld min %02ld s", s / 60, s % 60);
+    else
+        snprintf(buf, sizeof(buf), "%ld s", s);
+    return buf;
+}
+
+// The speed of a download, smoothed over a few seconds: feed it (time, bytes done) every frame; it keeps an
+// exponentially weighted rate, so one stalled or quick read does not make the numbers jump. A new phase or package
+// (done going back) starts it again.
+class RateMeter {
+public:
+    void feed(unsigned nowMs, uint64_t done) {
+        if (!started_ || done < lastDone_ || nowMs < lastMs_) {
+            started_ = true;
+            rate_ = 0;
+            haveRate_ = false;
+            lastMs_ = nowMs;
+            lastDone_ = done;
+            return;
+        }
+        const unsigned dt = nowMs - lastMs_;
+        if (dt < 250)
+            return; // too short to tell
+        const double instant = static_cast<double>(done - lastDone_) * 1000.0 / dt;
+        const double weight = dt >= 4000 ? 1.0 : dt / 4000.0; // a window of about 4 s
+        rate_ = haveRate_ ? rate_ + (instant - rate_) * weight : instant;
+        haveRate_ = true;
+        lastMs_ = nowMs;
+        lastDone_ = done;
+    }
+    void reset() { *this = RateMeter(); }
+    bool known() const { return haveRate_ && rate_ > 0; }
+    double bytesPerSecond() const { return rate_; }
+    // seconds left for `remaining` bytes, -1 when the speed is not known yet
+    double secondsLeft(uint64_t remaining) const { return known() ? static_cast<double>(remaining) / rate_ : -1; }
+
+private:
+    bool started_ = false;
+    bool haveRate_ = false;
+    double rate_ = 0;
+    unsigned lastMs_ = 0;
+    uint64_t lastDone_ = 0;
+};
+
+// Stop (Circle) is for Install / Update only: a Remove runs to the end (half of it undone would leave RetroArch
+// broken); a Remove left half-done by a power loss is finished by the next Install or Remove.
+inline bool stopAllowed(Op op) {
+    return op != Op::Remove;
+}
+
+// the notice before Install / Update (10-15 minutes, ~400 MB); Remove has its own confirm
+inline bool noticeFirst(Op op) {
+    return op != Op::Remove;
+}
+
 //******************
 // runnerCommand
 //******************

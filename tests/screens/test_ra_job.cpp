@@ -398,6 +398,70 @@ TEST_CASE("sizes read as KB / MB") {
     CHECK(humanBytes(42100000) == "42.1 MB");
 }
 
+TEST_CASE("the panel's stick line: free space of the total and a thin used bar") {
+    CHECK(humanSpace(18400000000ULL) == "18.4 GB");
+    CHECK(humanSpace(58200000000ULL) == "58.2 GB");
+    CHECK(humanSpace(512000000ULL) == "512.0 MB");
+    CHECK(usedFraction(18400000000ULL, 58200000000ULL) == doctest::Approx(0.6838).epsilon(0.001));
+    CHECK(usedFraction(0, 0) == 0);              // not asked / not known
+    CHECK(usedFraction(100, 50) == 0);           // free above total: nonsense, an empty bar
+    CHECK(usedFraction(0, 1000) == 1.0);
+}
+
+TEST_CASE("the progress panel's numbers: MB with one decimal or files, never raw bytes") {
+    CHECK(packageAmount(3604512, 6295495, "bytes") == "3.6 / 6.3 MB");
+    CHECK(packageAmount(1200, 41000, "files") == "1200 / 41000");
+    CHECK(packageAmount(2, 5, "items") == "2 / 5");
+}
+
+TEST_CASE("the whole job's bar: phase i of n at fraction f is (i - 1 + f) / n") {
+    CHECK(jobFraction(parseLine("phase 1/4|check-space|0|4|items||0|0").progress) == 0);
+    CHECK(jobFraction(parseLine("phase 3/4|unpack|50|100|files|x.zip|1|2").progress) == doctest::Approx(0.625));
+    CHECK(jobFraction(parseLine("phase 2/4|unpack|0|0").progress) == doctest::Approx(0.25)); // total unknown
+    CHECK(jobFraction(Progress()) == 0);
+}
+
+TEST_CASE("the download's speed is smoothed and the time left follows it") {
+    RateMeter meter;
+    CHECK_FALSE(meter.known());
+    CHECK(meter.secondsLeft(1000) == -1);
+    meter.feed(0, 0);
+    meter.feed(100, 1000000); // too short: not counted
+    CHECK_FALSE(meter.known());
+    meter.feed(1000, 1000000); // 1 MB/s
+    REQUIRE(meter.known());
+    CHECK(meter.bytesPerSecond() == doctest::Approx(1000000));
+    meter.feed(2000, 3000000); // 2 MB/s now, but only a quarter of the weight
+    CHECK(meter.bytesPerSecond() > 1000000);
+    CHECK(meter.bytesPerSecond() < 1500000);
+    meter.feed(3000, 3000000 - 1); // done going back (a new package): starts again
+    CHECK_FALSE(meter.known());
+    CHECK(humanDuration(45) == "45 s");
+    CHECK(humanDuration(200) == "3 min 20 s");
+    CHECK(humanDuration(-1) == "");
+}
+
+TEST_CASE("Stop and the pre-install notice belong to Install and Update; Remove has neither") {
+    CHECK(stopAllowed(Op::Install));
+    CHECK(stopAllowed(Op::Update));
+    CHECK_FALSE(stopAllowed(Op::Remove));
+    CHECK(noticeFirst(Op::Install));
+    CHECK(noticeFirst(Op::Update));
+    CHECK_FALSE(noticeFirst(Op::Remove));
+}
+
+TEST_CASE("the old fake runner line and a new 8-field one move the same job") {
+    JobState job;
+    job.begin();
+    job.apply("phase 2/3|download-cores|10|20\n");
+    CHECK(job.progress.unit == "");
+    job.apply("phase 2/3|download-cores|15|20|bytes|cores-psc-20261003.tar.gz|1|4\n");
+    CHECK(job.progress.unit == "bytes");
+    CHECK(job.progress.item == "cores-psc-20261003.tar.gz");
+    job.apply("phase 2/3|download-cores|garbage\n"); // garbled: keeps what there is
+    CHECK(job.progress.done == 15);
+}
+
 //
 // RaJobService on real children
 //
