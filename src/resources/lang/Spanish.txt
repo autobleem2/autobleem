@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 623
+# Untranslated: 0 / Total: 646
 
 %1 needs game data it can run: %2.=%1 necesita datos de juego que pueda ejecutar: %2.
 %1 sectors could not be read and were written as zeros.=No se pudieron leer %1 sectores y se escribieron como ceros.
@@ -23,6 +23,7 @@ Already installed=Ya instalado
 Also delete the BIOS files=Eliminar también los archivos BIOS
 Always=Siempre
 Animations:=Animaciones:
+Aperture=Rejilla
 app=aplicación
 Applying settings...=Aplicando los ajustes...
 Apps=Aplicaciones
@@ -105,6 +106,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=Margen CRT:
+CRT mask:=Máscara CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=No se encontró el archivo CUE
 Custom=Personalizado
@@ -127,6 +129,7 @@ Delete slot=Borrar ranura
 Delete the !SaveState folder of %s?=¿Borrar la carpeta !SaveState de %s?
 Delete the folder %s?=¿Borrar la carpeta %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=¿Borrar los ajustes guardados en el emulador y volver a usar los de AutoBleem?
+Delta=Delta
 DEMO=DEMO
 Description=Descripción
 Diagnostics=Diagnóstico
@@ -173,6 +176,7 @@ Install, update or remove RetroArch=Instalar, actualizar o eliminar RetroArch
 Installed=Instalado
 Installing RetroArch=Instalando RetroArch
 Merging the settings=Combinando la configuración
+Needs the CRT (raster) filter=Requiere el filtro CRT (raster)
 no card yet=aún no hay tarjeta
 Not available for a disc in the drive=No disponible para un disco en la unidad
 Not enough room in Games: the copy needs %1, %2 is free.=No hay espacio suficiente en Games: la copia necesita %1 y hay %2 libres.

@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 623
+# Untranslated: 0 / Total: 646
 
 %1 needs game data it can run: %2.=%1, çalıştırabileceği oyun verisine ihtiyaç duyar: %2.
 %1 sectors could not be read and were written as zeros.=%1 sektör okunamadı ve sıfır olarak yazıldı.
@@ -23,6 +23,7 @@ Already installed=Zaten kurulu
 Also delete the BIOS files=BIOS dosyalarını da sil
 Always=Her zaman
 Animations:=Animasyonlar:
+Aperture=Izgara
 app=uygulama
 Applying settings...=Ayarlar uygulanıyor...
 Apps=Uygulamalar
@@ -105,6 +106,7 @@ CRT (fast)=CRT (hızlı)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT kenar boşluğu:
+CRT mask:=CRT maskesi:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE dosyası bulunamadı
 Custom=Özel
@@ -127,6 +129,7 @@ Delete slot=Slotu sil
 Delete the !SaveState folder of %s?=%s için !SaveState klasörü silinsin mi?
 Delete the folder %s?=%s klasörü silinsin mi?
 Delete the settings saved in the emulator and use AutoBleem's again?=Emülatörde kaydedilen ayarlar silinip yeniden AutoBleem ayarları kullanılsın mı?
+Delta=Delta
 DEMO=DEMO
 Description=Açıklama
 Diagnostics=Tanılama
@@ -173,6 +176,7 @@ Install, update or remove RetroArch=RetroArch'i kur, güncelle veya kaldır
 Installed=Kurulu
 Installing RetroArch=RetroArch kuruluyor
 Merging the settings=Ayarlar birleştiriliyor
+Needs the CRT (raster) filter=CRT (raster) filtresini gerektirir
 no card yet=henüz kart yok
 Not available for a disc in the drive=Sürücüdeki disk için kullanılamaz
 Not enough room in Games: the copy needs %1, %2 is free.=Games içinde yeterli yer yok: kopya %1 gerektiriyor, %2 boş.

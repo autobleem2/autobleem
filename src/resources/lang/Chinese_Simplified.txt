@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 623
+# Untranslated: 0 / Total: 646
 
 %1 needs game data it can run: %2.=%1 需要它能运行的游戏数据：%2。
 %1 sectors could not be read and were written as zeros.=有 %1 个扇区无法读取，已写入为零。
@@ -23,6 +23,7 @@ Already installed=已安装
 Also delete the BIOS files=同时删除 BIOS 文件
 Always=始终
 Animations:=动画：
+Aperture=栅条
 app=应用
 Applying settings...=正在应用设置...
 Apps=应用
@@ -105,6 +106,7 @@ CRT (fast)=CRT（快速）
 CRT (raster)=CRT（光栅）
 CRT 4:3=CRT 4:3
 CRT margin:=CRT 边距：
+CRT mask:=CRT 荫罩:
 CRT-Pi=CRT-Pi
 Cue file not found=找不到CUE文件
 Custom=自定义
@@ -127,6 +129,7 @@ Delete slot=删除槽位
 Delete the !SaveState folder of %s?=要删除 %s 的 !SaveState 文件夹吗？
 Delete the folder %s?=要删除文件夹 %s 吗？
 Delete the settings saved in the emulator and use AutoBleem's again?=删除在模拟器中保存的设置并重新使用 AutoBleem 的设置？
+Delta=三角
 DEMO=演示
 Description=说明
 Diagnostics=诊断
@@ -173,6 +176,7 @@ Install, update or remove RetroArch=安装、更新或移除 RetroArch
 Installed=已安装
 Installing RetroArch=正在安装 RetroArch
 Merging the settings=正在合并设置
+Needs the CRT (raster) filter=需要 CRT (raster) 滤镜
 no card yet=尚无记忆卡
 Not available for a disc in the drive=光驱中的光盘不可用
 Not enough room in Games: the copy needs %1, %2 is free.=Games 空间不足：复制需要 %1，可用空间 %2。

@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 623
+# Untranslated: 0 / Total: 646
 
 %1 needs game data it can run: %2.=%1 heeft gamedata nodig die het kan uitvoeren: %2.
 %1 sectors could not be read and were written as zeros.=%1 sectoren konden niet gelezen worden en zijn als nullen geschreven.
@@ -23,6 +23,7 @@ Already installed=Al geïnstalleerd
 Also delete the BIOS files=Ook de BIOS-bestanden verwijderen
 Always=Altijd
 Animations:=Animaties:
+Aperture=Streep
 app=app
 Applying settings...=Instellingen toepassen...
 Apps=Apps
@@ -105,6 +106,7 @@ CRT (fast)=CRT (fast)
 CRT (raster)=CRT (raster)
 CRT 4:3=CRT 4:3
 CRT margin:=CRT-marge:
+CRT mask:=CRT-masker:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-bestand niet gevonden
 Custom=Aangepast
@@ -127,6 +129,7 @@ Delete slot=Slot verwijderen
 Delete the !SaveState folder of %s?=De !SaveState-map van %s verwijderen?
 Delete the folder %s?=De map %s verwijderen?
 Delete the settings saved in the emulator and use AutoBleem's again?=De in de emulator opgeslagen instellingen verwijderen en weer die van AutoBleem gebruiken?
+Delta=Delta
 DEMO=DEMO
 Description=Beschrijving
 Diagnostics=Diagnose
@@ -173,6 +176,7 @@ Install, update or remove RetroArch=RetroArch installeren, bijwerken of verwijde
 Installed=Geïnstalleerd
 Installing RetroArch=RetroArch installeren
 Merging the settings=Instellingen samenvoegen
+Needs the CRT (raster) filter=Vereist het filter CRT (raster)
 no card yet=nog geen kaart
 Not available for a disc in the drive=Niet beschikbaar voor een schijf in het station
 Not enough room in Games: the copy needs %1, %2 is free.=Te weinig ruimte in Games: de kopie heeft %1 nodig, %2 is vrij.
