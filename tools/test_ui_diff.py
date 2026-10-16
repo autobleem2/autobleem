@@ -92,6 +92,16 @@ class UiDiffTest(unittest.TestCase):
             ui_diff.MASKS.clear()
             ui_diff.MASKS.update(old)
 
+    def test_tour_diff_without_value(self):
+        import contextlib
+        import io
+        import ui_tour
+        for argv in (['ui_tour.py', self.new, '--diff'], ['ui_tour.py', self.new, '--diff', '--show']):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(ui_tour.main(argv), 2)  # before the launcher is started
+            self.assertIn('--diff PREV_DIR', buf.getvalue())
+
 
 if __name__ == '__main__':
     unittest.main()

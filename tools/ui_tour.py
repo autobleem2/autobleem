@@ -33,6 +33,13 @@ def main(argv):
     os.makedirs(out, exist_ok=True)
     show = '--show' in argv
     port = int(argv[argv.index('--port') + 1]) if '--port' in argv else 7789
+    prev = None
+    if '--diff' in argv:
+        i = argv.index('--diff')
+        if i + 1 >= len(argv) or argv[i + 1].startswith('--'):
+            print(__doc__)
+            return 2
+        prev = os.path.abspath(argv[i + 1])
     subprocess.check_call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'start', '--port', str(port)]
                           + (['--show'] if show else []))
     d = ab_drive.Driver(port)
@@ -140,9 +147,13 @@ def main(argv):
         subprocess.call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'stop', '--port', str(port)])
     ab_drive.sheet(os.path.join(out, 'tour.png'), shots, columns=3, width=426)
     print(len(shots), 'screens in', out)
-    if '--diff' in argv:
-        import ui_diff
-        print(json.dumps(ui_diff.diff_tours(os.path.abspath(argv[argv.index('--diff') + 1]), out)))
+    if prev:
+        try:
+            import ui_diff
+            summary = ui_diff.diff_tours(prev, out)
+        except Exception as e:  # like ui_diff.main: the tour itself succeeded, so exit 0
+            summary = {'changed': [], 'unchanged': 0, 'error': str(e)}
+        print(json.dumps(summary))
     return 0
 
 
