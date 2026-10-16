@@ -64,13 +64,31 @@ string phaseTitle(const string &key) {
 
 // the title of a phase in the job line ("Step 3 of 9 - Downloading cores"): the short form of phaseTitle
 string stepTitle(const string &key) {
+    if (key == "check-space")
+        return _("Checking space");
     if (key == "download-cores")
         return _("Downloading cores");
+    if (key == "download-assets")
+        return _("Downloading assets");
+    if (key == "merge-config")
+        return _("Merging settings");
+    if (key == "install-binary")
+        return _("Installing");
     return phaseTitle(key);
 }
 
-// the one-line "why" under a phase's package
-string phaseWhy(const string &key) {
+// the one-line "why" under a phase's package; the unpack phase says it per package (`item`)
+string phaseWhy(const string &key, const string &item) {
+    if (key == "unpack") {
+        switch (rajob::unpackKind(item)) {
+        case rajob::UnpackKind::Cheats:
+            return _("Cheat codes for thousands of games - many small files, so this part is slow.");
+        case rajob::UnpackKind::Cores:
+            return _("The cores are unpacked onto the stick, ready to run.");
+        case rajob::UnpackKind::Other:
+            break;
+        }
+    }
     if (key == "check-space")
         return _("Making sure the stick has room for everything.");
     if (key == "download-retroarch")
@@ -92,7 +110,7 @@ string phaseWhy(const string &key) {
     if (key == "install-binary")
         return _("Putting RetroArch in place so it can start.");
     if (key == "remove-files")
-        return _("Deleting RetroArch's files. Your games, saves and settings stay.");
+        return _("Your games, saves and settings are not touched.");
     return "";
 }
 
@@ -323,7 +341,7 @@ string GuiRaManager::titleOf(rajob::RowAction action) const {
 string GuiRaManager::descriptionOf(const rajob::Row &row) const {
     if (!row.enabled && (row.action == rajob::RowAction::Install || row.action == rajob::RowAction::Update)) {
         if (!networkUp)
-            return _("Not connected");
+            return _("No network - connect in Network & Controllers");
         return row.action == rajob::RowAction::Install ? _("Already installed") : _("Not installed");
     }
     switch (row.action) {
@@ -626,7 +644,7 @@ void GuiRaProgress::draw() {
     string packageCount;
     if (p.itemCount > 0)
         packageCount = fill(_("Package %s of %s"), {to_string(p.itemIndex), to_string(p.itemCount)});
-    const string why = stopping ? _("Stopping...") : phaseWhy(p.key);
+    const string why = stopping ? _("Stopping...") : phaseWhy(p.key, p.item);
     // the meter: nothing until the speed has three readings; a Remove has no speed, it has the wait
     string meterLine;
     if (op == rajob::Op::Remove)

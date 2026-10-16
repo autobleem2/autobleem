@@ -560,6 +560,14 @@ TEST_CASE("the Remove confirm lists: eight deleted with the BIOS files, seven wi
     CHECK(std::count(lists.stays.begin(), lists.stays.end(), RemoveItem::Covers) == 1);
 }
 
+TEST_CASE("the unpack phase's package kind picks its why line") {
+    CHECK(unpackKind("cheats") == UnpackKind::Cheats);
+    CHECK(unpackKind("cheats.zip") == UnpackKind::Cheats);
+    CHECK(unpackKind("cores-psc-20261003.tar.gz") == UnpackKind::Cores);
+    CHECK(unpackKind("assets.zip") == UnpackKind::Other);
+    CHECK(unpackKind("") == UnpackKind::Other);
+}
+
 TEST_CASE("the meter's words: speed with the language's decimal, time rounded") {
     CHECK(speedText(2400000, '.') == "2.4 MB/s");
     CHECK(speedText(2400000, ',') == "2,4 MB/s");

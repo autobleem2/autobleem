@@ -318,6 +318,18 @@ inline std::string packageWhat(const std::string &description, const std::string
     return displayName(item);
 }
 
+// Which package the unpack phase is on, for its "why" line: the cheats (a zip of tens of thousands of small files),
+// the emulator cores (cores-<date>.tar.gz), or any other.
+enum class UnpackKind { Cheats, Cores, Other };
+
+inline UnpackKind unpackKind(const std::string &item) {
+    if (item == "cheats" || item == "cheats.zip")
+        return UnpackKind::Cheats;
+    if (item.compare(0, 5, "cores") == 0)
+        return UnpackKind::Cores;
+    return UnpackKind::Other;
+}
+
 // A number written with the language's decimal sign: every '.' of `text` becomes `decimal` ("30.3 GB" -> "30,3 GB")
 inline std::string withDecimal(const std::string &text, char decimal) {
     std::string out = text;
