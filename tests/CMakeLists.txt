@@ -8,6 +8,10 @@ include(${CMAKE_SOURCE_DIR}/autobleem-core/tests/harness.cmake)
 if (ABLEEM_TEXT_RUST AND NOT WIN32)
     ab_add_test(test_text_languages screens/test_text_languages.cpp LIBS ableem ab_text SDL2_ttf SDL2)
     ab_test_path_define(test_text_languages AB_LAUNCHER_RESOURCES "${CMAKE_SOURCE_DIR}/src/resources")
+
+    # BUG-11: the glyph atlas outlives a Renderer that a static destroys at exit (the abort at quit)
+    ab_add_test(test_font_atlas_exit screens/test_font_atlas_exit.cpp LIBS ableem ab_text)
+    ab_test_path_define(test_font_atlas_exit AB_LAUNCHER_RESOURCES "${CMAKE_SOURCE_DIR}/src/resources")
 endif()
 
 # abpad, the virtual gamepad for Apps (apps/abpad)
