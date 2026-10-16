@@ -60,6 +60,9 @@ if [ -z "${AB_NO_SCCACHE:-}" ]; then
     cache="${AB_SCCACHE_DIR:-$HOME/.cache/autobleem-sccache}"
     mkdir -p "$cache"
     OPTS+=(-v "$cache:/tmp/sccache" -e SCCACHE_DIR=/tmp/sccache -e SCCACHE_CACHE_SIZE="${AB_SCCACHE_SIZE:-10G}")
+    # the checkout sits at its own path in the container, and cmake puts that path in every -I and source argument:
+    # SCCACHE_BASEDIRS makes the cache key relative to it, so the same commit cloned elsewhere hits the same entries
+    OPTS+=(-e "SCCACHE_BASEDIRS=${SCCACHE_BASEDIRS:-$PWD}")
     # docker run -u uid:gid drops the supplementary groups, so a cache dir that is group-writable for a group
     # the calling user belongs to (the host's shared one) would be read-only in the container: add its group back
     [ -d "$cache" ] && OPTS+=(--group-add "$(stat -c %g "$cache")")

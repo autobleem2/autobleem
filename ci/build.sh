@@ -99,7 +99,9 @@ configure() { # configure BUILD_DIR ARGS...
     # value is passed on to switch them off again)
     local san=()
     [ "$dir" = build_sys ] && san=("-DAB_SANITIZE=${AB_SANITIZE:-}")
-    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "${tests[@]}" "${gl[@]}" ${san[@]+"${san[@]}"} "$@"
+    local pmap=()
+    [ ${#LAUNCHER[@]} -gt 0 ] && pmap=(-DAB_DEBUG_PREFIX_MAP=ON)
+    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" ${pmap[@]+"${pmap[@]}"} "${tests[@]}" "${gl[@]}" ${san[@]+"${san[@]}"} "$@"
     # (a build directory reused from an ON run must not ship its backend file in an OFF package)
     if [ ${#gl[@]} -eq 0 ] || [ "${gl[0]}" = -DABLEEM_RENDER_GL=OFF ]; then
         rm -f "$dir"/ab_render_gles3.so "$dir"/ab_render_gles3.dll
@@ -112,12 +114,15 @@ LAUNCHER=()
 if [ -z "${AB_NO_SCCACHE:-}" ] && command -v sccache >/dev/null 2>&1; then
     LAUNCHER=(-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache)
     export AB_SCCACHE=1
+    # (outside docker/run.sh too: keys relative to this checkout, whatever path it is cloned to)
+    export SCCACHE_BASEDIRS="${SCCACHE_BASEDIRS:-$REPO}"
+    timeout 60 sccache --stop-server >/dev/null 2>&1 || true   # BASEDIRS is read when the server starts
     timeout 60 sccache --start-server >/dev/null 2>&1 || true
     timeout 60 sccache --zero-stats >/dev/null 2>&1 || true
 fi
 sccache_stats() {
     [ -n "${AB_SCCACHE:-}" ] || return 0
-    banner "sccache"
+    banner "sccache $(sccache --version 2>/dev/null | head -1) (basedirs: ${SCCACHE_BASEDIRS:-none})"
     timeout 60 sccache --show-stats 2>/dev/null | grep -E "Compile requests|Cache hits|Cache misses|Non-cacheable|Cache size|Cache location" || true
 }
 # --- extensions built with the launcher (BUG-10) ---------------------------------------------------------------
