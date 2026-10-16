@@ -115,6 +115,11 @@ if [ -z "${AB_NO_SCCACHE:-}" ] && command -v sccache >/dev/null 2>&1; then
     LAUNCHER=(-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
               "-DCMAKE_PROJECT_INCLUDE=$REPO/ci/prefix_map.cmake")
     export AB_SCCACHE=1
+    # sccache hashes the preprocessed output, whose line markers ("# 1 "/abs/clone/src/x.h"") carry the absolute
+    # path of every file; GCC's -ffile-prefix-map does not rewrite them (measured: all 563 units differ between
+    # two clone paths, 100 % of the lines come from the markers). SCCACHE_BASEDIR makes sccache strip this
+    # directory from the output before hashing. It is read when the server starts, so it is set before that.
+    export SCCACHE_BASEDIR="$REPO"
     timeout 60 sccache --start-server >/dev/null 2>&1 || true
     timeout 60 sccache --zero-stats >/dev/null 2>&1 || true
 fi
