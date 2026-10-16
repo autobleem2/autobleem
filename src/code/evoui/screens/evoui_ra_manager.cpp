@@ -441,7 +441,8 @@ void GuiRaManager::draw() {
     const int left = panel.x + TextInset;
     const int right = panel.x + panel.w - TextInset;
     put(fonts[FONT_28_BOLD], _("RetroArch"), left - 8, panel.y + 18, style.text);
-    put(fonts[FONT_20_BOLD], gui->text().elide(fonts[FONT_20_BOLD], head, right - left), left, panel.y + 84, style.text);
+    const string headLine = gui->text().elide(fonts[FONT_20_BOLD], head, right - left);
+    put(fonts[FONT_20_BOLD], headLine, left, panel.y + 84, style.text);
     if (spaceKnown) {
         // "Free on the stick" at the left, "18.4 GB free of 58.2 GB" at the right, the bar under both
         const string space = spaceLine(freeBytes, totalBytes);
@@ -469,7 +470,8 @@ void GuiRaManager::draw() {
             // the switch image at the row's right end; a theme without one gets the word
             if (!abgui::List::drawSwitch(gui->uiContext(), deleteBios, right, rowY, rowPitch)) {
                 const string word = deleteBios ? _("ON") : _("OFF");
-                put(fonts[FONT_20_BOLD], word, right - gui->text().textWidth(fonts[FONT_20_BOLD], word), rowY + 16, color);
+                const int wordWidth = gui->text().textWidth(fonts[FONT_20_BOLD], word);
+                put(fonts[FONT_20_BOLD], word, right - wordWidth, rowY + 16, color);
             }
         }
         if (!row.enabled)
@@ -591,8 +593,10 @@ void GuiRaRemoveConfirm::draw() {
     shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], _("Remove RetroArch?"), panel.x + TextInset, panel.y + 18,
-                                     style.text, XALIGN_LEFT);
+    const auto put = [&](const ableem::Font &f, const string &s, int x, int y, const ableem::Color &c) {
+        gui->text().renderText_WithColor(f, s, x, y, c, XALIGN_LEFT);
+    };
+    put(fonts[FONT_28_BOLD], _("Remove RetroArch?"), panel.x + TextInset, panel.y + 18, style.text);
     style.rule(gui->uiContext(), panel, panel.y + PanelStyle::HeaderHeight - 8);
     const int leftX = panel.x + TextInset;
     const int rightX = panel.x + panel.w / 2 + 10;
@@ -604,14 +608,12 @@ void GuiRaRemoveConfirm::draw() {
     renderer.setDrawColor(ableem::Color(style.heading.r, style.heading.g, style.heading.b, 80));
     renderer.fillRect(ableem::Rect(panel.x + panel.w / 2 - 12, top - 4, 1, rows * LineHeight + 40));
     // the headers: upper case, in the heading colour
-    gui->text().renderText_WithColor(fonts[FONT_20_BOLD], _("WILL BE DELETED"), leftX, top, style.heading, XALIGN_LEFT);
-    gui->text().renderText_WithColor(fonts[FONT_20_BOLD], _("STAYS ON THE STICK"), rightX, top, style.heading,
-                                     XALIGN_LEFT);
+    put(fonts[FONT_20_BOLD], _("WILL BE DELETED"), leftX, top, style.heading);
+    put(fonts[FONT_20_BOLD], _("STAYS ON THE STICK"), rightX, top, style.heading);
+    const ableem::Font &item = fonts[FONT_22_MED];
     int y = top + 36;
     for (const string &line : deleted) {
-        gui->text().renderText_WithColor(
-            fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], "\xE2\x80\x93  " + line, columnWidth), leftX, y,
-            style.text, XALIGN_LEFT);
+        put(item, gui->text().elide(item, "\xE2\x80\x93  " + line, columnWidth), leftX, y, style.text);
         y += LineHeight;
     }
     y = top + 36;
@@ -623,15 +625,13 @@ void GuiRaRemoveConfirm::draw() {
             renderer.drawLine({tx, ty + d}, {tx + 4, ty + 4 + d});
             renderer.drawLine({tx + 4, ty + 4 + d}, {tx + 12, ty - 5 + d});
         }
-        gui->text().renderText_WithColor(fonts[FONT_22_MED],
-                                         gui->text().elide(fonts[FONT_22_MED], line, columnWidth - 22), rightX + 22, y,
-                                         style.description, XALIGN_LEFT);
+        put(item, gui->text().elide(item, line, columnWidth - 22), rightX + 22, y, style.description);
         y += LineHeight;
     }
-    if (withBios)
-        gui->text().renderText_WithColor(
-            fonts[FONT_15_BOLD], gui->text().elide(fonts[FONT_15_BOLD], warning, panel.w - 2 * TextInset), leftX,
-            top + 36 + rows * LineHeight + 10, style.description, XALIGN_LEFT);
+    if (withBios) {
+        const string note = gui->text().elide(fonts[FONT_15_BOLD], warning, panel.w - 2 * TextInset);
+        put(fonts[FONT_15_BOLD], note, leftX, top + 36 + rows * LineHeight + 10, style.description);
+    }
     style.footer(*gui,
                  ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
                  {{{"X"}, _("Remove")}, {{"O"}, _("Cancel")}}, "", false);
