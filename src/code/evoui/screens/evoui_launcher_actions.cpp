@@ -1164,6 +1164,7 @@ void GuiLauncher::loop_raManager() {
     rajob::Op op = rajob::Op::Install;
     rajob::RowAction keptRow = rajob::RowAction::Install;
     bool keepRow = false;
+    bool keptBios = false;
     // the panel, then the box for its choice; a Cancel in the box comes back to the panel with the same row selected
     for (;;) {
         {
@@ -1176,9 +1177,11 @@ void GuiLauncher::loop_raManager() {
             panel.spaceKnown = RaJobService::stickSpace(panel.freeBytes, panel.totalBytes);
             panel.keepRow = keepRow;
             panel.startRow = keptRow;
+            panel.deleteBios = keptBios;
             panel.show();
             choice = panel.result;
             keptRow = panel.chosenRow;
+            keptBios = panel.deleteBios;
         }
         if (choice == RaChoice::None)
             return;
@@ -1219,7 +1222,7 @@ void GuiLauncher::loop_raManager() {
     if (rajob::boxFor(job.status().state) != rajob::EndBox::Message)
         return;
     // the end of a run is a message with one OK, not a question
-    string message, title, tag;
+    string message, detail, title, tag;
     const bool update = op == rajob::Op::Update;
     // "%s" in `format` filled in order by `args`
     const auto fill = [](string format, const vector<string> &args) {
@@ -1259,19 +1262,41 @@ void GuiLauncher::loop_raManager() {
     case rajob::State::Error: {
         title = op == rajob::Op::Remove ? _("Removal failed") : update ? _("Update failed") : _("Installation failed");
         tag = _("ERROR");
-        const string &code = job.status().code;
-        if (code == "no-network")
+        // the cause the runner's code names; a line saying what is left as it was or what to do next under it
+        switch (rajob::failureFor(op, job.status().code)) {
+        case rajob::Failure::NoNetwork:
             message = _("There is no network connection");
-        else if (code == "no-space")
-            message = _("There is not enough free space");
-        else if (code == "download")
+            detail = _("Nothing was changed - connect and try again.");
+            break;
+        case rajob::Failure::NoSpace: {
+            uint64_t freeBytes = 0, totalBytes = 0;
+            if (RaJobService::stickSpace(freeBytes, totalBytes))
+                message =
+                    fill(_("Not enough free space: the stick has %s free."), {GuiRaManager::spaceText(freeBytes)});
+            else
+                message = _("There is not enough free space");
+            detail = _("Nothing was changed - free some space and try again.");
+            break;
+        }
+        case rajob::Failure::Download:
             message = _("A download failed - try again");
-        else if (code == "checksum")
+            detail = _("The parts downloaded so far are kept.");
+            break;
+        case rajob::Failure::Checksum:
             message = _("A downloaded file is damaged - try again");
-        else if (code == "apt-provided")
+            detail = _("Nothing was changed - try again.");
+            break;
+        case rajob::Failure::AptProvided:
             message = _("RetroArch here belongs to the system's package manager, so AutoBleem leaves it alone.");
-        else
+            break;
+        case rajob::Failure::RemoveIncomplete:
+            message = _("Some files could not be removed - RetroArch may be partly removed.");
+            detail = _("Choose Remove again to finish. Your games, saves and settings were not touched.");
+            break;
+        case rajob::Failure::Other:
             message = _("Something went wrong - see the log");
+            break;
+        }
         break;
     }
     default:
@@ -1281,5 +1306,6 @@ void GuiLauncher::loop_raManager() {
     box.title = title;
     box.tag = tag;
     box.label = message;
+    box.detail = detail;
     box.show();
 }

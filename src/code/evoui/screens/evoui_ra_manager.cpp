@@ -3,6 +3,7 @@
 #include "gui/gui.h"
 #include "gui/screens/gui_confirm.h"
 
+#include <ab_gui/list.h>
 #include <ab_gui/panel.h>
 #include <ab_gui/text_page.h>
 
@@ -13,7 +14,6 @@ using namespace std;
 namespace {
 const int PanelWidth = 800;                     // at least - wider for a long line
 const int TextInset = PanelStyle::RowInset + 8; // a line's x in the panel, and its right margin
-const int RowHeight = PanelStyle::RowHeight;
 const int RowInset = PanelStyle::RowInset;
 const int LineHeight = 30;
 
@@ -26,11 +26,16 @@ int panelWidthFor(Gui &gui, const vector<pair<const ableem::Font *, string>> &te
     return min(maxPanelWidth, max(PanelWidth, widest + 2 * TextInset));
 }
 
+// where a panel of `height` starts: centred over the shelf, clear of the hint bar under it (the mockups' y0)
+int panelTop(int canvasHeight, int height) {
+    return max(PanelStyle::Margin / 2, (canvasHeight - 92 - height) / 2 + 20);
+}
+
 // the dimmed launcher's snapshot under the panel; returns the panel's rect
 ableem::Rect drawPanel(Gui &gui, const PanelStyle &style, int width, int height) {
     gui.renderBackground();
     style.dim(gui.uiContext());
-    ableem::Rect panel{(gui.renderer().width() - width) / 2, (gui.renderer().height() - height) / 2, width, height};
+    ableem::Rect panel{(gui.renderer().width() - width) / 2, panelTop(gui.renderer().height(), height), width, height};
     style.sheet(gui.uiContext(), panel);
     return panel;
 }
@@ -194,23 +199,33 @@ void GuiRaMessage::draw() {
     const vector<abgui::HintItem> hints = {{{"X"}, _("OK")}};
     const int panelWidth = abgui::Panel::compactWidth(ctx, hints, "");
     const int width = min(textWidth(style), panelWidth - 2 * (style.rowInset + 8));
-    const vector<string> rows = abgui::wrapText(label, width, [&font](const string &s) { return font.width(s); });
-    const int tagHeight = tag.empty() ? 0 : font.lineHeight();
-    const int textHeight = static_cast<int>(rows.size()) * font.lineHeight() + tagHeight;
-    const abgui::Panel panel(panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth),
-                             style);
+    const auto measure = [&font](const string &s) { return font.width(s); };
+    const vector<string> rows = abgui::wrapText(label, width, measure);
+    const vector<string> detailRows = abgui::wrapText(detail, width, measure);
+    const int textHeight = static_cast<int>(rows.size() + detailRows.size()) * font.lineHeight();
+    ableem::Rect rect = panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth);
+    rect.y = panelTop(ctx.renderer().height(), rect.h);
+    const abgui::Panel panel(rect, style);
     panel.sheet(ctx);
 
     const bool programShadow = ctx.setTextShadow(style.textShadow);
-    int y = panel.header(ctx, title.empty() ? _("RetroArch...") : title) + TextGapTop;
+    const string heading = title.empty() ? _("RetroArch...") : title;
+    int y = panel.header(ctx, heading) + TextGapTop;
     const int x = panel.rect().x + style.rowInset + 8;
     if (!tag.empty()) {
-        ctx.drawText(font, tag, x, y, ableem::Color(230, 70, 70, 255)); // the ERROR tag
-        y += tagHeight;
+        // the ERROR chip right of the title (ra-4b)
+        const int titleWidth = ctx.textWidth(ctx.font(abgui::FontRole::Title), heading);
+        const int chipX = panel.rect().x + style.rowInset + titleWidth + 16;
+        style.button(ctx, tag, chipX, panel.rect().y + 28, 24);
     }
     for (const string &row : rows) {
         if (!row.empty())
             ctx.drawText(font, row, x, y, style.text);
+        y += font.lineHeight();
+    }
+    for (const string &row : detailRows) {
+        if (!row.empty())
+            ctx.drawText(font, row, x, y, style.description);
         y += font.lineHeight();
     }
     style.footer(ctx, panel.footer(), hints, "", false);
@@ -234,37 +249,55 @@ void GuiRaNotice::draw() {
     struct Row {
         string text;
         ableem::Color color;
+        bool bullet; // a cyan square before the row's text (the first row of a bullet)
+        bool indented;
     };
     vector<Row> rows;
-    for (const string &row : abgui::wrapText(label, width, measure))
-        rows.push_back({row, style.text});
-    rows.push_back({"", style.text});
-    const string dash = "- ";
-    const string indent(dash.size(), ' ');
-    const int bulletWidth = width - font.width(dash);
+    // the intro breaks after its colon, as the mockup has it: "...on the console:" / "about 400 MB to download ..."
+    string intro = label, rest;
+    const size_t colon = label.find(": ");
+    if (colon != string::npos) {
+        intro = label.substr(0, colon + 1);
+        rest = label.substr(colon + 2);
+    }
+    for (const string &row : abgui::wrapText(intro, width, measure))
+        rows.push_back({row, style.text, false, false});
+    if (!rest.empty())
+        for (const string &row : abgui::wrapText(rest, width, measure))
+            rows.push_back({row, style.text, false, false});
+    rows.push_back({"", style.text, false, false});
+    const int squareGap = 18; // the bullet's square and the space after it
+    const int bulletWidth = width - squareGap;
     for (const string &bullet : bullets) {
         bool first = true;
         for (const string &row : abgui::wrapText(bullet, bulletWidth, measure)) {
-            rows.push_back({(first ? dash : indent) + row, style.text});
+            rows.push_back({row, style.description, first, true});
             first = false;
         }
     }
     if (!accent.empty()) {
-        rows.push_back({"", style.text});
+        rows.push_back({"", style.text, false, false});
         for (const string &row : abgui::wrapText(accent, width, measure))
-            rows.push_back({row, style.heading}); // the colour of the cyan headings
+            rows.push_back({row, style.heading, false, false}); // the colour of the cyan headings
     }
     const int textHeight = static_cast<int>(rows.size()) * font.lineHeight();
-    const abgui::Panel panel(panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth),
-                             style);
+    ableem::Rect rect = panelRect(style, textHeight, ctx.renderer().width(), ctx.renderer().height(), panelWidth);
+    rect.y = panelTop(ctx.renderer().height(), rect.h);
+    const abgui::Panel panel(rect, style);
     panel.sheet(ctx);
 
     const bool programShadow = ctx.setTextShadow(style.textShadow);
     int y = panel.header(ctx, title.empty() ? _("Before you start") : title) + TextGapTop;
     const int x = panel.rect().x + style.rowInset + 8;
     for (const Row &row : rows) {
+        if (row.bullet) {
+            // 7x7 square in the heading colour (cyan, not the focus colour), level with the text's middle
+            ctx.renderer().setBlendMode(ableem::BlendMode::Blend);
+            ctx.renderer().setDrawColor(style.heading);
+            ctx.renderer().fillRect(ableem::Rect(x, y + font.lineHeight() / 2 - 3, 7, 7));
+        }
         if (!row.text.empty())
-            ctx.drawText(font, row.text, x, y, row.color);
+            ctx.drawText(font, row.text, x + (row.indented ? squareGap : 0), y, row.color);
         y += font.lineHeight();
     }
     style.footer(ctx, panel.footer(), hints, "", false);
@@ -352,15 +385,13 @@ string GuiRaManager::descriptionOf(const rajob::Row &row) const {
     case rajob::RowAction::Remove:
         return _("Delete RetroArch - games, saves and settings stay");
     case rajob::RowAction::DeleteBios:
-        return _("Remove RetroArch and the BIOS files too");
+        return _("Only with Remove");
     }
     return "";
 }
 
 void GuiRaManager::rebuild() {
-    const rajob::RowAction chosen =
-        selected < static_cast<int>(rows_.size()) ? rows_[selected].action : rajob::RowAction::Install;
-    rows_ = rajob::panelRows(installed, networkUp, chosen);
+    rows_ = rajob::panelRows(installed, networkUp);
     selected = min(selected, static_cast<int>(rows_.size()) - 1);
 }
 
@@ -374,10 +405,8 @@ void GuiRaManager::init() {
             selected = i;
             break;
         }
-    rebuild();
     if (keepRow) {
-        // the row the user came back from - the BIOS row exists only while Remove is the chosen one
-        rows_ = rajob::panelRows(installed, networkUp, startRow);
+        // the row the user came back from
         for (int i = 0; i < static_cast<int>(rows_.size()); i++)
             if (rows_[i].action == startRow)
                 selected = i;
@@ -388,14 +417,15 @@ void GuiRaManager::init() {
 
 void GuiRaManager::draw() {
     const string head = summary(installed, version);
-    const string space = spaceKnown ? spaceLine(freeBytes, totalBytes) : "";
-    const int spaceHeight = spaceKnown ? LineHeight + 10 : 0; // the line and the thin bar
-    const int headerHeight = PanelStyle::HeaderHeight + LineHeight + 12 + spaceHeight;
-    const int panelHeight = headerHeight + 4 * RowHeight + PanelStyle::FooterHeight; // room for the BIOS row too
+    // the mockup's layout (ra-1a), in the 1280x720 canvas: the status line, the free-space line and its bar, the rule,
+    // four rows 64 apart
+    const int headerHeight = 188;
+    const int rowPitch = 64;
+    const int panelHeight = headerHeight + 4 * rowPitch + PanelStyle::FooterHeight + 18;
     Fonts &fonts = gui->assets().themeFonts;
-    vector<pair<const ableem::Font *, string>> texts{{&fonts[FONT_22_MED], head}};
+    vector<pair<const ableem::Font *, string>> texts{{&fonts[FONT_20_BOLD], head}};
     for (const rajob::Row &row : rows_) {
-        texts.emplace_back(&fonts[FONT_22_MED], titleOf(row.action));
+        texts.emplace_back(&fonts[FONT_20_BOLD], titleOf(row.action));
         texts.emplace_back(&fonts[FONT_15_BOLD], descriptionOf(row));
     }
     ableem::Rect panel = drawPanel(*gui, style, panelWidthFor(*gui, texts), panelHeight);
@@ -405,16 +435,20 @@ void GuiRaManager::draw() {
     shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], _("RetroArch..."), panel.x + RowInset, panel.y + 18,
-                                     style.text, XALIGN_LEFT);
-    gui->text().renderText_WithColor(fonts[FONT_22_MED],
-                                     gui->text().elide(fonts[FONT_22_MED], head, panel.w - 2 * TextInset),
-                                     panel.x + TextInset, panel.y + 66, style.description, XALIGN_LEFT);
+    const auto put = [&](const ableem::Font &f, const string &s, int x, int y, const ableem::Color &c) {
+        gui->text().renderText_WithColor(f, s, x, y, c, XALIGN_LEFT);
+    };
+    const int left = panel.x + TextInset;
+    const int right = panel.x + panel.w - TextInset;
+    put(fonts[FONT_28_BOLD], _("RetroArch"), left - 8, panel.y + 18, style.text);
+    put(fonts[FONT_20_BOLD], gui->text().elide(fonts[FONT_20_BOLD], head, right - left), left, panel.y + 84, style.text);
     if (spaceKnown) {
-        gui->text().renderText_WithColor(
-            fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], space, panel.w - 2 * TextInset),
-            panel.x + TextInset, panel.y + 66 + LineHeight, style.description, XALIGN_LEFT);
-        ableem::Rect bar(panel.x + TextInset, panel.y + 66 + 2 * LineHeight + 2, panel.w - 2 * TextInset, 8);
+        // "Free on the stick" at the left, "18.4 GB free of 58.2 GB" at the right, the bar under both
+        const string space = spaceLine(freeBytes, totalBytes);
+        const int spaceWidth = gui->text().textWidth(fonts[FONT_22_MED], space);
+        put(fonts[FONT_22_MED], _("Free on the stick"), left, panel.y + 122, style.description);
+        put(fonts[FONT_22_MED], space, right - spaceWidth, panel.y + 122, style.text);
+        ableem::Rect bar(left, panel.y + 158, right - left, 10);
         style.progressBox(gui->uiContext(), bar, rajob::usedFraction(freeBytes, totalBytes));
     }
     style.rule(gui->uiContext(), panel, panel.y + headerHeight - 8);
@@ -422,17 +456,25 @@ void GuiRaManager::draw() {
     int rowY = panel.y + headerHeight;
     for (int i = 0; i < static_cast<int>(rows_.size()); i++) {
         const rajob::Row &row = rows_[i];
+        const bool toggle = row.action == rajob::RowAction::DeleteBios;
+        const ableem::Rect band(panel.x + 2, rowY, panel.w - 4, rowPitch - 4);
         if (i == selected)
-            style.selection(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
+            style.selection(gui->uiContext(), band);
         const auto color = row.enabled ? style.rowColor(i == selected)
                                        : style.disabledColor(gui->uiContext(), style.rowColor(i == selected));
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], titleOf(row.action), panel.x + RowInset + 8, rowY + 7,
-                                         color, XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], descriptionOf(row), panel.x + RowInset + 8, rowY + 35,
-                                         style.description, XALIGN_LEFT);
+        const int textX = left + (toggle ? 28 : 0);
+        put(fonts[FONT_20_BOLD], titleOf(row.action), textX, rowY + 6, color);
+        put(fonts[FONT_15_BOLD], descriptionOf(row), textX, rowY + 36, style.description);
+        if (toggle) {
+            // the switch image at the row's right end; a theme without one gets the word
+            if (!abgui::List::drawSwitch(gui->uiContext(), deleteBios, right, rowY, rowPitch)) {
+                const string word = deleteBios ? _("ON") : _("OFF");
+                put(fonts[FONT_20_BOLD], word, right - gui->text().textWidth(fonts[FONT_20_BOLD], word), rowY + 16, color);
+            }
+        }
         if (!row.enabled)
-            style.disabled(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
-        rowY += RowHeight;
+            style.disabled(gui->uiContext(), band);
+        rowY += rowPitch;
     }
 
     style.footer(*gui,
@@ -464,7 +506,6 @@ void GuiRaManager::loop() {
                     app.audio().cursor.play();
                     selected = (selected + 1) % count;
                 }
-                rebuild(); // the BIOS row comes and goes with Remove
                 break;
             }
             case Event::Type::ButtonDown:
@@ -475,6 +516,10 @@ void GuiRaManager::loop() {
                         break;
                     }
                     app.audio().cursor.play();
+                    if (row.action == rajob::RowAction::DeleteBios) {
+                        deleteBios = !deleteBios; // a switch: Remove reads it
+                        break;
+                    }
                     chosenRow = row.action;
                     switch (row.action) {
                     case rajob::RowAction::Install:
@@ -484,10 +529,8 @@ void GuiRaManager::loop() {
                         result = RaChoice::Update;
                         break;
                     case rajob::RowAction::Remove:
-                        result = RaChoice::Remove;
-                        break;
                     case rajob::RowAction::DeleteBios:
-                        result = RaChoice::RemoveWithBios;
+                        result = deleteBios ? RaChoice::RemoveWithBios : RaChoice::Remove;
                         break;
                     }
                     menuVisible = false;
@@ -535,8 +578,10 @@ void GuiRaRemoveConfirm::draw() {
         stays.push_back(removeItemText(item));
     const string warning = withBios ? _("Cores that need these BIOS files won't start until you copy them back.") : "";
     const int rows = static_cast<int>(max(deleted.size(), stays.size()));
-    const int bodyHeight = LineHeight + 12 + rows * LineHeight + (withBios ? LineHeight + 16 : 0) + 12;
-    const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
+    // ra-3a / ra-3b: the columns start 88 under the top, a header and 36 px later the rows, 30 apart; the BIOS note
+    // takes one more line
+    const int listTop = 88 + 36;
+    const int panelHeight = listTop + rows * LineHeight + (withBios ? 38 : 0) + 24 + PanelStyle::FooterHeight;
     vector<pair<const ableem::Font *, string>> texts{{&fonts[FONT_28_BOLD], _("Remove RetroArch?")},
                                                      {&fonts[FONT_15_BOLD], warning}};
     ableem::Rect panel = drawPanel(*gui, style, panelWidthFor(*gui, texts), panelHeight);
@@ -549,28 +594,44 @@ void GuiRaRemoveConfirm::draw() {
     gui->text().renderText_WithColor(fonts[FONT_28_BOLD], _("Remove RetroArch?"), panel.x + TextInset, panel.y + 18,
                                      style.text, XALIGN_LEFT);
     style.rule(gui->uiContext(), panel, panel.y + PanelStyle::HeaderHeight - 8);
-    const int columnWidth = (panel.w - 2 * TextInset) / 2;
-    const int top = panel.y + PanelStyle::HeaderHeight + 8;
-    const struct {
-        const string heading;
-        const vector<string> &lines;
-        int x;
-    } columns[] = {{_("Will be deleted"), deleted, panel.x + TextInset},
-                   {_("Stays on the stick"), stays, panel.x + TextInset + columnWidth}};
-    for (const auto &column : columns) {
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], column.heading, column.x, top, style.text, XALIGN_LEFT);
-        int y = top + LineHeight + 8;
-        for (const string &line : column.lines) {
-            gui->text().renderText_WithColor(fonts[FONT_15_BOLD],
-                                             gui->text().elide(fonts[FONT_15_BOLD], line, columnWidth - 12), column.x,
-                                             y, style.description, XALIGN_LEFT);
-            y += LineHeight;
+    const int leftX = panel.x + TextInset;
+    const int rightX = panel.x + panel.w / 2 + 10;
+    const int columnWidth = panel.x + panel.w - TextInset - rightX;
+    const int top = panel.y + 88;
+    ableem::Renderer &renderer = gui->renderer();
+    // the divider between the columns: the heading colour, faint
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+    renderer.setDrawColor(ableem::Color(style.heading.r, style.heading.g, style.heading.b, 80));
+    renderer.fillRect(ableem::Rect(panel.x + panel.w / 2 - 12, top - 4, 1, rows * LineHeight + 40));
+    // the headers: upper case, in the heading colour
+    gui->text().renderText_WithColor(fonts[FONT_20_BOLD], _("WILL BE DELETED"), leftX, top, style.heading, XALIGN_LEFT);
+    gui->text().renderText_WithColor(fonts[FONT_20_BOLD], _("STAYS ON THE STICK"), rightX, top, style.heading,
+                                     XALIGN_LEFT);
+    int y = top + 36;
+    for (const string &line : deleted) {
+        gui->text().renderText_WithColor(
+            fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], "\xE2\x80\x93  " + line, columnWidth), leftX, y,
+            style.text, XALIGN_LEFT);
+        y += LineHeight;
+    }
+    y = top + 36;
+    for (const string &line : stays) {
+        // the tick is drawn, the font has none: two 1 px strokes make it 2 px wide
+        const int tx = rightX, ty = y + 14;
+        renderer.setDrawColor(style.heading);
+        for (int d = 0; d < 2; d++) {
+            renderer.drawLine({tx, ty + d}, {tx + 4, ty + 4 + d});
+            renderer.drawLine({tx + 4, ty + 4 + d}, {tx + 12, ty - 5 + d});
         }
+        gui->text().renderText_WithColor(fonts[FONT_22_MED],
+                                         gui->text().elide(fonts[FONT_22_MED], line, columnWidth - 22), rightX + 22, y,
+                                         style.description, XALIGN_LEFT);
+        y += LineHeight;
     }
     if (withBios)
         gui->text().renderText_WithColor(
-            fonts[FONT_15_BOLD], gui->text().elide(fonts[FONT_15_BOLD], warning, panel.w - 2 * TextInset),
-            panel.x + TextInset, top + LineHeight + 8 + rows * LineHeight + 8, style.text, XALIGN_LEFT);
+            fonts[FONT_15_BOLD], gui->text().elide(fonts[FONT_15_BOLD], warning, panel.w - 2 * TextInset), leftX,
+            top + 36 + rows * LineHeight + 10, style.description, XALIGN_LEFT);
     style.footer(*gui,
                  ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
                  {{{"X"}, _("Remove")}, {{"O"}, _("Cancel")}}, "", false);

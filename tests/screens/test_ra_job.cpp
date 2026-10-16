@@ -360,30 +360,43 @@ TEST_CASE("the panel's rows: Install while absent, Update while installed, offli
         FAIL("row missing");
         return false;
     };
-    auto absent = panelRows(false, true, RowAction::Install);
+    auto absent = panelRows(false, true);
     CHECK(enabled(absent, RowAction::Install));
     CHECK_FALSE(enabled(absent, RowAction::Update));
     CHECK(enabled(absent, RowAction::Remove));
 
-    auto present = panelRows(true, true, RowAction::Install);
+    auto present = panelRows(true, true);
     CHECK_FALSE(enabled(present, RowAction::Install));
     CHECK(enabled(present, RowAction::Update));
 
     for (bool installed : {false, true}) {
-        auto offline = panelRows(installed, false, RowAction::Install);
+        auto offline = panelRows(installed, false);
         CHECK_FALSE(enabled(offline, RowAction::Install));
         CHECK_FALSE(enabled(offline, RowAction::Update));
         CHECK(enabled(offline, RowAction::Remove)); // Remove works offline
     }
 }
 
-TEST_CASE("the BIOS row is there only while Remove is the chosen row") {
-    CHECK(panelRows(true, true, RowAction::Install).size() == 3);
-    CHECK(panelRows(true, true, RowAction::Update).size() == 3);
-    const auto withBios = panelRows(true, true, RowAction::Remove);
-    REQUIRE(withBios.size() == 4);
-    CHECK(withBios.back().action == RowAction::DeleteBios);
-    CHECK(panelRows(true, true, RowAction::DeleteBios).size() == 4); // the cursor on it keeps it
+TEST_CASE("the BIOS toggle row is there from the first frame, last, and enabled") {
+    for (bool installed : {false, true}) {
+        const auto rows = panelRows(installed, true);
+        REQUIRE(rows.size() == 4);
+        CHECK(rows.back().action == RowAction::DeleteBios);
+        CHECK(rows.back().enabled);
+    }
+}
+
+TEST_CASE("a failed run's cause: the code's own, a Remove's incomplete, an unknown code other") {
+    CHECK(failureFor(Op::Install, "no-network") == Failure::NoNetwork);
+    CHECK(failureFor(Op::Update, "no-space") == Failure::NoSpace);
+    CHECK(failureFor(Op::Install, "download") == Failure::Download);
+    CHECK(failureFor(Op::Install, "checksum") == Failure::Checksum);
+    CHECK(failureFor(Op::Install, "apt-provided") == Failure::AptProvided);
+    CHECK(failureFor(Op::Install, "other") == Failure::Other);
+    CHECK(failureFor(Op::Install, "disk-on-fire") == Failure::Other);
+    CHECK(failureFor(Op::Remove, "other") == Failure::RemoveIncomplete);
+    CHECK(failureFor(Op::Remove, "") == Failure::RemoveIncomplete);
+    CHECK(failureFor(Op::Remove, "apt-provided") == Failure::AptProvided);
 }
 
 TEST_CASE("the Quick menu offers Install RetroArch only while it is absent, and where there is a runner") {
@@ -549,11 +562,15 @@ TEST_CASE("the stall clock: a change of phase, package or count starts the secon
     CHECK(clock.stalledMs(9000) == 0);
 }
 
-TEST_CASE("the Remove confirm lists: eight deleted with the BIOS files, seven without; six stay") {
+TEST_CASE("the Remove confirm lists: the BIOS files stay (seven each side) or go (eight deleted, six stay)") {
     RemoveLists lists = removeLists(false);
     CHECK(lists.deleted.size() == 7);
-    CHECK(lists.stays.size() == 6);
+    REQUIRE(lists.stays.size() == 7);
+    CHECK(lists.stays.back() == RemoveItem::Bios);
+    CHECK(std::count(lists.deleted.begin(), lists.deleted.end(), RemoveItem::Bios) == 0);
     lists = removeLists(true);
+    CHECK(lists.stays.size() == 6);
+    CHECK(std::count(lists.stays.begin(), lists.stays.end(), RemoveItem::Bios) == 0);
     REQUIRE(lists.deleted.size() == 8);
     CHECK(lists.deleted.back() == RemoveItem::Bios);
     CHECK(std::count(lists.stays.begin(), lists.stays.end(), RemoveItem::Playlists) == 1);

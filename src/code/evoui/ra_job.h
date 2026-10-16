@@ -493,10 +493,13 @@ inline RemoveLists removeLists(bool withBios) {
     RemoveLists lists;
     lists.deleted = {RemoveItem::RetroArch, RemoveItem::Cores,    RemoveItem::MenuAssets, RemoveItem::Databases,
                      RemoveItem::Cheats,    RemoveItem::Overlays, RemoveItem::Shaders};
-    if (withBios)
-        lists.deleted.push_back(RemoveItem::Bios);
     lists.stays = {RemoveItem::Games, RemoveItem::Playlists,  RemoveItem::Covers,
                    RemoveItem::Saves, RemoveItem::SaveStates, RemoveItem::Settings};
+    // the BIOS files are on one side or the other: they stay unless the toggle says they go (ra-3a / ra-3b)
+    if (withBios)
+        lists.deleted.push_back(RemoveItem::Bios);
+    else
+        lists.stays.push_back(RemoveItem::Bios);
     return lists;
 }
 
@@ -655,19 +658,39 @@ struct Row {
 };
 
 // Install while absent, Update while installed (both need the network, greyed without), Remove always works
-// offline. "Also delete the BIOS files" is a row of its own, there only while Remove is the chosen row.
-inline bool biosRowShown(RowAction chosen) {
-    return chosen == RowAction::Remove || chosen == RowAction::DeleteBios;
-}
-
-inline std::vector<Row> panelRows(bool installed, bool networkUp, RowAction chosen) {
+// offline. "Also delete the BIOS files" is the toggle row under Remove, shown from the first frame (ra-1a); it is a
+// switch that Remove reads, not a run of its own.
+inline std::vector<Row> panelRows(bool installed, bool networkUp) {
     std::vector<Row> rows;
     rows.push_back({RowAction::Install, networkUp && !installed});
     rows.push_back({RowAction::Update, networkUp && installed});
     rows.push_back({RowAction::Remove, true});
-    if (biosRowShown(chosen))
-        rows.push_back({RowAction::DeleteBios, true});
+    rows.push_back({RowAction::DeleteBios, true});
     return rows;
+}
+
+//******************
+// What a failed run says
+//******************
+// The cause of a failure as the box words it. The runner's codes know the cause (no network, no space, a download, a
+// damaged file, the system's package manager); a Remove has no cause the runner names, its failure is its own box.
+enum class Failure { NoNetwork, NoSpace, Download, Checksum, AptProvided, RemoveIncomplete, Other };
+
+inline Failure failureFor(Op op, const std::string &code) {
+    const std::string known = knownCode(code);
+    if (known == "apt-provided")
+        return Failure::AptProvided;
+    if (op == Op::Remove)
+        return Failure::RemoveIncomplete;
+    if (known == "no-network")
+        return Failure::NoNetwork;
+    if (known == "no-space")
+        return Failure::NoSpace;
+    if (known == "download")
+        return Failure::Download;
+    if (known == "checksum")
+        return Failure::Checksum;
+    return Failure::Other;
 }
 
 // How the end of a run is shown: a plain message with one OK for what happened (Done, Stopped, every error), nothing
