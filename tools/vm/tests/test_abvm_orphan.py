@@ -41,7 +41,7 @@ class FakeGuest:
             return f'./autobleem-gui {p[0]} ' if p else ''
         if cmd.startswith('set -e; mountpoint'):
             port = int(re.search(r'AB_DEBUG_PORT=(\d+)', cmd).group(1))
-            root = re.search(r'./autobleem-gui (\S+) >', cmd).group(1)
+            root = re.search(r'run-launcher.sh (\S+) >', cmd).group(1)
             bound = port not in self.listeners() and not self.silent
             pid = self.spawn(root, port, listens=bound) if not (port in self.listeners()) else None
             if pid is None:  # the launcher cannot bind and exits at once
