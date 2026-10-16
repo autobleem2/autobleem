@@ -12,6 +12,11 @@ if (ABLEEM_TEXT_RUST AND NOT WIN32)
     # BUG-11: the glyph atlas outlives a Renderer that a static destroys at exit (the abort at quit)
     ab_add_test(test_font_atlas_exit screens/test_font_atlas_exit.cpp LIBS ableem ab_text)
     ab_test_path_define(test_font_atlas_exit AB_LAUNCHER_RESOURCES "${CMAKE_SOURCE_DIR}/src/resources")
+    set_tests_properties(test_font_atlas_exit PROPERTIES SKIP_RETURN_CODE 77) # no renderer: skipped, not passed
+    # the abort was one run in a few: twenty runs in a row (a failure prints "failures K/20")
+    add_test(NAME test_font_atlas_exit_x20
+             COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/screens/repeat_test.sh 20 $<TARGET_FILE:test_font_atlas_exit>)
+    set_tests_properties(test_font_atlas_exit_x20 PROPERTIES SKIP_RETURN_CODE 77)
 endif()
 
 # abpad, the virtual gamepad for Apps (apps/abpad)

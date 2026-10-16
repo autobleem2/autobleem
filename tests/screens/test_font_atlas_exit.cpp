@@ -11,6 +11,7 @@
 #include <ableem/ui/font.h>
 #include <ableem/ui/gui_base.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <memory>
@@ -38,8 +39,10 @@ TEST_CASE("a text drawn on a renderer that a static destroys at exit: the atlas 
         h.gui = make_unique<ableem::GuiBase>("ab_test_font_atlas_exit", 320, 240);
     } catch (const exception &e) {
         const string why = e.what();
-        MESSAGE("test_font_atlas_exit: skipping - no usable renderer here (" << why << ")");
-        return;
+        // ctest counts exit 77 as skipped (SKIP_RETURN_CODE in tests/CMakeLists.txt), not as a pass
+        fprintf(stderr, "SKIPPED test_font_atlas_exit: no usable renderer here (%s)\n", why.c_str());
+        fflush(stderr);
+        exit(77);
     }
     ableem::Renderer &renderer = h.gui->renderer();
     const string ttf = string(AB_LAUNCHER_RESOURCES) + "/fonts/RedHatText-Medium.ttf";
