@@ -7,7 +7,7 @@ include(${CMAKE_SOURCE_DIR}/autobleem-core/tests/harness.cmake)
 # its tests never run) leaves it out
 if (ABLEEM_TEXT_RUST AND NOT WIN32)
     ab_add_test(test_text_languages screens/test_text_languages.cpp LIBS ableem ab_text SDL2_ttf SDL2)
-    target_compile_definitions(test_text_languages PRIVATE AB_LAUNCHER_RESOURCES="${CMAKE_SOURCE_DIR}/src/resources")
+    ab_test_path_define(test_text_languages AB_LAUNCHER_RESOURCES "${CMAKE_SOURCE_DIR}/src/resources")
 endif()
 
 # abpad, the virtual gamepad for Apps (apps/abpad)
@@ -28,8 +28,8 @@ target_include_directories(test_carousel_motion PRIVATE ${CMAKE_SOURCE_DIR}/src/
 
 # rc/app_resolve.sh, the shell copy of AppManifest's rule, held to the same answers
 ab_add_test(test_app_resolve rc/test_app_resolve.cpp)
-target_compile_definitions(test_app_resolve PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc"
-                                                     AB_LINUX_RC_DIR="${CMAKE_SOURCE_DIR}/payload_linux/Autobleem/rc")
+ab_test_path_define(test_app_resolve AB_RC_DIR "${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
+ab_test_path_define(test_app_resolve AB_LINUX_RC_DIR "${CMAKE_SOURCE_DIR}/payload_linux/Autobleem/rc")
 
 # abfetch, the console's own downloader (src/tools/abfetch - built for psc and the dev hosts)
 if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
@@ -40,7 +40,7 @@ endif()
 if (NOT AB_TARGET STREQUAL "win" AND NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
     ab_add_test(test_abupdate tools/test_abupdate.cpp)
     add_dependencies(test_abupdate abupdate)
-    target_compile_definitions(test_abupdate PRIVATE AB_ABUPDATE_PATH="$<TARGET_FILE:abupdate>")
+    ab_test_path_define(test_abupdate AB_ABUPDATE_PATH "${CMAKE_BINARY_DIR}" "$<TARGET_FILE_NAME:abupdate>")
 endif()
 
 # ab_gui G5o3: the launcher's state change on tweens - the menu row, its option move and zoom, the meta panel and the
@@ -104,7 +104,7 @@ target_include_directories(test_disc_view_logic PRIVATE ${CMAKE_SOURCE_DIR}/src/
 # The RetroArch install / remove job (evoui/ra_job.h, pure, and ra_job_service.cpp with the fake runner in tools/)
 ab_add_test(test_ra_job screens/test_ra_job.cpp ${CMAKE_SOURCE_DIR}/src/code/evoui/ra_job_service.cpp)
 target_include_directories(test_ra_job PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
-target_compile_definitions(test_ra_job PRIVATE AB_TOOLS_DIR="${CMAKE_SOURCE_DIR}/tools")
+ab_test_path_define(test_ra_job AB_TOOLS_DIR "${CMAKE_SOURCE_DIR}/tools")
 
 # Copying the disc in the drive to Games as a CHD (evoui/screens/disc_rip_logic.h): who is offered the copy, the names
 # of the CHD / .sbi / .m3u, the LibCrypt .sbi choice, the refusals before the rip, the popup's numbers
@@ -118,16 +118,16 @@ target_include_directories(test_ra_gates PRIVATE ${CMAKE_SOURCE_DIR}/src/code/ev
 # The PSC's core picks and ROM folders (src/resources/platform/psc.cores.cfg, roms_skip.cfg) against the console's real
 # core set: autobleem-core's tests/data/psc-info, the info/ folder of the cores tarball the PSC installs
 ab_add_test(test_psc_cores platform/test_psc_cores.cpp)
-target_compile_definitions(test_psc_cores PRIVATE AB_PLATFORM_DIR="${CMAKE_SOURCE_DIR}/src/resources/platform")
+ab_test_path_define(test_psc_cores AB_PLATFORM_DIR "${CMAKE_SOURCE_DIR}/src/resources/platform")
 
 # rc/pe_run.sh + rc/pe_env.sh, the start of a PE App: the real scripts on a fake mod (the bind mount needs root and
 # is only checked there), and the trimmed pad table the mods read (tools/make_pe_gamecontrollerdb.py)
 ab_add_test(test_pe_run rc/test_pe_run.cpp)
-target_compile_definitions(test_pe_run PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
+ab_test_path_define(test_pe_run AB_RC_DIR "${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
 
 # rc/ab_memory.sh, overcommit 1 and the zram swap at boot: the real script on a fake /proc, /sys and /dev, run twice
 ab_add_test(test_ab_memory rc/test_ab_memory.cpp)
-target_compile_definitions(test_ab_memory PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
+ab_test_path_define(test_ab_memory AB_RC_DIR "${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if (Python3_Interpreter_FOUND)
     add_test(NAME test_make_pe_gamecontrollerdb COMMAND ${Python3_EXECUTABLE}

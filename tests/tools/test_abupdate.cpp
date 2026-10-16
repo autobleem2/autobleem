@@ -17,7 +17,7 @@ namespace {
 
 // abupdate with `args`, its output into <tmp>/out.txt; the exit code
 int run(const TempDir &tmp, const string &args) {
-    const string command = "\"" AB_ABUPDATE_PATH "\" " + args + " > \"" + tmp.at("out.txt") + "\" 2>&1";
+    const string command = "\"" + string(AB_ABUPDATE_PATH) + "\" " + args + " > \"" + tmp.at("out.txt") + "\" 2>&1";
     const int status = system(command.c_str());
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }

@@ -729,7 +729,7 @@ TEST_CASE("RaJobService with the fake runner: a whole install, then a remove") {
     TempDir tmp("rajob_fake");
     setenv("AB_FAKE_RA_STEPS", "2", 1);
     setenv("AB_FAKE_RA_BINARY", tmp.at("bin/retroarch").c_str(), 1);
-    const std::string fake = AB_TOOLS_DIR "/fake_ra_runner.sh";
+    const std::string fake = std::string(AB_TOOLS_DIR) + "/fake_ra_runner.sh";
     const std::string file = tmp.at("p");
 
     RaJobService job;
@@ -751,7 +751,7 @@ TEST_CASE("RaJobService with the fake runner: a whole install, then a remove") {
 TEST_CASE("RaJobService with the fake runner: stop() ends with end|stopped, the next install resumes") {
     TempDir tmp("rajob_stop");
     setenv("AB_FAKE_RA_STEPS", "10", 1);
-    const std::string fake = AB_TOOLS_DIR "/fake_ra_runner.sh";
+    const std::string fake = std::string(AB_TOOLS_DIR) + "/fake_ra_runner.sh";
     const std::string file = tmp.at("p");
 
     RaJobService job;
@@ -776,7 +776,7 @@ TEST_CASE("RaJobService with the fake runner: stop() ends with end|stopped, the 
 TEST_CASE("RaJobService: destroyed while the fake runner still works (the shutdown path)") {
     TempDir tmp("rajob_shutdown");
     setenv("AB_FAKE_RA_STEPS", "10", 1);
-    const std::string fake = AB_TOOLS_DIR "/fake_ra_runner.sh";
+    const std::string fake = std::string(AB_TOOLS_DIR) + "/fake_ra_runner.sh";
     const std::string file = tmp.at("p");
     {
         RaJobService job;
@@ -803,7 +803,7 @@ TEST_CASE("RaJobService: destroyed while the fake runner still works (the shutdo
 TEST_CASE("RaJobService with the fake runner: its failure knobs") {
     TempDir tmp("rajob_knobs");
     setenv("AB_FAKE_RA_STEPS", "4", 1);
-    const std::string fake = AB_TOOLS_DIR "/fake_ra_runner.sh";
+    const std::string fake = std::string(AB_TOOLS_DIR) + "/fake_ra_runner.sh";
     const std::string file = tmp.at("p");
     setenv("AB_FAKE_RA_FAIL", "no-space", 1);
     RaJobService job;
