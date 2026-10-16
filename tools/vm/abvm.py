@@ -84,6 +84,18 @@ ONLY the pool sb1..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          `probe <path>` (relative to the sandbox, no ..) is read-only
                                                          in the guest: id autobleem, owner/mode of the path and its
                                                          parent, ls -la - the output is among the results
+                                                         --valgrind: the launcher under valgrind memcheck (slow; the
+                                                         log is System/Logs/valgrind.txt). ABVM_SANDBOX_ENV (words
+                                                         NAME=value: AB_* keys, MALLOC_CHECK_, MALLOC_PERTURB_,
+                                                         MALLOC_ARENA_MAX, ASAN/UBSAN/LSAN/MSAN_OPTIONS, G_DEBUG,
+                                                         G_SLICE, LD_DEBUG) goes to the launcher; ABVM_SANDBOX_VALGRIND=1
+                                                         is --valgrind. Every run's end is recorded in <sandbox>/.abvm/
+                                                         exit-status, a core kept in <sandbox>/.abvm/core/
+  python tools/vm/abvm.py sandbox exit-status <name>     JSON {launcher_exit, launcher_signal, finished_at} of the last
+                                                         run (null while it runs / never ran); exit 134 = signal 6
+  python tools/vm/abvm.py sandbox crash-report <name>    for a death by signal: a gdb backtrace of the kept core with
+                                                         the build's symbols, as text; says "no core" / "gdb is not
+                                                         installed" when so
   python tools/vm/abvm.py sandbox logs <name> [n]        the launcher's output
   python tools/vm/abvm.py sandbox stop|reset|rm <name>   quit it (the driver's `quit`, a kill after 5 s) / start it
                                                          afresh from the template / delete it
@@ -1698,7 +1710,117 @@ def sb_reap_unleased(names):
     return kept
 
 
-def sb_start(name, size=None, **lay):
+RUN_SCRIPT = 'run-launcher.sh'
+EXIT_FILE = 'exit-status'
+CORE_DIR = 'core'
+# the launcher's environment words a caller may pass (ABVM_SANDBOX_ENV): its own AB_* keys and the allocator/sanitizer
+# debug keys; never the loader's (LD_PRELOAD, LD_LIBRARY_PATH)
+DEBUG_ENV_KEYS = ('MALLOC_CHECK_', 'MALLOC_PERTURB_', 'MALLOC_ARENA_MAX', 'ASAN_OPTIONS', 'UBSAN_OPTIONS',
+                  'LSAN_OPTIONS', 'MSAN_OPTIONS', 'G_DEBUG', 'G_SLICE', 'LD_DEBUG')
+
+# runs in the guest in place of the bare launcher: cores allowed, the wait status and the time recorded when it ends,
+# a core file moved from the launcher's directory (the default core_pattern) to <sandbox>/.abvm/core/
+RUN_SCRIPT_TEXT = '''#!/bin/sh
+# run-launcher.sh <sandbox root> [valgrind]   (written by abvm.py)
+root=$1
+ab=$root/.abvm
+ulimit -c unlimited 2>/dev/null
+if [ "$2" = valgrind ]; then
+    valgrind --log-file="$root/System/Logs/valgrind.txt" --error-limit=no --num-callers=40 ./autobleem-gui "$root"
+else
+    ./autobleem-gui "$root"
+fi
+s=$?
+mkdir -p "$ab/core"
+for c in core core.*; do
+    [ -f "$c" ] && mv -f "$c" "$ab/core/"
+done
+echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
+exit "$s"
+'''
+
+
+def sb_check_env_words(words):
+    for w in words:
+        key = w.split('=', 1)[0]
+        if '=' not in w or not (re.fullmatch(r'AB_[A-Z0-9_]+', key) or key in DEBUG_ENV_KEYS):
+            raise Fail(f'ABVM_SANDBOX_ENV {w!r}: NAME=value with NAME an AB_* key or one of {", ".join(DEBUG_ENV_KEYS)}')
+    return words
+
+
+def sb_write_run_script(name):
+    d = os.path.join(sb_host(name), '.abvm')
+    os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, RUN_SCRIPT), 'w', newline='\n') as f:
+        f.write(RUN_SCRIPT_TEXT)
+    sb_open_modes(d)
+
+
+def sb_clear_run_record(name):
+    d = os.path.join(sb_host(name), '.abvm')
+    for f in (EXIT_FILE, EXIT_FILE + '.tmp'):
+        try:
+            os.remove(os.path.join(d, f))
+        except OSError:
+            pass
+    shutil.rmtree(os.path.join(d, CORE_DIR), ignore_errors=True)
+
+
+def parse_exit_record(text):
+    """'<shell status> <epoch>' as the run script writes it -> {launcher_exit, launcher_signal, finished_at}. A status
+    above 128 is the shell's way to say "killed by signal status-128" (134 = SIGABRT = 6); a launcher exit code in
+    129..192 would read the same, the launcher has none."""
+    m = re.fullmatch(r'\s*(\d+)\s+(\d+)\s*', text or '')
+    if not m:
+        return {'launcher_exit': None, 'launcher_signal': None, 'finished_at': None}
+    status, at = int(m.group(1)), int(m.group(2))
+    return {'launcher_exit': status, 'launcher_signal': status - 128 if 128 < status <= 192 else None,
+            'finished_at': at}
+
+
+def sb_exit_status(name):
+    try:
+        with open(os.path.join(sb_host(name), '.abvm', EXIT_FILE)) as f:
+            return parse_exit_record(f.read())
+    except OSError:
+        return parse_exit_record('')
+
+
+def sb_core_files(name):
+    d = os.path.join(sb_host(name), '.abvm', CORE_DIR)
+    return sorted(os.path.join(d, f) for f in os.listdir(d)) if os.path.isdir(d) else []
+
+
+def sb_crash_report(name):
+    """text: the last run's end, and for a death by signal a gdb backtrace (all threads) of the kept core, with the
+    symbols of the sandbox's launcher binary; says so when there is no core or no gdb"""
+    st = sb_exit_status(name)
+    if sb_running(name):
+        return f'sandbox {name}: the launcher runs - no crash report'
+    if st['launcher_exit'] is None:
+        return f'sandbox {name}: no finished run recorded'
+    head = f'launcher exit {st["launcher_exit"]}'
+    if st['launcher_signal'] is None:
+        return f'{head}: ended normally, no crash'
+    head += f', signal {st["launcher_signal"]}'
+    cores = sb_core_files(name)
+    if not cores:
+        pattern = guest_run('cat /proc/sys/kernel/core_pattern', check=False).strip()
+        return (f'{head}\nno core file: the guest\'s core_pattern is {pattern!r}'
+                + (' (piped - no core lands in the sandbox; set it to a plain "core" as root in the guest)'
+                   if pattern.startswith('|') else ' (a core is kept only when it is written to the launcher\'s '
+                                                    'directory as core / core.*)'))
+    if guest_run('command -v gdb', check=False).strip() == '':
+        return f'{head}\ncore kept: {cores[0]}\ngdb is not installed in the guest - no backtrace'
+    g = f'{SB_GUEST}/{name}'
+    core = f'{g}/.abvm/{CORE_DIR}/{os.path.basename(cores[0])}'
+    exe = f'{g}/Autobleem/bin/autobleem/autobleem-gui'
+    bt = guest_run(f'gdb -batch -nx -ex "set pagination off" -ex "thread apply all bt full" {shlex.quote(exe)} '
+                   f'{shlex.quote(core)} 2>&1', check=False)
+    return f'{head}\ncore: {cores[0]}\n{bt.rstrip()}'
+
+
+def sb_start(name, size=None, valgrind=False, **lay):
     size = size or os.environ.get('ABVM_SANDBOX_SIZE', '1280x720')
     if not sb_running(name):  # refuse before the sandbox is made or a build is laid over it
         others = sb_running_names(exclude=name)
@@ -1743,7 +1865,8 @@ def sb_start(name, size=None, **lay):
            f'AB_WINDOW_SIZE={size} AB_DEBUG_OUT={g}/.abvm/out AB_PAD_BATTERY_DIR={g}/.abvm/power_supply AB_MAX_FPS=30 AB_AMBIENT_FPS=5')
     extra = os.environ.get('ABVM_SANDBOX_ENV', '')  # more for the launcher, e.g. AB_FRAME_STATS=1
     if extra:
-        env += ' ' + ' '.join(shlex.quote(w) for w in extra.split())
+        env += ' ' + ' '.join(shlex.quote(w) for w in sb_check_env_words(extra.split()))
+    valgrind = valgrind or os.environ.get('ABVM_SANDBOX_VALGRIND') == '1'
     t0 = time.time()
     # made here, open to the guest (a folder the guest makes through the share is QEMU's, and closed to this user)
     for sub in ('out', 'power_supply'):
@@ -1754,10 +1877,13 @@ def sb_start(name, size=None, **lay):
     # the redirect below fails (and no launcher starts, no log is written) when System/Logs is missing
     os.makedirs(os.path.join(sb_host(name), 'System', 'Logs'), exist_ok=True)
     sb_open_modes(os.path.join(sb_host(name), 'System'))
+    sb_write_run_script(name)
+    sb_clear_run_record(name)  # this run's record replaces the last one's
     out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; mkdir -p {rt}; '
                     f'cd {g}/Autobleem/bin/autobleem; umask 000; '
-                    f'{env} setsid nohup ./autobleem-gui {g} > {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
-                    f'echo pid $!; for i in $(seq 100); do '
+                    f'{env} setsid nohup sh {g}/.abvm/{RUN_SCRIPT} {g}{" valgrind" if valgrind else ""} '
+                    f'> {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
+                    f'echo pid $!; for i in $(seq {600 if valgrind else 100}); do '
                     f'l=$(ss -ltnp | grep "127.0.0.1:{port} " || true); '
                     f'if [ -n "$l" ]; then echo "listen $l"; break; fi; sleep 0.1; done')
     pid = int(re.search(r'pid (\d+)', out).group(1))
@@ -1780,7 +1906,7 @@ def sb_start(name, size=None, **lay):
     try:
         d = import_ab_drive().Driver(port)
         try:
-            d.wait_screen('GuiLauncher', 60)
+            d.wait_screen('GuiLauncher', 600 if valgrind else 60)
         finally:
             d.close()
     except (OSError, RuntimeError) as e:
@@ -2011,6 +2137,9 @@ def check_sandbox_flags(rest):
     """sandbox new|start|reset <name> [flags]: an unknown flag, or one without its value, is an error - never ignored"""
     i = 0
     while i < len(rest):
+        if rest[i] == '--valgrind':  # the one flag with no value
+            i += 1
+            continue
         if rest[i] not in SANDBOX_FLAGS:
             raise Fail(f'sandbox: unknown argument {rest[i]!r} (flags: {" ".join(SANDBOX_FLAGS)})')
         if i + 1 >= len(rest):
@@ -2071,6 +2200,13 @@ def sandbox_command(args, out_dir):
         n = int(args[2]) if len(args) > 2 else 40
         with open(path, errors='replace') as f:
             print(''.join(f.readlines()[-n:]), end='')
+    elif sub in ('exit-status', 'crash-report'):  # read-only: no lease
+        if not name:
+            raise Fail(f'sandbox {sub} <name>')
+        if sub == 'exit-status':
+            print(json.dumps(sb_exit_status(name)))
+        else:
+            print(sb_crash_report(name))
     elif sub in ('new', 'start', 'drive', 'stop', 'reset', 'rm'):
         if not name:
             raise Fail(f'sandbox {sub} <name>')
@@ -2088,7 +2224,7 @@ def sandbox_command(args, out_dir):
         if sub == 'new':
             sb_new(name, **lay)
         elif sub == 'start':
-            sb_start(name, size, **lay)
+            sb_start(name, size, valgrind='--valgrind' in args, **lay)
         elif sub == 'drive':
             sb_drive(name, _script_from_args(args[2:]), out_dir)
         elif sub == 'stop':
@@ -2105,8 +2241,8 @@ def sandbox_command(args, out_dir):
     else:
         raise Fail('sandbox list | setup | template [--package <pcusb package|nightly>] | take-free <task> [min] | '
                    'take <name> <task> [min] | release <name> | rm-legacy [--dry-run] | '
-                   'new|start <name> [--build <dist dir>] [--ext <zip|dir>]... | drive <name> "<script>" | logs <name> [n] | '
-                   'stop|reset|rm <name>')
+                   'new|start <name> [--build <dist dir>] [--ext <zip|dir>]... [--valgrind] | drive <name> "<script>" | '
+                   'logs <name> [n] | exit-status <name> | crash-report <name> | stop|reset|rm <name>')
 
 
 def sb_drive_remote(name, script, out_dir):
