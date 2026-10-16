@@ -42,6 +42,7 @@
 #   AB_BUILD_CHANNEL=dev|nightly|prerelease|release   the channel the launcher's corner tag names (UIREV-40); unset = dev
 #                   (a hand build says DEV + its commit); the publish workflow sets the real one
 set -euo pipefail
+umask 0002   # files written into the shared sccache directory stay group-writable
 cd "$(dirname "$0")/.."
 REPO="$PWD"
 JOBS="${AB_JOBS:-$(nproc)}"
@@ -110,7 +111,9 @@ configure() { # configure BUILD_DIR ARGS...
 # binary. AB_NO_SCCACHE=1 builds without. The stats at the end of a run say what it did.
 LAUNCHER=()
 if [ -z "${AB_NO_SCCACHE:-}" ] && command -v sccache >/dev/null 2>&1; then
-    LAUNCHER=(-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache)
+    # (ci/prefix_map.cmake maps the per-clone source and build paths to "." so two clones share cache entries)
+    LAUNCHER=(-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+              "-DCMAKE_PROJECT_INCLUDE=$REPO/ci/prefix_map.cmake")
     export AB_SCCACHE=1
     timeout 60 sccache --start-server >/dev/null 2>&1 || true
     timeout 60 sccache --zero-stats >/dev/null 2>&1 || true
@@ -118,7 +121,7 @@ fi
 sccache_stats() {
     [ -n "${AB_SCCACHE:-}" ] || return 0
     banner "sccache"
-    timeout 60 sccache --show-stats 2>/dev/null | grep -E "Compile requests|Cache hits|Cache misses|Non-cacheable|Cache size|Cache location" || true
+    timeout 60 sccache --show-stats 2>/dev/null | grep -E "Compile requests|Cache hits|Cache misses|Non-cacheable|Cache write errors|Cache size|Cache location" || true
 }
 # --- extensions built with the launcher (BUG-10) ---------------------------------------------------------------
 # The Store (ext_store) is a plugin compiled against the launcher's SDK headers; one built earlier fails in dlopen
