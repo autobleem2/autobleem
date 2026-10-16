@@ -56,8 +56,8 @@ bool nearPx(int a, int b) {
 }
 
 bool samePoint(const Point &a, const Point &b) {
-    return nearPx(a.x, b.x) && nearPx(a.y, b.y) && floatNear(a.scale, b.scale) && std::fabs(a.shade - b.shade) <= 1.0f &&
-           floatNear(a.angle, b.angle);
+    return nearPx(a.x, b.x) && nearPx(a.y, b.y) && floatNear(a.scale, b.scale) &&
+           std::fabs(a.shade - b.shade) <= 1.0f && floatNear(a.angle, b.angle);
 }
 
 // one cover, with both timers' fields: the old side uses the first three, the new side `move`
