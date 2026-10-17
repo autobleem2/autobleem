@@ -78,6 +78,12 @@ ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          ABVM_TESTGAMES), big files hard-linked;
                                                          --set Key=Value (repeatable): a line in the launcher's
                                                          config.ini, laid last (e.g. --set Language=Polski)
+  python tools/vm/abvm.py sandbox tour <name> <outdir> [--diff PREV]   tools/ui_tour.py --attach on the sandbox's
+                                                         driver, run inside this tool (the forwarded port is
+                                                         reachable only there): every screen's shot, tour.png and,
+                                                         with --diff, changed.html, diff/ and a JSON summary line
+                                                         land in <sandbox>/.abvm/out/<outdir>/; PREV is an earlier
+                                                         tour's folder in the same out folder (relative, no ..)
   python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (@1 tap a; wait_idle
                                                          300; shot a.png; clip start b.mp4; ...; clip stop); shots,
                                                          grabs and clips (MP4, ffmpeg on the test machine) come back
@@ -798,6 +804,8 @@ def local_sources():
     """(name on the test machine, this side's file) of everything the test machine's copy consists of; the tool last"""
     tools = os.path.join(HERE, '..')
     return [('ab_drive.py', os.path.join(tools, 'ab_drive.py')),
+            ('ui_tour.py', os.path.join(tools, 'ui_tour.py')),
+            ('ui_diff.py', os.path.join(tools, 'ui_diff.py')),
             ('make_usb.py', os.path.join(tools, 'make_usb.py')),
             (os.path.basename(REMOTE_TOOL), os.path.abspath(__file__))]
 
@@ -2173,6 +2181,56 @@ def sb_drive(name, script, out_dir):
         raise Fail(str(failure))
 
 
+def sb_tour_dir(name, rel, what='outdir'):
+    """this machine's folder <sandbox>/.abvm/out/<rel>; Fail for an absolute path or a `..`"""
+    rel = (rel or '').strip()
+    if not rel or rel.startswith(('/', '\\')) or re.match(r'^[A-Za-z]:', rel) or '..' in re.split(r'[\\/]+', rel):
+        raise Fail(f'{what} {rel!r}: a folder inside the sandbox\'s out folder, relative, with no ..')
+    return os.path.join(sb_host(name), '.abvm', 'out', rel)
+
+
+def sb_tour_args(rest):
+    """['<outdir>'] or ['<outdir>', '--diff', '<prev>'] -> (outdir, prev or None); anything else is an error"""
+    if len(rest) == 1 and not rest[0].startswith('--'):
+        return rest[0], None
+    if len(rest) == 3 and rest[1] == '--diff' and not rest[0].startswith('--') and not rest[2].startswith('--'):
+        return rest[0], rest[2]
+    raise Fail('sandbox tour <name> <outdir> [--diff PREV]')
+
+
+def sb_tour(name, outdir, prev=None):
+    """ui_tour.py's tour of the running sandbox, in this process (the forwarded port is reachable only here):
+    shots, tour.png and - with `prev`, an earlier tour's folder in the same out folder - changed.html, diff/ and the
+    JSON summary land in <sandbox>/.abvm/out/<outdir>/"""
+    out = sb_tour_dir(name, outdir)
+    prev_dir = sb_tour_dir(name, prev, 'diff') if prev else None
+    if prev_dir and not os.path.isdir(prev_dir):
+        raise Fail(f'diff {prev!r}: no such tour in the out folder of sandbox {name}')
+    st = sb_running(name)
+    if not st:
+        raise Fail(f'sandbox {name} is not running: abvm.py sandbox start {name}')
+    os.makedirs(out, exist_ok=True)
+    sb_open_tree(name)  # the folder is made here: the guest's launcher must be able to write its shots in it
+    guest_root = f'{SB_GUEST}/{name}/'
+    host_root = sb_host(name) + os.sep
+
+    def to_guest(path):  # this machine's name for a file of the sandbox -> the guest's, where the launcher writes
+        return guest_root + path[len(host_root):] if path.startswith(host_root) else path
+
+    import_ab_drive()
+    import ui_tour
+    argv = ['ui_tour.py', out, '--attach', '--port', str(st['port'])] + (['--diff', prev_dir] if prev_dir else [])
+    try:
+        rc = ui_tour.main(argv, shot_path=to_guest)
+    except RuntimeError as e:
+        raise Fail(str(e))
+    finally:
+        sb_open_modes(out)
+    if rc:
+        raise Fail(f'ui_tour exited {rc}')
+    print(f'out {out}')
+
+
 def sb_stop(name, use_driver=True):
     st = sb_state(name)
     if st.get('pid') and sb_guest_pid_alive(name, st['pid']):
@@ -2413,6 +2471,16 @@ def sandbox_command(args, out_dir):
         LEASE_KEY = f'sb-{name}'
         lease_op('check', WHO)
         sb_signal(name, args[2])
+    elif sub == 'tour':
+        tour_args = sb_tour_args(args[2:])  # refused before the lease or the sandbox is touched
+        if not name:
+            raise Fail('sandbox tour <name> <outdir> [--diff PREV]')
+        sb_tour_dir(name, tour_args[0])
+        if tour_args[1]:
+            sb_tour_dir(name, tour_args[1], 'diff')
+        LEASE_KEY = f'sb-{name}'
+        lease_op('check', WHO)
+        sb_tour(name, *tour_args)
     elif sub in ('new', 'start', 'drive', 'stop', 'reset', 'rm'):
         if not name:
             raise Fail(f'sandbox {sub} <name>')
@@ -2448,6 +2516,7 @@ def sandbox_command(args, out_dir):
         raise Fail('sandbox list | setup | template [--package <pcusb package|nightly>] | take-free <task> [min] | '
                    'take <name> <task> [min] | release <name> | rm-legacy [--dry-run] | '
                    'new|start <name> [--build <dist dir>] [--ext <zip|dir>]... [--valgrind] | drive <name> "<script>" | '
+                   'tour <name> <outdir> [--diff PREV] | '
                    'logs <name> [n] | exit-status <name> | crash-report <name> | signal <name> <SIG> | stop|reset|rm <name>')
 
 

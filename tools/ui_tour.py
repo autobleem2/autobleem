@@ -27,7 +27,9 @@ sys.path.insert(0, os.path.join(REPO, 'tools'))
 import ab_drive  # noqa: E402
 
 
-def main(argv):
+def main(argv, shot_path=None):
+    """shot_path: turns a shot's file here into the name the driver is sent (abvm: the sandbox guest's path)"""
+    shot_path = shot_path or (lambda p: p)
     if len(argv) < 2:
         print(__doc__)
         return 2
@@ -57,7 +59,7 @@ def main(argv):
     def shot(name):
         n[0] += 1
         path = os.path.join(out, '%02d-%s.png' % (n[0], name))
-        d.cmd('shot ' + path)
+        d.cmd('shot ' + shot_path(path))
         shots.append(path)
 
     def run(script):
