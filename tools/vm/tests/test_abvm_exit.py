@@ -71,6 +71,20 @@ class Commands(unittest.TestCase):
         with open(os.path.join(self.ab, abvm.EXIT_FILE), 'w') as f:
             f.write(text)
 
+    def core(self, name, data=b'\x7fELF core'):
+        os.makedirs(os.path.join(self.ab, 'core'), exist_ok=True)
+        with open(os.path.join(self.ab, 'core', name), 'wb') as f:
+            f.write(data)
+
+    def test_crash_report_names_an_empty_core_and_runs_no_gdb(self):
+        self.record('139 1')
+        self.core('core', b'')
+        with mock.patch.object(abvm, 'guest_run') as g:
+            text = self.say('crash-report', 'sb2')
+        self.assertIn('the kept core is empty (0 bytes)', text)
+        self.assertIn(abvm.CORE_LOCAL, text)
+        g.assert_not_called()
+
     def test_exit_status_json(self):
         self.record('134 1760000000\n')
         self.assertEqual(json.loads(self.say('exit-status', 'sb2')),
@@ -102,14 +116,14 @@ class Commands(unittest.TestCase):
     def test_crash_report_no_gdb(self):
         self.record('134 1')
         os.makedirs(os.path.join(self.ab, 'core'))
-        open(os.path.join(self.ab, 'core', 'core'), 'w').close()
+        self.core('core')
         with mock.patch.object(abvm, 'guest_run', return_value=''):
             self.assertIn('gdb is not installed', self.say('crash-report', 'sb2'))
 
     def test_crash_report_backtrace(self):
         self.record('134 1')
         os.makedirs(os.path.join(self.ab, 'core'))
-        open(os.path.join(self.ab, 'core', 'core.7'), 'w').close()
+        self.core('core.7')
         calls = []
 
         def guest(cmd, check=True):
@@ -124,8 +138,7 @@ class Commands(unittest.TestCase):
 
     def _core_and_gdb(self, reply):
         self.record('134 1')
-        os.makedirs(os.path.join(self.ab, 'core'))
-        open(os.path.join(self.ab, 'core', 'core'), 'w').close()
+        self.core('core')
         calls = []
 
         def guest(cmd, check=True):
@@ -141,6 +154,15 @@ class Commands(unittest.TestCase):
         self.assertIn('sudo gdb', calls[-1])
         self.assertIn('#0  raise ()', text)
 
+    def test_crash_report_of_a_upx_packed_launcher_says_how_to_get_symbols(self):
+        text, _ = self._core_and_gdb("warning: Can't open file /memfd:upx (deleted) during file-backed mapping\n"
+                                     '#0  0xf6e1c559 in __kernel_vsyscall ()\n')
+        self.assertIn('UPX-packed', text)
+        self.assertIn('--build', text)
+        self.assertIn('#0  0xf6e1c559', text)
+        text, _ = self._core_and_gdb('#0  raise ()\n')
+        self.assertNotIn('UPX', text)
+
     def test_crash_report_unreadable_core_names_the_reason(self):
         text, _ = self._core_and_gdb('/x/core: Permission denied.\n')
         self.assertIn('could not read the core', text)
@@ -151,6 +173,45 @@ class Commands(unittest.TestCase):
         text, _ = self._core_and_gdb('warning: core file may not match\n')
         self.assertIn('no backtrace: gdb gave no frames', text)
         self.assertIn('may not match', text)
+
+    def test_run_script_writes_the_core_on_the_guest_disk_then_copies_it(self):
+        t = abvm.RUN_SCRIPT_TEXT
+        self.assertIn('kernel.core_pattern="/var/tmp/abvm-core/core.%e.%p"', t)
+        self.assertIn('local=${ABVM_CORE_LOCAL:-/var/tmp/abvm-core}', t)
+        self.assertIn('cp -f "$c" "$ab/core/"', t)
+        self.assertIn('"$local"/core.*."$pid"', t)
+        self.assertNotIn('@', t)   # every placeholder replaced
+
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'reads /proc of the run script\'s launcher')
+    def test_run_script_runs_the_launcher_in_the_foreground_with_sigint_and_keeps_its_core(self):
+        """a fake launcher: records its pid and its ignored-signal mask, leaves a core where the kernel would"""
+        root = os.path.join(self.host, 'sb2')
+        bindir = os.path.join(self.host, 'bin')
+        local = os.path.join(self.host, 'local')
+        os.makedirs(bindir)
+        os.makedirs(local)
+        fake = os.path.join(bindir, 'autobleem-gui')
+        with open(fake, 'w', newline='\n') as f:
+            f.write('#!/bin/sh\necho $$ > "$1/fake.pid"\ngrep SigIgn /proc/$$/status > "$1/fake.sigign"\n'
+                    f'printf core > "{local}/core.autobleem-gui.$$"\n'
+                    f': > "{local}/core.autobleem-gui.999999"\nexit 3\n')
+        os.chmod(fake, 0o755)
+        script = os.path.join(self.host, 'run.sh')
+        with open(script, 'w', newline='\n') as f:
+            f.write(abvm.RUN_SCRIPT_TEXT)
+        env = dict(os.environ, ABVM_CORE_LOCAL=local, PATH='/usr/bin:/bin')
+        r = subprocess.run(['sh', script, root], cwd=bindir, env=env, capture_output=True, text=True, timeout=60)
+        self.assertEqual(r.returncode, 3, r.stderr)
+        with open(os.path.join(root, 'fake.pid')) as f:
+            pid = f.read().strip()
+        with open(os.path.join(self.ab, 'launcher.pid')) as f:
+            self.assertEqual(f.read().strip(), pid)   # the pid the core is named by is the launcher's own
+        with open(os.path.join(root, 'fake.sigign')) as f:
+            mask = int(f.read().split()[1], 16)
+        self.assertFalse(mask & (1 << 1), 'SIGINT is ignored in the launcher')   # bit 1 = signal 2
+        self.assertEqual(os.listdir(os.path.join(self.ab, 'core')), ['core.autobleem-gui.' + pid])
+        self.assertEqual(sorted(os.listdir(local)), ['core.autobleem-gui.999999'])   # another launcher's core stays
+        self.assertEqual(abvm.parse_exit_record(open(os.path.join(self.ab, 'exit-status')).read())['launcher_exit'], 3)
 
     def test_run_script_opens_the_kept_core(self):
         self.assertIn('chmod a+rw "$ab/core"/*', abvm.RUN_SCRIPT_TEXT)
@@ -230,6 +291,18 @@ class DebugTools(unittest.TestCase):
                 mock.patch.object(abvm, 'sb_install_debug_tools', tools), redirect_stdout(out):
             abvm.sb_setup()
         return out.getvalue()
+
+    def test_setup_makes_the_guest_local_core_pattern_permanent(self):
+        calls = []
+        with mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: calls.append(cmd) or ''):
+            abvm.sb_core_setup()
+        cmd = calls[0]
+        for word in ('/etc/sysctl.d/60-abvm-core.conf', '/etc/tmpfiles.d/abvm-core.conf', 'systemd-tmpfiles --create',
+                     'printf "%s\\n" kernel.core_pattern=/var/tmp/abvm-core/core.%e.%p |',
+                     "sysctl -q -w kernel.core_pattern=/var/tmp/abvm-core/core.%e.%p"):
+            self.assertIn(word, cmd)
+        r = subprocess.run(['sh', '-n'], input=cmd, text=True, capture_output=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
 
     def test_sb_setup_runs_it(self):
         tools = mock.Mock()

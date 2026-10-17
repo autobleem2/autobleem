@@ -73,6 +73,9 @@ ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          user gets (the template is only as new as the stick);
                                                          --games N: N fake PS1 games, 3 memory card sets, Apps
                                                          (make_usb.py's), the covers from the shared DBs;
+                                                         --games test: the test machine's game set laid like a
+                                                         stick (~/abvm/testgames: Games/, RetroArch/roms/;
+                                                         ABVM_TESTGAMES), big files hard-linked;
                                                          --set Key=Value (repeatable): a line in the launcher's
                                                          config.ini, laid last (e.g. --set Language=Polski)
   python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (@1 tap a; wait_idle
@@ -1326,10 +1329,20 @@ def sb_setup():
     guest_run(f'set -e; [ -d {SB_GUEST}/_shared/db ] || sudo cp -r {STICK}/Autobleem/bin/db {SB_GUEST}/_shared/db')
     sb_share_group(strict=True)
     print(f'sandboxes: {SB_GUEST} in the guest = {sb_host()} here; covers in _shared/db')
+    sb_core_setup()
     try:
         sb_install_debug_tools()
     except Fail as e:  # offline guest, mirror down: the rest of the setup stands
         print(f'WARNING: valgrind/gdb not installed: {e}; --valgrind and crash-report will say so')
+
+
+def sb_core_setup():
+    """the guest's cores go to CORE_LOCAL on its own disk, for good (sysctl.d + tmpfiles.d survive a reboot)"""
+    line = shlex.quote(f'kernel.core_pattern={CORE_PATTERN}')   # through %s: the pattern's own % must not reach printf
+    guest_run(f'set -e; printf "%s\\n" {line} | sudo tee /etc/sysctl.d/60-abvm-core.conf '
+              f'>/dev/null; printf "d {CORE_LOCAL} 1777 root root 7d\\n" | sudo tee /etc/tmpfiles.d/abvm-core.conf '
+              f'>/dev/null; sudo systemd-tmpfiles --create /etc/tmpfiles.d/abvm-core.conf; '
+              f'sudo sysctl -q -w kernel.core_pattern={shlex.quote(CORE_PATTERN)}; cat /proc/sys/kernel/core_pattern')
 
 
 def sb_template_source_write(source, version):
@@ -1522,6 +1535,61 @@ def sb_add_games(name, count):
         sb_open_modes(os.path.join(sb_host(name), d))
 
 
+TEST_GAMES = 'test'   # `--games test`: the test machine's own set of real games (kept outside the template)
+LINK_MIN_BYTES = 1 << 20   # files from 1 MB (the discs) are hard-linked, smaller ones (Game.ini, covers) copied
+TEST_SET_PARTS = ('Games', 'RetroArch')   # what the set lays: a stick's PS1 games and RetroArch/roms/<system>/
+
+
+def test_games_dir():
+    return os.path.expanduser(os.environ.get('ABVM_TESTGAMES', '~/abvm/testgames'))
+
+
+def parse_games(value):
+    """--games N (fake games) or --games test; 0 when not given"""
+    if value in (None, ''):
+        return 0
+    if value == TEST_GAMES:
+        return TEST_GAMES
+    if not re.fullmatch(r'\d{1,3}', value):
+        raise Fail(f'--games {value!r}: a number of fake games, or "{TEST_GAMES}" for the test machine\'s game set')
+    return int(value)
+
+
+def sb_add_test_games(name):
+    """the test set (test_games_dir(), laid out like a stick: Games/<game>/, RetroArch/roms/<system>/) laid over the
+    sandbox: files of 1 MB and up hard-linked (no space taken; the launcher only reads a disc or a ROM), the small ones
+    copied so the launcher's own writes (Game.ini, covers) stay in this sandbox. A file already there is kept"""
+    src = test_games_dir()
+    if not os.path.isdir(src):
+        raise Fail(f'--games {TEST_GAMES}: no game set at {src} on the test machine (ABVM_TESTGAMES)')
+    dest_root, laid = sb_host(name), 0
+    for part in TEST_SET_PARTS:
+        for root, dirs, files in os.walk(os.path.join(src, part)):
+            dirs[:] = sorted(d for d in dirs if not d.startswith('.'))
+            to = os.path.join(dest_root, os.path.relpath(root, src))
+            os.makedirs(to, exist_ok=True)
+            for f in sorted(files):
+                a, b = os.path.join(root, f), os.path.join(to, f)
+                if f.startswith('.') or os.path.lexists(b):
+                    continue
+                laid += 1
+                if os.path.getsize(a) >= LINK_MIN_BYTES:
+                    try:
+                        os.link(a, b)
+                        continue
+                    except OSError:
+                        pass   # another file system: a copy
+                shutil.copy2(a, b)
+        if os.path.isdir(os.path.join(dest_root, part)):
+            sb_open_modes(os.path.join(dest_root, part))
+
+    def names(*rel):
+        d = os.path.join(src, *rel)
+        return ', '.join(sorted(os.listdir(d))) if os.path.isdir(d) else 'none'
+    print(f'sandbox {name}: test set laid ({laid} new files); PS1: {names("Games")}; '
+          f'RetroArch: {names("RetroArch", "roms")}')
+
+
 def sb_set_config(name, sets):
     """Key=Value lines in the sandbox launcher's config.ini - a line with that key replaced, else added at the end.
     Laid after --build/--package, which bring their own config.ini (a dist's has no Language= line)"""
@@ -1551,7 +1619,9 @@ def sb_lay(name, build=None, exts=(), package=None, games=0, sets=()):
         sb_copy_build(name, build)
     for ext in exts:
         sb_copy_ext(name, ext)
-    if games:
+    if games == TEST_GAMES:
+        sb_add_test_games(name)
+    elif games:
         sb_add_games(name, games)
     if sets:
         sb_set_config(name, sets)
@@ -1735,27 +1805,43 @@ CORE_DIR = 'core'
 DEBUG_ENV_KEYS = ('MALLOC_CHECK_', 'MALLOC_PERTURB_', 'MALLOC_ARENA_MAX', 'ASAN_OPTIONS', 'UBSAN_OPTIONS',
                   'LSAN_OPTIONS', 'MSAN_OPTIONS', 'G_DEBUG', 'G_SLICE', 'LD_DEBUG')
 
+# where the kernel writes a core: the guest's own disk (a core dumped onto the 9p share comes out 0 bytes); %p is the
+# launcher's pid, so two sandboxes never take each other's core. sandbox setup makes it permanent, the run script
+# sets it again when it differs (a VM set up earlier)
+CORE_LOCAL = '/var/tmp/abvm-core'
+CORE_PATTERN = f'{CORE_LOCAL}/core.%e.%p'
+UPX_MARK = 'memfd:upx'   # what gdb names the mapping of a UPX-packed binary
+
 # runs in the guest in place of the bare launcher: cores allowed, the wait status and the time recorded when it ends,
-# a core file moved from the launcher's directory (the default core_pattern) to <sandbox>/.abvm/core/
+# the launcher's core copied from CORE_LOCAL to <sandbox>/.abvm/core/ once it has ended. The launcher runs in the
+# FOREGROUND (exec'd by a small sh that first writes its pid): a background job of a non-interactive sh would start
+# with SIGINT ignored, and `sandbox signal INT` would then do nothing
 RUN_SCRIPT_TEXT = '''#!/bin/sh
 # run-launcher.sh <sandbox root> [valgrind]   (written by abvm.py)
 root=$1
 ab=$root/.abvm
+local=${ABVM_CORE_LOCAL:-@CORE_LOCAL@}   # the variable only for the tests
 ulimit -c unlimited 2>/dev/null
+mkdir -p "$local" 2>/dev/null || sudo -n mkdir -p "$local"
+sudo -n chmod 1777 "$local" 2>/dev/null
+[ "$(cat /proc/sys/kernel/core_pattern)" = "@CORE_PATTERN@" ] || sudo -n sysctl -q -w kernel.core_pattern="@CORE_PATTERN@" >/dev/null 2>&1
+rm -f "$ab/launcher.pid"
 if [ "$2" = valgrind ]; then
-    valgrind --log-file="$root/System/Logs/valgrind.txt" --error-limit=no --num-callers=40 ./autobleem-gui "$root"
+    sh -c 'echo $$ > "$0"; exec valgrind --log-file="$1/System/Logs/valgrind.txt" --error-limit=no --num-callers=40 ./autobleem-gui "$1"' "$ab/launcher.pid" "$root"
 else
-    ./autobleem-gui "$root"
+    sh -c 'echo $$ > "$0"; exec ./autobleem-gui "$1"' "$ab/launcher.pid" "$root"
 fi
 s=$?
+pid=$(cat "$ab/launcher.pid" 2>/dev/null)
 mkdir -p "$ab/core"
-for c in core core.*; do
-    [ -f "$c" ] && mv -f "$c" "$ab/core/"
+for c in ${pid:+"$local"/core.*."$pid"} core core.*; do
+    [ -s "$c" ] && { cp -f "$c" "$ab/core/" 2>/dev/null || sudo -n cp -f "$c" "$ab/core/"; }   # an empty core is no core
+    [ -f "$c" ] && { rm -f "$c" 2>/dev/null || sudo -n rm -f "$c"; }
 done
 chmod a+rw "$ab/core"/* 2>/dev/null   # the kernel writes a core 0600: open it to the other readers of the share
 echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
 exit "$s"
-'''
+'''.replace('@CORE_LOCAL@', CORE_LOCAL).replace('@CORE_PATTERN@', CORE_PATTERN)
 
 
 def sb_check_env_words(words):
@@ -1821,13 +1907,17 @@ def sb_crash_report(name):
     if st['launcher_signal'] is None:
         return f'{head}: ended normally, no crash'
     head += f', signal {st["launcher_signal"]}'
-    cores = sb_core_files(name)
+    found = sb_core_files(name)
+    cores = [c for c in found if os.path.getsize(c) > 0]
+    if found and not cores:
+        return (f'{head}\nthe kept core is empty (0 bytes): {found[0]} - the kernel could not write it there (a core '
+                f'dumped onto the 9p share comes out empty); run `sandbox setup` so cores go to {CORE_LOCAL}')
     if not cores:
         pattern = guest_run('cat /proc/sys/kernel/core_pattern', check=False).strip()
         return (f'{head}\nno core file: the guest\'s core_pattern is {pattern!r}'
-                + (' (piped - no core lands in the sandbox; set it to a plain "core" as root in the guest)'
-                   if pattern.startswith('|') else ' (a core is kept only when it is written to the launcher\'s '
-                                                    'directory as core / core.*)'))
+                + (' (piped - no core lands in the sandbox; `sandbox setup` sets it to ' + CORE_PATTERN + ')'
+                   if pattern.startswith('|') else f' (a core is kept only when the kernel writes it as {CORE_PATTERN}'
+                                                    f' - `sandbox setup` sets that)'))
     if guest_run('command -v gdb', check=False).strip() == '':
         return f'{head}\ncore kept: {cores[0]}\ngdb is not installed in the guest - no backtrace'
     g = f'{SB_GUEST}/{name}'
@@ -1843,6 +1933,9 @@ def sb_crash_report(name):
                 f'(the share keeps it closed to root); gdb said:\n{bt.rstrip()}')
     if not re.search(r'^#\d+ ', bt, re.M):
         return f'{head}\ncore: {cores[0]}\nno backtrace: gdb gave no frames; it said:\n{bt.rstrip()}'
+    if UPX_MARK in bt:   # a package's launcher (the template, a nightly) is UPX-packed: gdb sees no symbol in it
+        head += ('\nNOTE: this launcher is UPX-packed (a package binary) - the frames have no names; start the sandbox '
+                 'with --build <a pcusb build dist> for a backtrace with symbols')
     return f'{head}\ncore: {cores[0]}\n{bt.rstrip()}'
 
 
@@ -2280,7 +2373,7 @@ def sandbox_command(args, out_dir):
 
         size = one('--size')
         lay = dict(build=one('--build'), exts=every('--ext'), package=one('--package'),
-                   games=int(one('--games') or 0), sets=every('--set'))
+                   games=parse_games(one('--games')), sets=every('--set'))
         if sub == 'new':
             sb_new(name, **lay)
         elif sub == 'start':
