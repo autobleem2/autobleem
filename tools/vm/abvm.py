@@ -73,8 +73,9 @@ ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          user gets (the template is only as new as the stick);
                                                          --games N: N fake PS1 games, 3 memory card sets, Apps
                                                          (make_usb.py's), the covers from the shared DBs;
-                                                         --games test: the test machine's real game set
-                                                         (~/abvm/testgames, ABVM_TESTGAMES), discs hard-linked;
+                                                         --games test: the test machine's game set laid like a
+                                                         stick (~/abvm/testgames: Games/, RetroArch/roms/;
+                                                         ABVM_TESTGAMES), big files hard-linked;
                                                          --set Key=Value (repeatable): a line in the launcher's
                                                          config.ini, laid last (e.g. --set Language=Polski)
   python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (@1 tap a; wait_idle
@@ -1536,6 +1537,7 @@ def sb_add_games(name, count):
 
 TEST_GAMES = 'test'   # `--games test`: the test machine's own set of real games (kept outside the template)
 LINK_MIN_BYTES = 1 << 20   # files from 1 MB (the discs) are hard-linked, smaller ones (Game.ini, covers) copied
+TEST_SET_PARTS = ('Games', 'RetroArch')   # what the set lays: a stick's PS1 games and RetroArch/roms/<system>/
 
 
 def test_games_dir():
@@ -1554,22 +1556,23 @@ def parse_games(value):
 
 
 def sb_add_test_games(name):
-    """the game folders of test_games_dir() laid into the sandbox's Games/: the discs hard-linked (no space taken; the
-    launcher only reads a disc), the small files copied so the launcher's own writes
-    (Game.ini, covers) stay in this sandbox. A folder that is already there is kept (a restart rescans nothing new)"""
+    """the test set (test_games_dir(), laid out like a stick: Games/<game>/, RetroArch/roms/<system>/) laid over the
+    sandbox: files of 1 MB and up hard-linked (no space taken; the launcher only reads a disc or a ROM), the small ones
+    copied so the launcher's own writes (Game.ini, covers) stay in this sandbox. A file already there is kept"""
     src = test_games_dir()
     if not os.path.isdir(src):
         raise Fail(f'--games {TEST_GAMES}: no game set at {src} on the test machine (ABVM_TESTGAMES)')
-    games = os.path.join(sb_host(name), 'Games')
-    laid = []
-    for game in sorted(os.listdir(src)):
-        if game.startswith('.') or not os.path.isdir(os.path.join(src, game)) or os.path.exists(os.path.join(games, game)):
-            continue
-        for root, _, files in os.walk(os.path.join(src, game)):
-            to = os.path.join(games, os.path.relpath(root, src))
+    dest_root, laid = sb_host(name), 0
+    for part in TEST_SET_PARTS:
+        for root, dirs, files in os.walk(os.path.join(src, part)):
+            dirs[:] = sorted(d for d in dirs if not d.startswith('.'))
+            to = os.path.join(dest_root, os.path.relpath(root, src))
             os.makedirs(to, exist_ok=True)
-            for f in files:
+            for f in sorted(files):
                 a, b = os.path.join(root, f), os.path.join(to, f)
+                if f.startswith('.') or os.path.lexists(b):
+                    continue
+                laid += 1
                 if os.path.getsize(a) >= LINK_MIN_BYTES:
                     try:
                         os.link(a, b)
@@ -1577,9 +1580,14 @@ def sb_add_test_games(name):
                     except OSError:
                         pass   # another file system: a copy
                 shutil.copy2(a, b)
-        laid.append(game)
-    sb_open_modes(games)
-    print(f'sandbox {name}: test games laid: {", ".join(laid) or "none new"}')
+        if os.path.isdir(os.path.join(dest_root, part)):
+            sb_open_modes(os.path.join(dest_root, part))
+
+    def names(*rel):
+        d = os.path.join(src, *rel)
+        return ', '.join(sorted(os.listdir(d))) if os.path.isdir(d) else 'none'
+    print(f'sandbox {name}: test set laid ({laid} new files); PS1: {names("Games")}; '
+          f'RetroArch: {names("RetroArch", "roms")}')
 
 
 def sb_set_config(name, sets):

@@ -1,4 +1,4 @@
-"""abvm sandbox --games test: the test machine's real game set laid into a sandbox (discs hard-linked)"""
+"""abvm sandbox --games test: the test machine's game set (laid out like a stick) laid into a sandbox"""
 import os
 import sys
 import tempfile
@@ -8,18 +8,25 @@ from unittest import mock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import abvm  # noqa: E402
 
+NES = 'Nintendo - Nintendo Entertainment System'
+
 
 class TestGames(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.set = os.path.join(self.tmp.name, 'testgames')
         self.host = os.path.join(self.tmp.name, 'sandboxes')
-        game = os.path.join(self.set, 'Game One')
+        game = os.path.join(self.set, 'Games', 'Game One')
         os.makedirs(game)
         with open(os.path.join(game, 'disc.bin'), 'wb') as f:
             f.write(b'\0' * (abvm.LINK_MIN_BYTES + 1))
         with open(os.path.join(game, 'Game.ini'), 'w') as f:
             f.write('[Game]\nTitle=One\n')
+        roms = os.path.join(self.set, 'RetroArch', 'roms', NES)
+        os.makedirs(roms)
+        with open(os.path.join(roms, 'Contra (USA).zip'), 'wb') as f:
+            f.write(b'PK')
+        os.makedirs(os.path.join(self.set, 'System'))   # not a part of the set: never laid
         os.makedirs(os.path.join(self.host, 'sb2', 'Games'))
         self.patches = [mock.patch.object(abvm, 'SB_HOST', self.host), mock.patch.object(abvm, 'LOCAL', True),
                         mock.patch.dict(os.environ, {'ABVM_TESTGAMES': self.set}),
@@ -32,22 +39,28 @@ class TestGames(unittest.TestCase):
             p.stop()
         self.tmp.cleanup()
 
-    def test_the_disc_is_linked_and_the_small_files_copied(self):
+    def test_discs_are_linked_small_files_copied_and_roms_laid(self):
         abvm.sb_lay('sb2', games=abvm.parse_games('test'))
         dest = os.path.join(self.host, 'sb2', 'Games', 'Game One')
         disc, ini = os.path.join(dest, 'disc.bin'), os.path.join(dest, 'Game.ini')
-        self.assertTrue(os.path.samefile(disc, os.path.join(self.set, 'Game One', 'disc.bin')))
-        self.assertFalse(os.path.samefile(ini, os.path.join(self.set, 'Game One', 'Game.ini')))
+        self.assertTrue(os.path.samefile(disc, os.path.join(self.set, 'Games', 'Game One', 'disc.bin')))
+        self.assertFalse(os.path.samefile(ini, os.path.join(self.set, 'Games', 'Game One', 'Game.ini')))
         with open(ini, 'a') as f:   # the launcher's write stays in this sandbox
             f.write('Changed=1\n')
-        with open(os.path.join(self.set, 'Game One', 'Game.ini')) as f:
+        with open(os.path.join(self.set, 'Games', 'Game One', 'Game.ini')) as f:
             self.assertNotIn('Changed', f.read())
+        self.assertTrue(os.path.isfile(os.path.join(self.host, 'sb2', 'RetroArch', 'roms', NES, 'Contra (USA).zip')))
+        self.assertFalse(os.path.exists(os.path.join(self.host, 'sb2', 'System')))
 
-    def test_a_folder_already_there_is_kept(self):
+    def test_a_file_already_there_is_kept(self):
         dest = os.path.join(self.host, 'sb2', 'Games', 'Game One')
         os.makedirs(dest)
+        with open(os.path.join(dest, 'Game.ini'), 'w') as f:
+            f.write('mine\n')
         abvm.sb_add_test_games('sb2')
-        self.assertEqual(os.listdir(dest), [])
+        with open(os.path.join(dest, 'Game.ini')) as f:
+            self.assertEqual(f.read(), 'mine\n')
+        self.assertTrue(os.path.exists(os.path.join(dest, 'disc.bin')))
 
     def test_no_set_is_an_error(self):
         with mock.patch.dict(os.environ, {'ABVM_TESTGAMES': os.path.join(self.tmp.name, 'none')}):
