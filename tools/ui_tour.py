@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """A screenshot of every screen the launcher can show, through the DebugDriver (tools/ab_drive.py):
 
-  python tools/ui_tour.py OUTDIR [--show] [--port N] [--diff PREV_DIR]
+  python tools/ui_tour.py OUTDIR [--show] [--port N] [--diff PREV_DIR] [--attach [--host H]]
 
+--attach walks the driver already listening on --port (e.g. an abvm sandbox's): the launcher is neither started
+nor stopped.
 --diff PREV_DIR then compares the run with the earlier one (tools/ui_diff.py): <OUTDIR>/changed.html and
 <OUTDIR>/diff/ hold only the screens that changed.
 
@@ -40,9 +42,15 @@ def main(argv):
             print(__doc__)
             return 2
         prev = os.path.abspath(argv[i + 1])
-    subprocess.check_call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'start', '--port', str(port)]
-                          + (['--show'] if show else []))
-    d = ab_drive.Driver(port)
+    attach = '--attach' in argv
+    if attach:
+        # a driver is already listening on --port (an abvm sandbox): no start, no stop
+        host = argv[argv.index('--host') + 1] if '--host' in argv else ab_drive.DEFAULT_HOST
+    else:
+        subprocess.check_call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'start', '--port',
+                               str(port)] + (['--show'] if show else []))
+        host = ab_drive.DEFAULT_HOST
+    d = ab_drive.Driver(port, host=host)
     shots = []
     n = [0]
 
@@ -144,7 +152,8 @@ def main(argv):
         run('wait_screen GuiLauncher')
     finally:
         d.close()
-        subprocess.call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'stop', '--port', str(port)])
+        if not attach:
+            subprocess.call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'stop', '--port', str(port)])
     ab_drive.sheet(os.path.join(out, 'tour.png'), shots, columns=3, width=426)
     print(len(shots), 'screens in', out)
     if prev:
