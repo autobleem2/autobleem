@@ -163,6 +163,18 @@ class Commands(unittest.TestCase):
         text, _ = self._core_and_gdb('#0  raise ()\n')
         self.assertNotIn('UPX', text)
 
+    def test_crash_report_of_a_stripped_launcher_names_the_symbols_build(self):
+        # a release pcusb build (build 1376): libc frames named, the launcher's own frames ??
+        text, _ = self._core_and_gdb('#0  0xf7f4b579 in __kernel_vsyscall ()\n'
+                                     '#1  0xf7a2b8b7 in raise () from /lib/i386-linux-gnu/libc.so.6\n'
+                                     '#2  0x0806c1d2 in ?? ()\n')
+        self.assertIn('no symbols', text)
+        self.assertIn('AB_PCUSB_DEBUG=1', text)
+        self.assertIn('#2  0x0806c1d2 in ?? ()', text)
+        self.assertNotIn('UPX', text)
+        text, _ = self._core_and_gdb('#0  0x0806c1d2 in App::run (this=0xffd0) at src/code/app.cpp:91\n')
+        self.assertNotIn('no symbols', text)
+
     def test_crash_report_unreadable_core_names_the_reason(self):
         text, _ = self._core_and_gdb('/x/core: Permission denied.\n')
         self.assertIn('could not read the core', text)

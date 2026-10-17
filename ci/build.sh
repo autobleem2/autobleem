@@ -33,6 +33,8 @@
 #   AB_NO_LINT=1    skip clang-tidy in the native target (it is the slow part)
 #   AB_NO_TESTS=1   neither build nor run the test suites (a quick build for a device check)
 #   AB_SANITIZE=L   native only: build and run the suites with -fsanitize=L, e.g. address,undefined (default: none)
+#   AB_PCUSB_DEBUG=1 pcusb only: the launcher with symbols (-g, not stripped) in build_pcusb_dbg/, staged into
+#                   dist/pcusb/ like the release one - for a named gdb backtrace (`abvm sandbox crash-report`)
 #   AB_NO_UPX=1    leave the shipped binaries unpacked
 #   AB_CLEAN=1      wipe each target's build directory first
 #   AB_RENDER_GL=0  leave the loadable GLES 3 renderer out. Default (unset or 1) = built: -DABLEEM_RENDER_GL=ON, cargo
@@ -323,17 +325,25 @@ build_rpi() { # build_rpi armhf|arm64
 }
 
 build_pcusb() {
-    banner "pcusb: configure + build (build_pcusb)"
-    configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake ${EXT_ARGS[@]+"${EXT_ARGS[@]}"}
-    ninja -C build_pcusb -j "$JOBS"
+    # AB_PCUSB_DEBUG=1: the symbols build gets its own directory, so switching between the two never rebuilds
+    # everything, and a release build never picks up the debug flags from a reused cache
+    local dir=build_pcusb dbg=OFF
+    if [ "${AB_PCUSB_DEBUG:-0}" = 1 ]; then dir=build_pcusb_dbg; dbg=ON; fi
+    banner "pcusb: configure + build ($dir)"
+    configure "$dir" -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=$dbg -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake ${EXT_ARGS[@]+"${EXT_ARGS[@]}"}
+    ninja -C "$dir" -j "$JOBS"
     banner "pcusb: check"
-    file build_pcusb/autobleem-gui
-    file build_pcusb/autobleem-gui | grep -q 'ELF 32-bit LSB.*Intel 80386'
+    file "$dir/autobleem-gui"
+    file "$dir/autobleem-gui" | grep -q 'ELF 32-bit LSB.*Intel 80386'
+    if [ "$dbg" = ON ]; then
+        file "$dir/autobleem-gui" | grep -q 'with debug_info, not stripped' \
+            || { echo "AB_PCUSB_DEBUG=1 but $dir/autobleem-gui has no debug info" >&2; exit 1; }
+    fi
     # i386 runs on this host: the suites are a gate here too (their scratch dirs carry the pid, -j is safe)
     banner "pcusb: tests"
-    run_ctest --test-dir build_pcusb --output-on-failure -j "$JOBS"
+    run_ctest --test-dir "$dir" --output-on-failure -j "$JOBS"
     banner "pcusb: stage"
-    stage_launcher build_pcusb pcusb
+    stage_launcher "$dir" pcusb
 }
 
 # --- win: Windows --------------------------------------------------------------------------------------------
