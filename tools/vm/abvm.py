@@ -1752,6 +1752,7 @@ mkdir -p "$ab/core"
 for c in core core.*; do
     [ -f "$c" ] && mv -f "$c" "$ab/core/"
 done
+chmod a+rw "$ab/core"/* 2>/dev/null   # the kernel writes a core 0600: open it to the other readers of the share
 echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
 exit "$s"
 '''
@@ -1832,8 +1833,16 @@ def sb_crash_report(name):
     g = f'{SB_GUEST}/{name}'
     core = f'{g}/.abvm/{CORE_DIR}/{os.path.basename(cores[0])}'
     exe = f'{g}/Autobleem/bin/autobleem/autobleem-gui'
-    bt = guest_run(f'gdb -batch -nx -ex "set pagination off" -ex "thread apply all bt full" {shlex.quote(exe)} '
-                   f'{shlex.quote(core)} 2>&1', check=False)
+    # the kernel writes a core 0600 for the crashing process's user; the guest's free sudo opens the kept core to
+    # every reader and gdb runs as root, so the owner of the core no longer matters
+    cdir = shlex.quote(f'{g}/.abvm/{CORE_DIR}')
+    bt = guest_run(f'sudo chmod -R a+rX {cdir} 2>/dev/null; sudo gdb -batch -nx -ex "set pagination off" '
+                   f'-ex "thread apply all bt full" {shlex.quote(exe)} {shlex.quote(core)} 2>&1', check=False)
+    if 'Permission denied' in bt or 'sudo:' in bt:
+        return (f'{head}\ncore kept: {cores[0]}\nno backtrace: the guest could not read the core even through sudo '
+                f'(the share keeps it closed to root); gdb said:\n{bt.rstrip()}')
+    if not re.search(r'^#\d+ ', bt, re.M):
+        return f'{head}\ncore: {cores[0]}\nno backtrace: gdb gave no frames; it said:\n{bt.rstrip()}'
     return f'{head}\ncore: {cores[0]}\n{bt.rstrip()}'
 
 
