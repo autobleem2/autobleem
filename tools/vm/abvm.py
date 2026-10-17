@@ -1841,9 +1841,10 @@ else
     sh -c 'echo $$ > "$0"; exec ./autobleem-gui "$1"' "$ab/launcher.pid" "$root"
 fi
 s=$?
-# the end first: a core copied over the share takes ~20 s, and exit-status must not wait for it
-echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
+# the end first: a core copied over the share takes ~20 s, and exit-status must not wait for it. The mark goes up
+# before the record, so whenever exit-status exists, either the mark stands or the copy is done
 : > "$ab/core-saving"
+echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
 pid=$(cat "$ab/launcher.pid" 2>/dev/null)
 mkdir -p "$ab/core"
 for c in ${pid:+"$local"/core.*."$pid"} core core.*; do

@@ -231,10 +231,13 @@ class Commands(unittest.TestCase):
 
     def test_run_script_records_the_end_before_it_copies_the_core(self):
         t = abvm.RUN_SCRIPT_TEXT
+        mark = t.index(': > "$ab/core-saving"')
         record = t.index('mv -f "$ab/exit-status.tmp" "$ab/exit-status"')
-        self.assertLess(record, t.index(': > "$ab/core-saving"'))
-        self.assertLess(t.index(': > "$ab/core-saving"'), t.index('cp -f "$c" "$ab/core/"'))
-        self.assertLess(t.index('cp -f "$c" "$ab/core/"'), t.index('rm -f "$ab/core-saving"'))
+        copy = t.index('cp -f "$c" "$ab/core/"')
+        # the mark before the record: a crash-report never sees "ended, no mark" while the core is still copied
+        self.assertLess(mark, record)
+        self.assertLess(record, copy)
+        self.assertLess(copy, t.index('rm -f "$ab/core-saving"'))
         self.assertEqual(t.count('exit-status.tmp" &&'), 1)   # written once
 
     @unittest.skipUnless(sys.platform.startswith('linux'), 'reads /proc of the run script\'s launcher')
