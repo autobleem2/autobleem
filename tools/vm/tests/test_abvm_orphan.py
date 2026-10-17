@@ -20,6 +20,8 @@ class FakeGuest:
         self.next_pid = 4000
         self.silent = False  # a launcher that never opens its port
         self.killed = []
+        self.valgrind = '/usr/bin/valgrind'  # what `command -v valgrind` says ('' = not installed)
+        self.starts = []  # the start commands
 
     def listeners(self):
         return {port: pid for pid, (_, port) in self.procs.items() if port}
@@ -39,9 +41,12 @@ class FakeGuest:
         if m:
             p = self.procs.get(int(m.group(1)))
             return f'./autobleem-gui {p[0]} ' if p else ''
+        if cmd.startswith('command -v valgrind'):
+            return self.valgrind + '\n' if self.valgrind else ''
         if cmd.startswith('set -e; mountpoint'):
+            self.starts.append(cmd)
             port = int(re.search(r'AB_DEBUG_PORT=(\d+)', cmd).group(1))
-            root = re.search(r'run-launcher.sh (\S+) >', cmd).group(1)
+            root = re.search(r'run-launcher.sh (\S+)(?: valgrind)? >', cmd).group(1)
             bound = port not in self.listeners() and not self.silent
             pid = self.spawn(root, port, listens=bound) if not (port in self.listeners()) else None
             if pid is None:  # the launcher cannot bind and exits at once
@@ -65,13 +70,14 @@ class Base(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.host = self.tmp.name
         self.guest = FakeGuest()
+        self.screen_waits = screen_waits = []
 
         class Driver:
             def __init__(self, port):
                 pass
 
             def wait_screen(self, *a):
-                pass
+                screen_waits.append(a)
 
             def close(self):
                 pass
@@ -153,6 +159,43 @@ class Start(Base):
                 abvm.sb_start('sb1')
         with open(log) as f:
             self.assertEqual(f.read(), 'boom\n')
+
+
+class ValgrindStart(Base):
+    """FOUNDRY-126 return 1: a valgrind start timed out the caller's ~60 s tool call (screen at ~75 s under valgrind)"""
+
+    def test_a_guest_without_valgrind_is_refused_before_anything_starts(self):
+        self.guest.valgrind = ''
+        with self.assertRaises(abvm.Fail) as e:
+            abvm.sb_start('sb1', valgrind=True)
+        self.assertIn('valgrind is not installed in the guest', str(e.exception))
+        self.assertIn('sandbox setup', str(e.exception))
+        self.assertEqual(self.guest.starts, [])
+        self.assertEqual(self.guest.procs, {})
+
+    def test_it_returns_once_the_port_is_up_without_waiting_for_the_screen(self):
+        abvm.sb_start('sb1', valgrind=True)
+        st = abvm.sb_state('sb1')
+        self.assertEqual(self.guest.listeners(), {st['port']: st['pid']})
+        self.assertEqual(self.screen_waits, [])
+        self.assertIn(f'$(seq {abvm.VALGRIND_PORT_WAIT_S * 10})', self.guest.starts[0])
+        self.assertIn('run-launcher.sh /mnt/abvm/sb1 valgrind', self.guest.starts[0])
+        text = '\n'.join(c[0][0] for c in builtins.print.call_args_list)
+        self.assertIn('runs under valgrind', text)
+        self.assertIn('wait 75000', text)
+
+    def test_a_plain_start_still_waits_for_the_launcher_screen(self):
+        self.guest.valgrind = ''   # never asked without --valgrind
+        abvm.sb_start('sb1')
+        self.assertEqual(self.screen_waits, [('GuiLauncher', 60)])
+        self.assertIn('$(seq 100)', self.guest.starts[0])
+
+    def test_a_valgrind_launcher_that_never_opens_its_port_names_the_longer_wait(self):
+        self.guest.silent = True
+        with self.assertRaises(abvm.Fail) as e:
+            abvm.sb_start('sb1', valgrind=True)
+        self.assertIn(f'in {abvm.VALGRIND_PORT_WAIT_S} s', str(e.exception))
+        self.assertEqual(self.guest.procs, {})
 
 
 class OrphanCommands(Base):
