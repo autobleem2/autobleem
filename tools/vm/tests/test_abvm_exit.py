@@ -152,6 +152,13 @@ class Commands(unittest.TestCase):
         self.assertIn('no backtrace: gdb gave no frames', text)
         self.assertIn('may not match', text)
 
+    def test_run_script_writes_the_core_on_the_guest_disk_then_copies_it(self):
+        t = abvm.RUN_SCRIPT_TEXT
+        self.assertIn('kernel.core_pattern="$local/core.%e.%p"', t)
+        self.assertIn('local=/var/tmp/abvm-core', t)
+        self.assertIn('cp -f "$c" "$ab/core/"', t)
+        self.assertIn('wait "$pid"', t)
+
     def test_run_script_opens_the_kept_core(self):
         self.assertIn('chmod a+rw "$ab/core"/*', abvm.RUN_SCRIPT_TEXT)
 

@@ -1736,21 +1736,28 @@ DEBUG_ENV_KEYS = ('MALLOC_CHECK_', 'MALLOC_PERTURB_', 'MALLOC_ARENA_MAX', 'ASAN_
                   'LSAN_OPTIONS', 'MSAN_OPTIONS', 'G_DEBUG', 'G_SLICE', 'LD_DEBUG')
 
 # runs in the guest in place of the bare launcher: cores allowed, the wait status and the time recorded when it ends,
-# a core file moved from the launcher's directory (the default core_pattern) to <sandbox>/.abvm/core/
+# a real core dump: the kernel writes it on the guest-local disk (CORE_LOCAL, through core_pattern; a share cannot
+# take a core dump), and the run script copies it to <sandbox>/.abvm/core/ once the launcher has ended
 RUN_SCRIPT_TEXT = '''#!/bin/sh
 # run-launcher.sh <sandbox root> [valgrind]   (written by abvm.py)
 root=$1
 ab=$root/.abvm
+local=/var/tmp/abvm-core
 ulimit -c unlimited 2>/dev/null
+mkdir -p "$local" 2>/dev/null || sudo mkdir -p "$local"
+sudo chmod 1777 "$local" 2>/dev/null
+sudo sysctl -q -w kernel.core_pattern="$local/core.%e.%p" >/dev/null 2>&1
 if [ "$2" = valgrind ]; then
-    valgrind --log-file="$root/System/Logs/valgrind.txt" --error-limit=no --num-callers=40 ./autobleem-gui "$root"
+    valgrind --log-file="$root/System/Logs/valgrind.txt" --error-limit=no --num-callers=40 ./autobleem-gui "$root" &
 else
-    ./autobleem-gui "$root"
+    ./autobleem-gui "$root" &
 fi
+pid=$!
+wait "$pid"
 s=$?
 mkdir -p "$ab/core"
-for c in core core.*; do
-    [ -f "$c" ] && mv -f "$c" "$ab/core/"
+for c in "$local"/core.*."$pid" core core.*; do
+    [ -f "$c" ] && { cp -f "$c" "$ab/core/" 2>/dev/null || sudo cp -f "$c" "$ab/core/"; rm -f "$c" 2>/dev/null || sudo rm -f "$c"; }
 done
 chmod a+rw "$ab/core"/* 2>/dev/null   # the kernel writes a core 0600: open it to the other readers of the share
 echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
@@ -1826,8 +1833,8 @@ def sb_crash_report(name):
         pattern = guest_run('cat /proc/sys/kernel/core_pattern', check=False).strip()
         return (f'{head}\nno core file: the guest\'s core_pattern is {pattern!r}'
                 + (' (piped - no core lands in the sandbox; set it to a plain "core" as root in the guest)'
-                   if pattern.startswith('|') else ' (a core is kept only when it is written to the launcher\'s '
-                                                    'directory as core / core.*)'))
+                   if pattern.startswith('|') else ' (a core is kept only when it is written to the guest-local '
+                                                    '/var/tmp/abvm-core/ as core.<name>.<pid>)'))
     if guest_run('command -v gdb', check=False).strip() == '':
         return f'{head}\ncore kept: {cores[0]}\ngdb is not installed in the guest - no backtrace'
     g = f'{SB_GUEST}/{name}'
