@@ -1325,8 +1325,11 @@ def sb_setup():
     # the cover DBs: 280 MB, the same for every sandbox - one copy, linked from each
     guest_run(f'set -e; [ -d {SB_GUEST}/_shared/db ] || sudo cp -r {STICK}/Autobleem/bin/db {SB_GUEST}/_shared/db')
     sb_share_group(strict=True)
-    sb_install_debug_tools()
     print(f'sandboxes: {SB_GUEST} in the guest = {sb_host()} here; covers in _shared/db')
+    try:
+        sb_install_debug_tools()
+    except Fail as e:  # offline guest, mirror down: the rest of the setup stands
+        print(f'WARNING: valgrind/gdb not installed: {e}; --valgrind and crash-report will say so')
 
 
 def sb_template_source_write(source, version):
@@ -2080,8 +2083,12 @@ def sb_signal(name, sig):
     st = sb_running(name)
     if not st:
         raise Fail(f'sandbox {name}: no launcher runs - nothing to signal')
-    guest_run(f'kill -{s} {int(st["pid"])}', check=False)
-    print(f'sandbox {name}: SIG{s} sent to the launcher (pid {int(st["pid"])})')
+    pid = int(st['pid'])
+    out = guest_run(f'kill -0 {pid} 2>/dev/null && kill -{s} {pid} 2>/dev/null && echo sent || echo gone', check=False)
+    if out.strip() != 'sent':
+        print(f'sandbox {name}: launcher already gone (pid {pid}) - SIG{s} not delivered; see exit-status')
+        return
+    print(f'sandbox {name}: SIG{s} sent to the launcher (pid {pid})')
 
 
 def sb_release(name):

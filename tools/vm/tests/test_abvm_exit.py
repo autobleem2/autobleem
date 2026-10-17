@@ -128,13 +128,13 @@ class Commands(unittest.TestCase):
 
 
 class Signal(unittest.TestCase):
-    def sent(self, name, sig, running=True):
+    def sent(self, name, sig, running=True, reply='sent'):
         calls = []
         out = io.StringIO()
         with mock.patch.object(abvm, 'LOCAL', True), mock.patch.object(abvm, 'WHO', 'alice'), \
                 mock.patch.object(abvm, 'lease_op', lambda *a, **k: 'ok'), \
                 mock.patch.object(abvm, 'sb_running', lambda n: {'pid': 4242} if running else None), \
-                mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: calls.append(cmd) or ''), \
+                mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: calls.append(cmd) or reply), \
                 redirect_stdout(out):
             abvm.sandbox_command(['signal', name, sig], '.')
         return calls, out.getvalue()
@@ -142,12 +142,18 @@ class Signal(unittest.TestCase):
     def test_each_allowed_signal_is_sent_to_the_launcher_pid(self):
         for sig in ('ABRT', 'SEGV', 'TERM', 'KILL', 'INT'):
             calls, out = self.sent('sb2', sig)
-            self.assertEqual(calls, [f'kill -{sig} 4242'])
+            self.assertEqual(len(calls), 1)
+            self.assertIn(f'kill -0 4242 2>/dev/null && kill -{sig} 4242', calls[0])
             self.assertIn(f'SIG{sig} sent', out)
 
+    def test_a_launcher_that_died_or_refuses_the_kill_is_reported_gone(self):
+        calls, out = self.sent('sb2', 'ABRT', reply='gone\n')
+        self.assertIn('launcher already gone', out)
+        self.assertNotIn('sent to the launcher', out)
+
     def test_name_forms_are_normalised(self):
-        self.assertEqual(self.sent('sb2', 'sigabrt')[0], ['kill -ABRT 4242'])
-        self.assertEqual(self.sent('sb2', 'term')[0], ['kill -TERM 4242'])
+        self.assertIn('kill -ABRT 4242', self.sent('sb2', 'sigabrt')[0][0])
+        self.assertIn('kill -TERM 4242', self.sent('sb2', 'term')[0][0])
 
     def test_other_signals_are_refused_and_nothing_is_sent(self):
         for sig in ('HUP', 'STOP', '9', 'USR1', '', 'ABRT; reboot', '-KILL'):
@@ -183,13 +189,26 @@ class DebugTools(unittest.TestCase):
         r = subprocess.run(['sh', '-n'], input=calls[0], text=True, capture_output=True)
         self.assertEqual(r.returncode, 0, r.stderr)
 
-    def test_sb_setup_runs_it(self):
+    def setup(self, tools):
+        out = io.StringIO()
         with mock.patch.object(abvm, 'guest_run', return_value=''), \
                 mock.patch.object(abvm, 'sb_host', lambda n='': '/nonexistent-abvm-test'), \
                 mock.patch.object(abvm.os, 'makedirs'), mock.patch.object(abvm, 'sb_share_group'), \
-                mock.patch.object(abvm, 'sb_install_debug_tools') as tools, redirect_stdout(io.StringIO()):
+                mock.patch.object(abvm, 'sb_install_debug_tools', tools), redirect_stdout(out):
             abvm.sb_setup()
+        return out.getvalue()
+
+    def test_sb_setup_runs_it(self):
+        tools = mock.Mock()
+        self.setup(tools)
         tools.assert_called_once_with()
+
+    def test_a_failed_install_is_a_warning_after_the_summary(self):
+        out = self.setup(mock.Mock(side_effect=abvm.Fail('apt: guest offline')))
+        lines = out.splitlines()
+        self.assertTrue(lines[0].startswith('sandboxes: '))
+        self.assertEqual(lines[1], 'WARNING: valgrind/gdb not installed: apt: guest offline; '
+                                   '--valgrind and crash-report will say so')
 
 
 if __name__ == '__main__':
