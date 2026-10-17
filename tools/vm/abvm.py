@@ -1326,10 +1326,20 @@ def sb_setup():
     guest_run(f'set -e; [ -d {SB_GUEST}/_shared/db ] || sudo cp -r {STICK}/Autobleem/bin/db {SB_GUEST}/_shared/db')
     sb_share_group(strict=True)
     print(f'sandboxes: {SB_GUEST} in the guest = {sb_host()} here; covers in _shared/db')
+    sb_core_setup()
     try:
         sb_install_debug_tools()
     except Fail as e:  # offline guest, mirror down: the rest of the setup stands
         print(f'WARNING: valgrind/gdb not installed: {e}; --valgrind and crash-report will say so')
+
+
+def sb_core_setup():
+    """the guest's cores go to CORE_LOCAL on its own disk, for good (sysctl.d + tmpfiles.d survive a reboot)"""
+    line = shlex.quote(f'kernel.core_pattern={CORE_PATTERN}')   # through %s: the pattern's own % must not reach printf
+    guest_run(f'set -e; printf "%s\\n" {line} | sudo tee /etc/sysctl.d/60-abvm-core.conf '
+              f'>/dev/null; printf "d {CORE_LOCAL} 1777 root root 7d\\n" | sudo tee /etc/tmpfiles.d/abvm-core.conf '
+              f'>/dev/null; sudo systemd-tmpfiles --create /etc/tmpfiles.d/abvm-core.conf; '
+              f'sudo sysctl -q -w kernel.core_pattern={shlex.quote(CORE_PATTERN)}; cat /proc/sys/kernel/core_pattern')
 
 
 def sb_template_source_write(source, version):
@@ -1735,34 +1745,42 @@ CORE_DIR = 'core'
 DEBUG_ENV_KEYS = ('MALLOC_CHECK_', 'MALLOC_PERTURB_', 'MALLOC_ARENA_MAX', 'ASAN_OPTIONS', 'UBSAN_OPTIONS',
                   'LSAN_OPTIONS', 'MSAN_OPTIONS', 'G_DEBUG', 'G_SLICE', 'LD_DEBUG')
 
+# where the kernel writes a core: the guest's own disk (a core dumped onto the 9p share comes out 0 bytes); %p is the
+# launcher's pid, so two sandboxes never take each other's core. sandbox setup makes it permanent, the run script
+# sets it again when it differs (a VM set up earlier)
+CORE_LOCAL = '/var/tmp/abvm-core'
+CORE_PATTERN = f'{CORE_LOCAL}/core.%e.%p'
+
 # runs in the guest in place of the bare launcher: cores allowed, the wait status and the time recorded when it ends,
-# a real core dump: the kernel writes it on the guest-local disk (CORE_LOCAL, through core_pattern; a share cannot
-# take a core dump), and the run script copies it to <sandbox>/.abvm/core/ once the launcher has ended
+# the launcher's core copied from CORE_LOCAL to <sandbox>/.abvm/core/ once it has ended. The launcher runs in the
+# FOREGROUND (exec'd by a small sh that first writes its pid): a background job of a non-interactive sh would start
+# with SIGINT ignored, and `sandbox signal INT` would then do nothing
 RUN_SCRIPT_TEXT = '''#!/bin/sh
 # run-launcher.sh <sandbox root> [valgrind]   (written by abvm.py)
 root=$1
 ab=$root/.abvm
-local=/var/tmp/abvm-core
+local=${ABVM_CORE_LOCAL:-@CORE_LOCAL@}   # the variable only for the tests
 ulimit -c unlimited 2>/dev/null
-mkdir -p "$local" 2>/dev/null || sudo mkdir -p "$local"
-sudo chmod 1777 "$local" 2>/dev/null
-sudo sysctl -q -w kernel.core_pattern="$local/core.%e.%p" >/dev/null 2>&1
+mkdir -p "$local" 2>/dev/null || sudo -n mkdir -p "$local"
+sudo -n chmod 1777 "$local" 2>/dev/null
+[ "$(cat /proc/sys/kernel/core_pattern)" = "@CORE_PATTERN@" ] || sudo -n sysctl -q -w kernel.core_pattern="@CORE_PATTERN@" >/dev/null 2>&1
+rm -f "$ab/launcher.pid"
 if [ "$2" = valgrind ]; then
-    valgrind --log-file="$root/System/Logs/valgrind.txt" --error-limit=no --num-callers=40 ./autobleem-gui "$root" &
+    sh -c 'echo $$ > "$0"; exec valgrind --log-file="$1/System/Logs/valgrind.txt" --error-limit=no --num-callers=40 ./autobleem-gui "$1"' "$ab/launcher.pid" "$root"
 else
-    ./autobleem-gui "$root" &
+    sh -c 'echo $$ > "$0"; exec ./autobleem-gui "$1"' "$ab/launcher.pid" "$root"
 fi
-pid=$!
-wait "$pid"
 s=$?
+pid=$(cat "$ab/launcher.pid" 2>/dev/null)
 mkdir -p "$ab/core"
-for c in "$local"/core.*."$pid" core core.*; do
-    [ -f "$c" ] && { cp -f "$c" "$ab/core/" 2>/dev/null || sudo cp -f "$c" "$ab/core/"; rm -f "$c" 2>/dev/null || sudo rm -f "$c"; }
+for c in ${pid:+"$local"/core.*."$pid"} core core.*; do
+    [ -s "$c" ] && { cp -f "$c" "$ab/core/" 2>/dev/null || sudo -n cp -f "$c" "$ab/core/"; }   # an empty core is no core
+    [ -f "$c" ] && { rm -f "$c" 2>/dev/null || sudo -n rm -f "$c"; }
 done
 chmod a+rw "$ab/core"/* 2>/dev/null   # the kernel writes a core 0600: open it to the other readers of the share
 echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
 exit "$s"
-'''
+'''.replace('@CORE_LOCAL@', CORE_LOCAL).replace('@CORE_PATTERN@', CORE_PATTERN)
 
 
 def sb_check_env_words(words):
@@ -1828,13 +1846,17 @@ def sb_crash_report(name):
     if st['launcher_signal'] is None:
         return f'{head}: ended normally, no crash'
     head += f', signal {st["launcher_signal"]}'
-    cores = sb_core_files(name)
+    found = sb_core_files(name)
+    cores = [c for c in found if os.path.getsize(c) > 0]
+    if found and not cores:
+        return (f'{head}\nthe kept core is empty (0 bytes): {found[0]} - the kernel could not write it there (a core '
+                f'dumped onto the 9p share comes out empty); run `sandbox setup` so cores go to {CORE_LOCAL}')
     if not cores:
         pattern = guest_run('cat /proc/sys/kernel/core_pattern', check=False).strip()
         return (f'{head}\nno core file: the guest\'s core_pattern is {pattern!r}'
-                + (' (piped - no core lands in the sandbox; set it to a plain "core" as root in the guest)'
-                   if pattern.startswith('|') else ' (a core is kept only when it is written to the guest-local '
-                                                    '/var/tmp/abvm-core/ as core.<name>.<pid>)'))
+                + (' (piped - no core lands in the sandbox; `sandbox setup` sets it to ' + CORE_PATTERN + ')'
+                   if pattern.startswith('|') else f' (a core is kept only when the kernel writes it as {CORE_PATTERN}'
+                                                    f' - `sandbox setup` sets that)'))
     if guest_run('command -v gdb', check=False).strip() == '':
         return f'{head}\ncore kept: {cores[0]}\ngdb is not installed in the guest - no backtrace'
     g = f'{SB_GUEST}/{name}'
