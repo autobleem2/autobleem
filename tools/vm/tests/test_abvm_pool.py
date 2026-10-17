@@ -1,4 +1,4 @@
-"""abvm's fixed sandbox pool sb1..sb4: take-free, refusal of other names, re-lay on take, list, rm-legacy
+"""abvm's fixed sandbox pool sb2..sb4: take-free, refusal of other names, re-lay on take, list, rm-legacy
 (a faked guest: no VM is touched)"""
 import contextlib
 import io
@@ -76,7 +76,7 @@ class Pool(unittest.TestCase):
         for sub in ('take', 'new', 'start', 'drive', 'reset', 'stop', 'release', 'logs'):
             code, _, err = self.sb(sub, 'mine', 'task')
             self.assertEqual(code, 1, sub)
-            self.assertIn('sandbox mine: not in the pool sb1..sb4 - use take-free', err)
+            self.assertIn('sandbox mine: not in the pool sb2..sb4 - use take-free', err)
         self.mkdir('old')
         with mock.patch.object(abvm, 'lease_op', lambda *a, **k: 'ok'):
             code, out, _ = self.sb('rm', 'old')
@@ -85,26 +85,37 @@ class Pool(unittest.TestCase):
 
     def test_take_free_takes_in_order_and_prints_slot_last(self):
         code, out, _ = self.sb('take-free', 'job-a', '5', who='alice')
-        self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb1'))
-        code, out, _ = self.sb('take-free', 'job-b', who='bob')
         self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb2'))
-        self.assertTrue(os.path.isfile(os.path.join(self.host, 'sb2', 'marker')))
+        code, out, _ = self.sb('take-free', 'job-b', who='bob')
+        self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb3'))
+        self.assertTrue(os.path.isfile(os.path.join(self.host, 'sb3', 'marker')))
 
     def test_take_free_busy_exit_3_names_the_holders(self):
-        for i, who in enumerate(('a', 'b', 'c', 'd')):
+        for i, who in enumerate(('a', 'b', 'c')):
             self.assertEqual(self.sb('take-free', f'job{i}', who=who)[0], 0)
         code, _, err = self.sb('take-free', 'late', who='e')
         self.assertEqual(code, 3)
-        self.assertIn('busy: no free sandbox slot (sb1..sb4: sb1 a (job0)', err)
-        self.assertIn('sb4 d (job3)', err)
+        self.assertIn('busy: no free sandbox slot (sb2..sb4: sb2 a (job0)', err)
+        self.assertIn('sb4 c (job2)', err)
+
+    def test_sb1_is_outside_the_pool(self):
+        self.assertEqual(abvm.SB_POOL, ('sb2', 'sb3', 'sb4'))
+        code, _, err = self.sb('take', 'sb1', 'job')
+        self.assertEqual(code, 1)
+        self.assertIn('sandbox sb1: not in the pool sb2..sb4 - use take-free', err)
+        self.mkdir('sb1')
+        code, out, _ = self.sb('list')
+        self.assertEqual(code, 0)
+        self.assertNotIn('sb1 ', out)
+        self.assertIn('legacy folders: 1', out)
 
     def test_take_free_skips_a_held_slot_and_kills_a_launcher_left_in_a_free_one(self):
-        self.sb('take-free', 'job', who='a')           # sb1 held
-        self.running.add('sb2')                        # a launcher left running, lease free
+        self.sb('take-free', 'job', who='a')           # sb2 held
+        self.running.add('sb3')                        # a launcher left running, lease free
         code, out, _ = self.sb('take-free', 'job', who='b')
-        self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb2'))
-        self.assertIn('sb2', self.stopped)
-        self.assertNotIn('sb2', self.running)
+        self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb3'))
+        self.assertIn('sb3', self.stopped)
+        self.assertNotIn('sb3', self.running)
 
     def test_take_lays_the_slot_fresh_from_the_template(self):
         self.mkdir('sb3')
@@ -118,11 +129,11 @@ class Pool(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.host, 'sb3', 'marker')))
 
     def test_take_by_the_holder_again_keeps_its_work(self):
-        self.sb('take', 'sb1', 'job')
-        with open(os.path.join(self.host, 'sb1', 'mine'), 'w') as f:
+        self.sb('take', 'sb2', 'job')
+        with open(os.path.join(self.host, 'sb2', 'mine'), 'w') as f:
             f.write('x')
-        self.assertEqual(self.sb('take', 'sb1', 'job', '40')[0], 0)
-        self.assertTrue(os.path.isfile(os.path.join(self.host, 'sb1', 'mine')))
+        self.assertEqual(self.sb('take', 'sb2', 'job', '40')[0], 0)
+        self.assertTrue(os.path.isfile(os.path.join(self.host, 'sb2', 'mine')))
 
     def test_list_shows_the_pool_the_template_and_the_legacy_count(self):
         self.mkdir('old1')
@@ -131,7 +142,7 @@ class Pool(unittest.TestCase):
         self.sb('take-free', 'job')
         code, out, _ = self.sb('list')
         self.assertEqual(code, 0)
-        for n in ('sb1', 'sb2', 'sb3', 'sb4'):
+        for n in ('sb2', 'sb3', 'sb4'):
             self.assertIn(n, out)
         self.assertNotIn('old1', out)
         self.assertIn('template:', out)
@@ -139,7 +150,7 @@ class Pool(unittest.TestCase):
                       '_template and _shared stay)', out)
 
     def test_rm_legacy_keeps_protected_pool_leased_and_running(self):
-        for n in ('_template.old', '_shared', 'sb1', 'sb2'):
+        for n in ('_template.old', '_shared', 'sb2', 'sb3'):
             self.mkdir(n, 10)
         self.mkdir('gone', 2_000_000_000 // 1000)
         self.mkdir('leased', 10)
@@ -153,7 +164,7 @@ class Pool(unittest.TestCase):
         code, out, _ = self.sb('rm-legacy')
         self.assertEqual(code, 0)
         self.assertFalse(os.path.exists(os.path.join(self.host, 'gone')))
-        for n in ('_template', '_template.old', '_shared', 'sb1', 'sb2', 'leased', 'busy', 'TEMPLATE_SOURCE'):
+        for n in ('_template', '_template.old', '_shared', 'sb2', 'sb3', 'leased', 'busy', 'TEMPLATE_SOURCE'):
             self.assertTrue(os.path.exists(os.path.join(self.host, n)), n)
         self.assertIn('removed gone', out)
         self.assertIn('freed', out)

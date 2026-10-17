@@ -50,7 +50,7 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          machine, a URL, or `nightly` (the site's newest pcusb nightly,
                                                          sha256 checked). _template/TEMPLATE_SOURCE records source,
                                                          version and date; `sandbox list` prints it
-ONLY the pool sb1..sb4 exists (ABVM_SB_POOL); any other name is refused, except `rm` of an old folder:
+ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except `rm` of an old folder:
   python tools/vm/abvm.py sandbox take-free <task> [min] [--who W]   the first free slot, laid fresh from the template;
                                                          last line `slot: <name>`; none free: exit 3 "busy: ..."
   python tools/vm/abvm.py sandbox rm-legacy [--dry-run]  remove the stopped, unleased folders outside the pool
@@ -96,6 +96,8 @@ ONLY the pool sb1..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
   python tools/vm/abvm.py sandbox crash-report <name>    for a death by signal: a gdb backtrace of the kept core with
                                                          the build's symbols, as text; says "no core" / "gdb is not
                                                          installed" when so
+  python tools/vm/abvm.py sandbox signal <name> <SIG>    send ABRT, SEGV, TERM, KILL or INT to the running launcher
+                                                         (anything else is refused); then exit-status / crash-report
   python tools/vm/abvm.py sandbox logs <name> [n]        the launcher's output
   python tools/vm/abvm.py sandbox stop|reset|rm <name>   quit it (the driver's `quit`, a kill after 5 s) / start it
                                                          afresh from the template / delete it
@@ -1078,8 +1080,8 @@ try:
 except ValueError:
     SB_SLOTS = SB_MAX_SLOTS
 # the ONLY sandboxes there are: a fixed pool, laid fresh from the template on every take (ABVM_SB_POOL: comma list)
-SB_POOL = tuple(n.strip() for n in os.environ.get('ABVM_SB_POOL', 'sb1,sb2,sb3,sb4').split(',')
-                if re.fullmatch(r'[a-z0-9][a-z0-9-]{0,30}', n.strip())) or ('sb1', 'sb2', 'sb3', 'sb4')
+SB_POOL = tuple(n.strip() for n in os.environ.get('ABVM_SB_POOL', 'sb2,sb3,sb4').split(',')
+                if re.fullmatch(r'[a-z0-9][a-z0-9-]{0,30}', n.strip())) or ('sb2', 'sb3', 'sb4')
 SB_PROTECTED = ('_template', '_template.old', '_template.new', '_shared', 'TEMPLATE_SOURCE')
 STICK = '/media/autobleem'
 MOUNT_UNIT = 'mnt-abvm.mount'
@@ -1298,6 +1300,17 @@ def sb_share_group(strict=False):
     return gid
 
 
+DEBUG_TOOLS = ('valgrind', 'gdb')  # `sandbox start --valgrind` and `sandbox crash-report` need them in the guest
+
+
+def sb_install_debug_tools():
+    """the guest has free sudo: install what is missing of DEBUG_TOOLS (apt), nothing when all are there"""
+    checks = ' '.join(f'command -v {t} >/dev/null || missing="$missing {t}";' for t in DEBUG_TOOLS)
+    guest_run(f'missing=; {checks} [ -z "$missing" ] || {{ sudo apt-get update -qq; '
+              f'sudo DEBIAN_FRONTEND=noninteractive apt-get install -y $missing; }}; '
+              + ' && '.join(f'command -v {t}' for t in DEBUG_TOOLS))
+
+
 def sb_setup():
     """once per VM (the VM's lease): the guest mounts the share at boot; the covers shared read-only"""
     unit = (f'[Unit]\\nDescription=abvm sandboxes (a 9p share from the test machine)\\n'
@@ -1312,6 +1325,7 @@ def sb_setup():
     # the cover DBs: 280 MB, the same for every sandbox - one copy, linked from each
     guest_run(f'set -e; [ -d {SB_GUEST}/_shared/db ] || sudo cp -r {STICK}/Autobleem/bin/db {SB_GUEST}/_shared/db')
     sb_share_group(strict=True)
+    sb_install_debug_tools()
     print(f'sandboxes: {SB_GUEST} in the guest = {sb_host()} here; covers in _shared/db')
 
 
@@ -2047,6 +2061,29 @@ def sb_stop(name, use_driver=True):
     print(f'sandbox {name} stopped')
 
 
+SB_SIGNALS = ('ABRT', 'SEGV', 'TERM', 'KILL', 'INT')  # the only signals `sandbox signal` sends
+
+
+def sb_signal_name(sig):
+    """'abrt' / 'SIGABRT' / 'ABRT' -> 'ABRT'; Fail for a signal outside SB_SIGNALS"""
+    s = (sig or '').strip().upper()
+    s = s[3:] if s.startswith('SIG') else s
+    if s not in SB_SIGNALS:
+        raise Fail(f'sandbox signal: {sig!r} is not allowed (only {", ".join(SB_SIGNALS)})')
+    return s
+
+
+def sb_signal(name, sig):
+    """send `sig` to the launcher process of sandbox `name` (the pid its state file names, checked to be that
+    sandbox's launcher); the run script then records the death in exit-status"""
+    s = sb_signal_name(sig)
+    st = sb_running(name)
+    if not st:
+        raise Fail(f'sandbox {name}: no launcher runs - nothing to signal')
+    guest_run(f'kill -{s} {int(st["pid"])}', check=False)
+    print(f'sandbox {name}: SIG{s} sent to the launcher (pid {int(st["pid"])})')
+
+
 def sb_release(name):
     """give a sandbox's lease back - and stop its launcher first if the holder forgot to: a launcher left running
     takes a whole CPU and a slot of the cap. Only the holder's own release (or one of a free lease) stops it; a
@@ -2207,6 +2244,13 @@ def sandbox_command(args, out_dir):
             print(json.dumps(sb_exit_status(name)))
         else:
             print(sb_crash_report(name))
+    elif sub == 'signal':
+        if not name or len(args) != 3:
+            raise Fail(f'sandbox signal <name> <{"|".join(SB_SIGNALS)}>')
+        sb_signal_name(args[2])  # refused before the lease or the guest is touched
+        LEASE_KEY = f'sb-{name}'
+        lease_op('check', WHO)
+        sb_signal(name, args[2])
     elif sub in ('new', 'start', 'drive', 'stop', 'reset', 'rm'):
         if not name:
             raise Fail(f'sandbox {sub} <name>')
@@ -2242,7 +2286,7 @@ def sandbox_command(args, out_dir):
         raise Fail('sandbox list | setup | template [--package <pcusb package|nightly>] | take-free <task> [min] | '
                    'take <name> <task> [min] | release <name> | rm-legacy [--dry-run] | '
                    'new|start <name> [--build <dist dir>] [--ext <zip|dir>]... [--valgrind] | drive <name> "<script>" | '
-                   'logs <name> [n] | exit-status <name> | crash-report <name> | stop|reset|rm <name>')
+                   'logs <name> [n] | exit-status <name> | crash-report <name> | signal <name> <SIG> | stop|reset|rm <name>')
 
 
 def sb_drive_remote(name, script, out_dir):
