@@ -281,10 +281,13 @@ class Commands(unittest.TestCase):
 
 
 class Signal(unittest.TestCase):
-    def sent(self, name, sig, running=True, reply='sent'):
+    def sent(self, name, sig, running=True, reply='sent', wait=0, status=None):
         calls = []
         out = io.StringIO()
         with mock.patch.object(abvm, 'LOCAL', True), mock.patch.object(abvm, 'WHO', 'alice'), \
+                mock.patch.object(abvm, 'SIGNAL_WAIT_S', wait), \
+                mock.patch.object(abvm, 'sb_exit_status', status or (lambda n: abvm.parse_exit_record(''))), \
+                mock.patch.object(abvm.time, 'sleep', lambda s: None), \
                 mock.patch.object(abvm, 'lease_op', lambda *a, **k: 'ok'), \
                 mock.patch.object(abvm, 'sb_running', lambda n: {'pid': 4242} if running else None), \
                 mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: calls.append(cmd) or reply), \
@@ -303,6 +306,33 @@ class Signal(unittest.TestCase):
         calls, out = self.sent('sb2', 'ABRT', reply='gone\n')
         self.assertIn('launcher already gone', out)
         self.assertNotIn('sent to the launcher', out)
+
+    def test_waits_for_the_record_and_answers_the_exit(self):
+        polls = []
+
+        def status(n):   # the record comes on the 3rd poll
+            polls.append(n)
+            return abvm.parse_exit_record('134 1' if len(polls) >= 3 else '')
+
+        calls, out = self.sent('sb2', 'ABRT', wait=20, status=status)
+        self.assertEqual(len(polls), 3)
+        self.assertIn('exit 134 (signal 6) after', out)
+        self.assertNotIn('still ending', out)
+
+    def test_a_record_that_never_comes_says_still_ending(self):
+        clock = [1000.0]
+        with mock.patch.object(abvm.time, 'time', lambda: clock[0]):
+            def tick(s):
+                clock[0] += 1
+            with mock.patch.object(abvm, 'SIGNAL_WAIT_S', 20), mock.patch.object(abvm, 'sb_running', lambda n: {'pid': 7}), \
+                    mock.patch.object(abvm, 'sb_exit_status', lambda n: abvm.parse_exit_record('')), \
+                    mock.patch.object(abvm.time, 'sleep', tick), \
+                    mock.patch.object(abvm, 'guest_run', lambda cmd, check=True: 'sent'):
+                out = io.StringIO()
+                with redirect_stdout(out):
+                    abvm.sb_signal('sb2', 'ABRT')
+        self.assertIn('still ending after 20 s - ask exit-status again', out.getvalue())
+        self.assertEqual(clock[0], 1020.0)
 
     def test_name_forms_are_normalised(self):
         self.assertIn('kill -ABRT 4242', self.sent('sb2', 'sigabrt')[0][0])
