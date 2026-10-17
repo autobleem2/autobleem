@@ -101,6 +101,41 @@ class Commands(unittest.TestCase):
         abvm.sb_clear_run_record('sb2')
         self.assertEqual(os.listdir(self.ab), [])
 
+    def test_clear_run_record_removes_a_left_core_saving_mark(self):
+        open(os.path.join(self.ab, abvm.CORE_SAVING), 'w').close()
+        abvm.sb_clear_run_record('sb2')
+        self.assertEqual(os.listdir(self.ab), [])
+
+    def test_exit_status_is_there_while_the_core_is_still_copied(self):
+        # FOUNDRY-126 return 1: a SIGABRT'd launcher read "null" for ~20 s while its core went over the share
+        self.record('134 1760000000\n')
+        open(os.path.join(self.ab, abvm.CORE_SAVING), 'w').close()
+        self.assertEqual(json.loads(self.say('exit-status', 'sb2'))['launcher_exit'], 134)
+
+    def test_crash_report_while_the_core_is_copied_says_so_after_its_wait(self):
+        self.record('134 1')
+        open(os.path.join(self.ab, abvm.CORE_SAVING), 'w').close()
+        with mock.patch.object(abvm, 'CORE_WAIT_S', 0), mock.patch.object(abvm, 'guest_run') as g:
+            text = self.say('crash-report', 'sb2')
+        self.assertIn('launcher exit 134, signal 6', text)
+        self.assertIn('still being copied', text)
+        self.assertNotIn('no finished run', text)
+        g.assert_not_called()   # no gdb on a half-copied core
+
+    def test_crash_report_waits_for_the_copy_then_reads_the_core(self):
+        self.record('134 1')
+        flag = os.path.join(self.ab, abvm.CORE_SAVING)
+        open(flag, 'w').close()
+
+        def copy_done(s):   # the run script finishes its copy while crash-report waits
+            os.remove(flag)
+            self.core('core.7', b'')
+
+        with mock.patch.object(abvm.time, 'sleep', copy_done), mock.patch.object(abvm, 'guest_run') as g:
+            text = self.say('crash-report', 'sb2')
+        self.assertIn('the kept core is empty', text)   # it went on to the core
+        g.assert_not_called()
+
     def test_crash_report_clean_exit(self):
         self.record('0 1')
         self.assertIn('no crash', self.say('crash-report', 'sb2'))
@@ -194,6 +229,17 @@ class Commands(unittest.TestCase):
         self.assertIn('"$local"/core.*."$pid"', t)
         self.assertNotIn('@', t)   # every placeholder replaced
 
+    def test_run_script_records_the_end_before_it_copies_the_core(self):
+        t = abvm.RUN_SCRIPT_TEXT
+        mark = t.index(': > "$ab/core-saving"')
+        record = t.index('mv -f "$ab/exit-status.tmp" "$ab/exit-status"')
+        copy = t.index('cp -f "$c" "$ab/core/"')
+        # the mark before the record: a crash-report never sees "ended, no mark" while the core is still copied
+        self.assertLess(mark, record)
+        self.assertLess(record, copy)
+        self.assertLess(copy, t.index('rm -f "$ab/core-saving"'))
+        self.assertEqual(t.count('exit-status.tmp" &&'), 1)   # written once
+
     @unittest.skipUnless(sys.platform.startswith('linux'), 'reads /proc of the run script\'s launcher')
     def test_run_script_runs_the_launcher_in_the_foreground_with_sigint_and_keeps_its_core(self):
         """a fake launcher: records its pid and its ignored-signal mask, leaves a core where the kernel would"""
@@ -224,6 +270,7 @@ class Commands(unittest.TestCase):
         self.assertEqual(os.listdir(os.path.join(self.ab, 'core')), ['core.autobleem-gui.' + pid])
         self.assertEqual(sorted(os.listdir(local)), ['core.autobleem-gui.999999'])   # another launcher's core stays
         self.assertEqual(abvm.parse_exit_record(open(os.path.join(self.ab, 'exit-status')).read())['launcher_exit'], 3)
+        self.assertFalse(os.path.exists(os.path.join(self.ab, abvm.CORE_SAVING)))   # the copy's mark is gone again
 
     def test_run_script_opens_the_kept_core(self):
         self.assertIn('chmod a+rw "$ab/core"/*', abvm.RUN_SCRIPT_TEXT)

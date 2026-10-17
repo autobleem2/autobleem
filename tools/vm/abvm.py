@@ -88,12 +88,15 @@ ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          in the guest: id autobleem, owner/mode of the path and its
                                                          parent, ls -la - the output is among the results
                                                          --valgrind: the launcher under valgrind memcheck (slow; the
-                                                         log is System/Logs/valgrind.txt). ABVM_SANDBOX_ENV (words
+                                                         log is System/Logs/valgrind.txt; start returns once the
+                                                         driver port is up, the screen ~75 s later; refused at once
+                                                         when the guest has no valgrind). ABVM_SANDBOX_ENV (words
                                                          NAME=value: AB_* keys, MALLOC_CHECK_, MALLOC_PERTURB_,
                                                          MALLOC_ARENA_MAX, ASAN/UBSAN/LSAN/MSAN_OPTIONS, G_DEBUG,
                                                          G_SLICE, LD_DEBUG) goes to the launcher; ABVM_SANDBOX_VALGRIND=1
                                                          is --valgrind. Every run's end is recorded in <sandbox>/.abvm/
-                                                         exit-status, a core kept in <sandbox>/.abvm/core/
+                                                         exit-status at once, a core kept in <sandbox>/.abvm/core/
+                                                         (copied after it; crash-report waits up to 40 s for the copy)
   python tools/vm/abvm.py sandbox exit-status <name>     JSON {launcher_exit, launcher_signal, finished_at} of the last
                                                          run (null while it runs / never ran); exit 134 = signal 6
   python tools/vm/abvm.py sandbox crash-report <name>    for a death by signal: a gdb backtrace of the kept core with
@@ -1801,6 +1804,9 @@ def sb_reap_unleased(names):
 RUN_SCRIPT = 'run-launcher.sh'
 EXIT_FILE = 'exit-status'
 CORE_DIR = 'core'
+CORE_SAVING = 'core-saving'   # there while the run script copies the core onto the share, after exit-status
+CORE_WAIT_S = 40              # how long crash-report waits for that copy (a caller's remote tool call ends at ~60 s)
+VALGRIND_PORT_WAIT_S = 40     # under valgrind the driver port opens ~11 s in, the launcher screen only ~75 s in
 # the launcher's environment words a caller may pass (ABVM_SANDBOX_ENV): its own AB_* keys and the allocator/sanitizer
 # debug keys; never the loader's (LD_PRELOAD, LD_LIBRARY_PATH)
 DEBUG_ENV_KEYS = ('MALLOC_CHECK_', 'MALLOC_PERTURB_', 'MALLOC_ARENA_MAX', 'ASAN_OPTIONS', 'UBSAN_OPTIONS',
@@ -1835,6 +1841,10 @@ else
     sh -c 'echo $$ > "$0"; exec ./autobleem-gui "$1"' "$ab/launcher.pid" "$root"
 fi
 s=$?
+# the end first: a core copied over the share takes ~20 s, and exit-status must not wait for it. The mark goes up
+# before the record, so whenever exit-status exists, either the mark stands or the copy is done
+: > "$ab/core-saving"
+echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
 pid=$(cat "$ab/launcher.pid" 2>/dev/null)
 mkdir -p "$ab/core"
 for c in ${pid:+"$local"/core.*."$pid"} core core.*; do
@@ -1842,7 +1852,7 @@ for c in ${pid:+"$local"/core.*."$pid"} core core.*; do
     [ -f "$c" ] && { rm -f "$c" 2>/dev/null || sudo -n rm -f "$c"; }
 done
 chmod a+rw "$ab/core"/* 2>/dev/null   # the kernel writes a core 0600: open it to the other readers of the share
-echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
+rm -f "$ab/core-saving"
 exit "$s"
 '''.replace('@CORE_LOCAL@', CORE_LOCAL).replace('@CORE_PATTERN@', CORE_PATTERN)
 
@@ -1865,7 +1875,7 @@ def sb_write_run_script(name):
 
 def sb_clear_run_record(name):
     d = os.path.join(sb_host(name), '.abvm')
-    for f in (EXIT_FILE, EXIT_FILE + '.tmp'):
+    for f in (EXIT_FILE, EXIT_FILE + '.tmp', CORE_SAVING):
         try:
             os.remove(os.path.join(d, f))
         except OSError:
@@ -1893,6 +1903,18 @@ def sb_exit_status(name):
         return parse_exit_record('')
 
 
+def sb_core_saved(name, wait_s=None):
+    """True once the run script has finished copying the core (it writes exit-status first, then copies); waits
+    up to `wait_s` (CORE_WAIT_S) for it"""
+    flag = os.path.join(sb_host(name), '.abvm', CORE_SAVING)
+    end = time.time() + (CORE_WAIT_S if wait_s is None else wait_s)
+    while os.path.exists(flag):
+        if time.time() >= end:
+            return False
+        time.sleep(1)
+    return True
+
+
 def sb_core_files(name):
     d = os.path.join(sb_host(name), '.abvm', CORE_DIR)
     return sorted(os.path.join(d, f) for f in os.listdir(d)) if os.path.isdir(d) else []
@@ -1910,6 +1932,9 @@ def sb_crash_report(name):
     if st['launcher_signal'] is None:
         return f'{head}: ended normally, no crash'
     head += f', signal {st["launcher_signal"]}'
+    if not sb_core_saved(name):
+        return (f'{head}\nthe core is still being copied to {os.path.join(sb_host(name), ".abvm", CORE_DIR)} '
+                f'(over {CORE_WAIT_S} s so far) - ask for the crash report again in a minute')
     found = sb_core_files(name)
     cores = [c for c in found if os.path.getsize(c) > 0]
     if found and not cores:
@@ -1992,6 +2017,9 @@ def sb_start(name, size=None, valgrind=False, **lay):
     if extra:
         env += ' ' + ' '.join(shlex.quote(w) for w in sb_check_env_words(extra.split()))
     valgrind = valgrind or os.environ.get('ABVM_SANDBOX_VALGRIND') == '1'
+    if valgrind and not guest_run('command -v valgrind || true', check=False).strip():
+        raise Fail(f'sandbox {name}: valgrind is not installed in the guest - `abvm.py sandbox setup` installs it '
+                   f'(with gdb); nothing started')
     t0 = time.time()
     # made here, open to the guest (a folder the guest makes through the share is QEMU's, and closed to this user)
     for sub in ('out', 'power_supply'):
@@ -2008,7 +2036,7 @@ def sb_start(name, size=None, valgrind=False, **lay):
                     f'cd {g}/Autobleem/bin/autobleem; umask 000; '
                     f'{env} setsid nohup sh {g}/.abvm/{RUN_SCRIPT} {g}{" valgrind" if valgrind else ""} '
                     f'> {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
-                    f'echo pid $!; for i in $(seq {600 if valgrind else 100}); do '
+                    f'echo pid $!; for i in $(seq {VALGRIND_PORT_WAIT_S * 10 if valgrind else 100}); do '
                     f'l=$(ss -ltnp | grep "127.0.0.1:{port} " || true); '
                     f'if [ -n "$l" ]; then echo "listen $l"; break; fi; sleep 0.1; done')
     pid = int(re.search(r'pid (\d+)', out).group(1))
@@ -2016,7 +2044,8 @@ def sb_start(name, size=None, valgrind=False, **lay):
     if not owner:
         sb_kill_launcher(name, pid)  # never an orphan: no state file would ever name it
         sb_save_state(name, {})
-        raise Fail(f'sandbox {name}: its launcher did not open its driver port {port} in 10 s (or the port is held by '
+        raise Fail(f'sandbox {name}: its launcher did not open its driver port {port} in '
+                   f'{VALGRIND_PORT_WAIT_S if valgrind else 10} s (or the port is held by '
                    f'another process) - launcher stopped, see {sb_host(name)}/System/Logs/abvm-out.txt')
     pid = owner
     st = {'pid': pid, 'port': port, 'since': time.time()}
@@ -2027,11 +2056,16 @@ def sb_start(name, size=None, valgrind=False, **lay):
         sb_stop(name, use_driver=False)  # the port on this side is someone else's - never talk to it
         raise
     sb_save_state(name, st)
+    if valgrind:  # its screen takes over a minute: waiting for it here would outlast the caller's ~60 s tool call
+        print(f'sandbox {name} runs under valgrind on port {port}, {size} (driver port up in {time.time() - t0:.1f} s); '
+              f'its launcher screen shows about 75 s after the start - begin a drive script with `wait 75000` or '
+              f'ask `screen`; the report is System/Logs/valgrind.txt once the launcher ends')
+        return
     # ready = the launcher's screen shows, so the first script's first shot is of it
     try:
         d = import_ab_drive().Driver(port)
         try:
-            d.wait_screen('GuiLauncher', 600 if valgrind else 60)
+            d.wait_screen('GuiLauncher', 60)
         finally:
             d.close()
     except (OSError, RuntimeError) as e:
