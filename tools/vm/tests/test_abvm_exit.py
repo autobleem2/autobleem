@@ -122,6 +122,39 @@ class Commands(unittest.TestCase):
         self.assertIn('Autobleem/bin/autobleem/autobleem-gui', calls[-1])
         self.assertIn('/sb2/.abvm/core/core.7', calls[-1])
 
+    def _core_and_gdb(self, reply):
+        self.record('134 1')
+        os.makedirs(os.path.join(self.ab, 'core'))
+        open(os.path.join(self.ab, 'core', 'core'), 'w').close()
+        calls = []
+
+        def guest(cmd, check=True):
+            calls.append(cmd)
+            return '/usr/bin/gdb' if cmd.startswith('command -v') else reply
+
+        with mock.patch.object(abvm, 'guest_run', guest):
+            return self.say('crash-report', 'sb2'), calls
+
+    def test_crash_report_opens_the_core_and_runs_gdb_as_root(self):
+        text, calls = self._core_and_gdb('#0  raise ()\n')
+        self.assertIn('sudo chmod -R a+rX', calls[-1])
+        self.assertIn('sudo gdb', calls[-1])
+        self.assertIn('#0  raise ()', text)
+
+    def test_crash_report_unreadable_core_names_the_reason(self):
+        text, _ = self._core_and_gdb('/x/core: Permission denied.\n')
+        self.assertIn('could not read the core', text)
+        self.assertIn('Permission denied', text)
+        self.assertNotIn('#0', text)
+
+    def test_crash_report_no_frames_says_what_gdb_said(self):
+        text, _ = self._core_and_gdb('warning: core file may not match\n')
+        self.assertIn('no backtrace: gdb gave no frames', text)
+        self.assertIn('may not match', text)
+
+    def test_run_script_opens_the_kept_core(self):
+        self.assertIn('chmod a+rw "$ab/core"/*', abvm.RUN_SCRIPT_TEXT)
+
     def test_crash_report_while_running(self):
         with mock.patch.object(abvm, 'sb_running', lambda n: {'pid': 1}):
             self.assertIn('runs', self.say('crash-report', 'sb2'))
