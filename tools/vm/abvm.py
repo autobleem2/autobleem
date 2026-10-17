@@ -73,6 +73,8 @@ ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          user gets (the template is only as new as the stick);
                                                          --games N: N fake PS1 games, 3 memory card sets, Apps
                                                          (make_usb.py's), the covers from the shared DBs;
+                                                         --games test: the test machine's real game set
+                                                         (~/abvm/testgames, ABVM_TESTGAMES), discs hard-linked;
                                                          --set Key=Value (repeatable): a line in the launcher's
                                                          config.ini, laid last (e.g. --set Language=Polski)
   python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (@1 tap a; wait_idle
@@ -1532,6 +1534,54 @@ def sb_add_games(name, count):
         sb_open_modes(os.path.join(sb_host(name), d))
 
 
+TEST_GAMES = 'test'   # `--games test`: the test machine's own set of real games (kept outside the template)
+LINK_MIN_BYTES = 1 << 20   # files from 1 MB (the discs) are hard-linked, smaller ones (Game.ini, covers) copied
+
+
+def test_games_dir():
+    return os.path.expanduser(os.environ.get('ABVM_TESTGAMES', '~/abvm/testgames'))
+
+
+def parse_games(value):
+    """--games N (fake games) or --games test; 0 when not given"""
+    if value in (None, ''):
+        return 0
+    if value == TEST_GAMES:
+        return TEST_GAMES
+    if not re.fullmatch(r'\d{1,3}', value):
+        raise Fail(f'--games {value!r}: a number of fake games, or "{TEST_GAMES}" for the test machine\'s game set')
+    return int(value)
+
+
+def sb_add_test_games(name):
+    """the game folders of test_games_dir() laid into the sandbox's Games/: the discs hard-linked (no space taken; the
+    launcher only reads a disc), the small files copied so the launcher's own writes
+    (Game.ini, covers) stay in this sandbox. A folder that is already there is kept (a restart rescans nothing new)"""
+    src = test_games_dir()
+    if not os.path.isdir(src):
+        raise Fail(f'--games {TEST_GAMES}: no game set at {src} on the test machine (ABVM_TESTGAMES)')
+    games = os.path.join(sb_host(name), 'Games')
+    laid = []
+    for game in sorted(os.listdir(src)):
+        if game.startswith('.') or not os.path.isdir(os.path.join(src, game)) or os.path.exists(os.path.join(games, game)):
+            continue
+        for root, _, files in os.walk(os.path.join(src, game)):
+            to = os.path.join(games, os.path.relpath(root, src))
+            os.makedirs(to, exist_ok=True)
+            for f in files:
+                a, b = os.path.join(root, f), os.path.join(to, f)
+                if os.path.getsize(a) >= LINK_MIN_BYTES:
+                    try:
+                        os.link(a, b)
+                        continue
+                    except OSError:
+                        pass   # another file system: a copy
+                shutil.copy2(a, b)
+        laid.append(game)
+    sb_open_modes(games)
+    print(f'sandbox {name}: test games laid: {", ".join(laid) or "none new"}')
+
+
 def sb_set_config(name, sets):
     """Key=Value lines in the sandbox launcher's config.ini - a line with that key replaced, else added at the end.
     Laid after --build/--package, which bring their own config.ini (a dist's has no Language= line)"""
@@ -1561,7 +1611,9 @@ def sb_lay(name, build=None, exts=(), package=None, games=0, sets=()):
         sb_copy_build(name, build)
     for ext in exts:
         sb_copy_ext(name, ext)
-    if games:
+    if games == TEST_GAMES:
+        sb_add_test_games(name)
+    elif games:
         sb_add_games(name, games)
     if sets:
         sb_set_config(name, sets)
@@ -2313,7 +2365,7 @@ def sandbox_command(args, out_dir):
 
         size = one('--size')
         lay = dict(build=one('--build'), exts=every('--ext'), package=one('--package'),
-                   games=int(one('--games') or 0), sets=every('--set'))
+                   games=parse_games(one('--games')), sets=every('--set'))
         if sub == 'new':
             sb_new(name, **lay)
         elif sub == 'start':
