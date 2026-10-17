@@ -98,7 +98,8 @@ ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          run (null while it runs / never ran); exit 134 = signal 6
   python tools/vm/abvm.py sandbox crash-report <name>    for a death by signal: a gdb backtrace of the kept core with
                                                          the build's symbols, as text; says "no core" / "gdb is not
-                                                         installed" when so
+                                                         installed" when so (named launcher frames need a pcusb build
+                                                         with AB_PCUSB_DEBUG=1 - a release build is stripped)
   python tools/vm/abvm.py sandbox signal <name> <SIG>    send ABRT, SEGV, TERM, KILL or INT to the running launcher
                                                          (anything else is refused); then exit-status / crash-report
   python tools/vm/abvm.py sandbox logs <name> [n]        the launcher's output
@@ -1811,6 +1812,8 @@ DEBUG_ENV_KEYS = ('MALLOC_CHECK_', 'MALLOC_PERTURB_', 'MALLOC_ARENA_MAX', 'ASAN_
 CORE_LOCAL = '/var/tmp/abvm-core'
 CORE_PATTERN = f'{CORE_LOCAL}/core.%e.%p'
 UPX_MARK = 'memfd:upx'   # what gdb names the mapping of a UPX-packed binary
+NAMELESS_FRAME = re.compile(r'^#\d+ +0x[0-9a-f]+ in \?\? \(', re.M)   # gdb's frame line when the binary has no symbols
+DEBUG_BUILD = 'AB_PCUSB_DEBUG=1 (ci/build.sh pcusb)'
 
 # runs in the guest in place of the bare launcher: cores allowed, the wait status and the time recorded when it ends,
 # the launcher's core copied from CORE_LOCAL to <sandbox>/.abvm/core/ once it has ended. The launcher runs in the
@@ -1935,7 +1938,10 @@ def sb_crash_report(name):
         return f'{head}\ncore: {cores[0]}\nno backtrace: gdb gave no frames; it said:\n{bt.rstrip()}'
     if UPX_MARK in bt:   # a package's launcher (the template, a nightly) is UPX-packed: gdb sees no symbol in it
         head += ('\nNOTE: this launcher is UPX-packed (a package binary) - the frames have no names; start the sandbox '
-                 'with --build <a pcusb build dist> for a backtrace with symbols')
+                 f'with --build <a pcusb build dist> built with {DEBUG_BUILD} for a backtrace with symbols')
+    elif NAMELESS_FRAME.search(bt):   # a release pcusb build is stripped (-s): libc frames are named, the launcher's not
+        head += ('\nNOTE: frames without names (??) - this launcher has no symbols (a release build is stripped); '
+                 f'build pcusb with {DEBUG_BUILD} and start the sandbox with --build <that dist> for named frames')
     return f'{head}\ncore: {cores[0]}\n{bt.rstrip()}'
 
 
