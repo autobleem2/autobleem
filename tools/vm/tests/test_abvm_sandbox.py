@@ -196,5 +196,65 @@ class OpenTree(unittest.TestCase):
             self.assertEqual(opened, ['sb1'] * 3)
 
 
+class Tour(unittest.TestCase):
+    def run_tour(self, host, outdir, prev=None, rc=0):
+        calls = []
+
+        class FakeTour:
+            @staticmethod
+            def main(argv, shot_path=None):
+                calls.append((argv, shot_path))
+                return rc
+
+        with mock.patch.object(abvm, 'SB_HOST', host), mock.patch.object(abvm, 'import_ab_drive', lambda: None), \
+                mock.patch.dict(sys.modules, {'ui_tour': FakeTour}), \
+                mock.patch.object(abvm, 'sb_running', lambda n: {'port': 7801}), \
+                mock.patch.object(abvm, 'sb_open_tree', lambda n, acl=False: None), \
+                mock.patch.object(abvm, 'sb_open_modes', lambda p: None):
+            abvm.sb_tour('sb1', outdir, prev)
+        return calls
+
+    def test_command_line_attach_port_out_folder_and_guest_path(self):
+        with tempfile.TemporaryDirectory() as host:
+            calls = self.run_tour(host, 'tour1')
+            argv, shot_path = calls[0]
+            out = os.path.join(host, 'sb1', '.abvm', 'out', 'tour1')
+            self.assertEqual(argv, ['ui_tour.py', out, '--attach', '--port', '7801'])
+            self.assertTrue(os.path.isdir(out))
+            self.assertEqual(shot_path(os.path.join(out, '01-a.png')),
+                             abvm.SB_GUEST + '/sb1/.abvm/out/tour1/01-a.png')
+
+    def test_diff_option_is_passed_as_a_folder_of_the_out_folder(self):
+        with tempfile.TemporaryDirectory() as host:
+            os.makedirs(os.path.join(host, 'sb1', '.abvm', 'out', 'tour1'))
+            argv = self.run_tour(host, 'tour2', 'tour1')[0][0]
+            self.assertEqual(argv[-2:], ['--diff', os.path.join(host, 'sb1', '.abvm', 'out', 'tour1')])
+
+    def test_refusals(self):
+        with tempfile.TemporaryDirectory() as host:
+            for bad in ('', '/etc', '../x', 'a/../../b', 'C:\\x'):
+                with self.assertRaises(abvm.Fail):
+                    self.run_tour(host, bad)
+            with self.assertRaises(abvm.Fail):  # a previous tour that does not exist
+                self.run_tour(host, 'tour2', 'nothere')
+            with self.assertRaises(abvm.Fail):
+                self.run_tour(host, 'tour2', '../tour1')
+            with self.assertRaises(abvm.Fail):  # the tour's own failure
+                self.run_tour(host, 'tour3', rc=1)
+
+    def test_args(self):
+        self.assertEqual(abvm.sb_tour_args(['o']), ('o', None))
+        self.assertEqual(abvm.sb_tour_args(['o', '--diff', 'p']), ('o', 'p'))
+        for bad in ([], ['o', '--diff'], ['o', 'p'], ['--diff', 'p'], ['o', '--diff', 'p', 'q'], ['o', '--bogus', 'p']):
+            with self.assertRaises(abvm.Fail):
+                abvm.sb_tour_args(bad)
+
+    def test_not_running(self):
+        with tempfile.TemporaryDirectory() as host, mock.patch.object(abvm, 'SB_HOST', host), \
+                mock.patch.object(abvm, 'sb_running', lambda n: None):
+            with self.assertRaises(abvm.Fail):
+                abvm.sb_tour('sb1', 'o')
+
+
 if __name__ == '__main__':
     unittest.main()
