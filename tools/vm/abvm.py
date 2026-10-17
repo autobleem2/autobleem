@@ -2206,6 +2206,7 @@ def sb_stop(name, use_driver=True):
     print(f'sandbox {name} stopped')
 
 
+SIGNAL_WAIT_S = 20  # how long `sandbox signal` waits for the launcher's end record
 SB_SIGNALS = ('ABRT', 'SEGV', 'TERM', 'KILL', 'INT')  # the only signals `sandbox signal` sends
 
 
@@ -2231,6 +2232,18 @@ def sb_signal(name, sig):
         print(f'sandbox {name}: launcher already gone (pid {pid}) - SIG{s} not delivered; see exit-status')
         return
     print(f'sandbox {name}: SIG{s} sent to the launcher (pid {pid})')
+    # the launcher ends only after the kernel has written its core: wait for the run script's record
+    t0 = time.time()
+    while True:
+        rec = sb_exit_status(name)
+        if rec['launcher_exit'] is not None:
+            sig = f' (signal {rec["launcher_signal"]})' if rec['launcher_signal'] is not None else ''
+            print(f'sandbox {name}: exit {rec["launcher_exit"]}{sig} after {round(time.time() - t0)} s')
+            return
+        if time.time() - t0 >= SIGNAL_WAIT_S:
+            print(f'sandbox {name}: still ending after {SIGNAL_WAIT_S} s - ask exit-status again')
+            return
+        time.sleep(1)
 
 
 def sb_release(name):
