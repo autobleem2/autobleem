@@ -138,7 +138,6 @@ class Commands(unittest.TestCase):
 
     def _core_and_gdb(self, reply):
         self.record('134 1')
-        os.makedirs(os.path.join(self.ab, 'core'))
         self.core('core')
         calls = []
 
@@ -154,6 +153,15 @@ class Commands(unittest.TestCase):
         self.assertIn('sudo chmod -R a+rX', calls[-1])
         self.assertIn('sudo gdb', calls[-1])
         self.assertIn('#0  raise ()', text)
+
+    def test_crash_report_of_a_upx_packed_launcher_says_how_to_get_symbols(self):
+        text, _ = self._core_and_gdb("warning: Can't open file /memfd:upx (deleted) during file-backed mapping\n"
+                                     '#0  0xf6e1c559 in __kernel_vsyscall ()\n')
+        self.assertIn('UPX-packed', text)
+        self.assertIn('--build', text)
+        self.assertIn('#0  0xf6e1c559', text)
+        text, _ = self._core_and_gdb('#0  raise ()\n')
+        self.assertNotIn('UPX', text)
 
     def test_crash_report_unreadable_core_names_the_reason(self):
         text, _ = self._core_and_gdb('/x/core: Permission denied.\n')

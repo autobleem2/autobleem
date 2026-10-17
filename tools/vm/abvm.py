@@ -1750,6 +1750,7 @@ DEBUG_ENV_KEYS = ('MALLOC_CHECK_', 'MALLOC_PERTURB_', 'MALLOC_ARENA_MAX', 'ASAN_
 # sets it again when it differs (a VM set up earlier)
 CORE_LOCAL = '/var/tmp/abvm-core'
 CORE_PATTERN = f'{CORE_LOCAL}/core.%e.%p'
+UPX_MARK = 'memfd:upx'   # what gdb names the mapping of a UPX-packed binary
 
 # runs in the guest in place of the bare launcher: cores allowed, the wait status and the time recorded when it ends,
 # the launcher's core copied from CORE_LOCAL to <sandbox>/.abvm/core/ once it has ended. The launcher runs in the
@@ -1872,6 +1873,9 @@ def sb_crash_report(name):
                 f'(the share keeps it closed to root); gdb said:\n{bt.rstrip()}')
     if not re.search(r'^#\d+ ', bt, re.M):
         return f'{head}\ncore: {cores[0]}\nno backtrace: gdb gave no frames; it said:\n{bt.rstrip()}'
+    if UPX_MARK in bt:   # a package's launcher (the template, a nightly) is UPX-packed: gdb sees no symbol in it
+        head += ('\nNOTE: this launcher is UPX-packed (a package binary) - the frames have no names; start the sandbox '
+                 'with --build <a pcusb build dist> for a backtrace with symbols')
     return f'{head}\ncore: {cores[0]}\n{bt.rstrip()}'
 
 
