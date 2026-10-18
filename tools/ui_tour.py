@@ -5,6 +5,10 @@
 
 --no-ra-core leaves the RetroArch screens out (no core installed); the JSON summary line lists them as skipped.
 
+The tour first closes whatever is open (Circle, up to 5 times; an error naming the screen, with a shot, if the home
+screen does not come) and needs games on the launcher (Up opens the Quick menu on an empty one): with none it stops
+with 'start the sandbox with games=30'.
+
 --attach walks the driver already listening on --port (e.g. an abvm sandbox's): the launcher is neither started
 nor stopped.
 --diff PREV_DIR then compares the run with the earlier one (tools/ui_diff.py): <OUTDIR>/changed.html and
@@ -30,6 +34,8 @@ import ab_drive  # noqa: E402
 
 
 NO_RA_CORE = 'no RetroArch core in the sandbox'
+NO_GAMES = 'the tour needs games on the launcher: start the sandbox with games=30'
+HOME_TRIES = 5
 
 
 def main(argv, shot_path=None, ra_cores=True):
@@ -74,13 +80,34 @@ def main(argv, shot_path=None, ra_cores=True):
     def run(script):
         d.run(script)
 
+    def screen():
+        reply = d.cmd('screen')
+        return reply.split(' ', 1)[1] if ' ' in reply else ''
+
+    def ensure_home():
+        # a modal (the update prompt: Circle is its "later"), a menu or an editor left open is closed with Circle
+        for _ in range(HOME_TRIES):
+            if screen() == 'GuiLauncher':
+                return
+            run('press o; wait 400')
+        if screen() == 'GuiLauncher':
+            return
+        stuck = screen()
+        shot('not-home')
+        raise RuntimeError(f'the launcher is not on its home screen after {HOME_TRIES} presses of Circle (now: {stuck})')
+
     try:
-        # the launcher
+        # the launcher: whatever an earlier run (or an attached sandbox) left open is closed first
+        ensure_home()
         run('wait 800')
         shot('launcher')
         run('press down; wait 400')
         shot('launcher-icon-row')
         run('press up; wait 400')
+        if screen() != 'GuiLauncher':
+            # with no games the launcher has no row to come back from: Up opens the Quick menu instead
+            ensure_home()
+            raise RuntimeError(NO_GAMES)
         # the set picker, each tab
         run('press select; wait_screen GuiSetPicker; wait 200')
         shot('set-picker-playstation')

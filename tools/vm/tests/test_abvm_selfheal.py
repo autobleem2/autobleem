@@ -54,10 +54,11 @@ class SelfHeal(unittest.TestCase):
             abvm.remote_tool(['lock', 'show'])
         self.assertEqual(len(self.refreshes()), 1)           # once per invocation
         self.assertIn('ab_drive.py', err.getvalue())
-        self.assertEqual(len(self.copied), 3)                # all three files are sent...
+        files = len(abvm.local_sources())
+        self.assertEqual(len(self.copied), files)            # every file is sent...
         self.assertTrue(all('.new' in c for c in self.copied))  # ...under temp names
         mv = [c for c in self.calls if c.startswith('mv -f')][0]
-        self.assertEqual(mv.count('mv -f'), 3)               # ...and renamed into place
+        self.assertEqual(mv.count('mv -f'), files)           # ...and renamed into place
         self.assertTrue(mv.rstrip().split('&&')[-1].strip().endswith('abvm.py'))  # the tool last
         order = [i for i, c in enumerate(self.calls) if c.startswith('mkdir -p') or 'lock show' in c]
         self.assertLess(order[0], order[1])                  # refreshed before the real call

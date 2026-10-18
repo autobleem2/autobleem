@@ -100,6 +100,53 @@ class UiTourModeTest(unittest.TestCase):
             ui_tour.main(['ui_tour.py', self.out, '--attach', '--no-ra-core'])
         self.assertEqual(len(json.loads(out.getvalue().strip().splitlines()[-1])['skipped']), 2)
 
+    def with_screens(self, screens, sticky=None):
+        """a tour whose `screen` answers come from the list; once it is used up, `sticky` (else GuiLauncher)"""
+        queue = list(screens)
+
+        class Scripted(FakeDriver):
+            def cmd(self, line):
+                if line == 'screen':
+                    return 'ok ' + (queue.pop(0) if queue else (sticky or 'GuiLauncher'))
+                return 'ok'
+
+        out = io.StringIO()
+        err = None
+        with contextlib.redirect_stdout(out), mock.patch.object(ui_tour.ab_drive, 'Driver', Scripted), \
+                mock.patch.object(ui_tour.ab_drive, 'sheet'):
+            try:
+                ui_tour.main(['ui_tour.py', self.out, '--attach'])
+            except RuntimeError as e:
+                err = str(e)
+        return err
+
+    def test_home_launcher_needs_no_presses(self):
+        self.summary()
+        self.assertNotIn('press o; wait 400', FakeDriver.scripts)
+        self.assertEqual(FakeDriver.scripts[0], 'wait 800')
+
+    def test_a_modal_is_closed_first(self):
+        self.assertIsNone(self.with_screens(['GuiUpdatePrompt', 'GuiLauncher']))
+        self.assertEqual(FakeDriver.scripts[0], 'press o; wait 400')
+        self.assertEqual(FakeDriver.scripts[1], 'wait 800')
+
+    def test_a_menu_is_closed_first(self):
+        self.assertIsNone(self.with_screens(['GuiSystemMenu', 'GuiOptions', 'GuiLauncher']))
+        self.assertEqual(FakeDriver.scripts[:2], ['press o; wait 400'] * 2)
+
+    def test_home_never_reached_names_the_screen(self):
+        err = self.with_screens([], sticky='GuiOptions')
+        self.assertIn('GuiOptions', err)
+        self.assertEqual(FakeDriver.scripts.count('press o; wait 400'), ui_tour.HOME_TRIES)
+        self.assertTrue(os.path.exists(self.out))
+
+    def test_no_games_is_a_clear_error(self):
+        # home at the start, then Up opened the Quick menu; Circle closes it again
+        err = self.with_screens(['GuiLauncher', 'GuiSystemMenu', 'GuiSystemMenu', 'GuiLauncher'])
+        self.assertEqual(err, ui_tour.NO_GAMES)
+        self.assertIn('games=30', err)
+        self.assertEqual(FakeDriver.scripts[-1], 'press o; wait 400')
+
     def test_about_is_left_with_two_backs(self):
         self.summary()
         self.assertIn('press start; wait 300; press o; wait 500; press o; wait_screen GuiLauncher', FakeDriver.scripts)

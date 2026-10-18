@@ -77,7 +77,8 @@ ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          stick (~/abvm/testgames: Games/, RetroArch/roms/;
                                                          ABVM_TESTGAMES), big files hard-linked;
                                                          --set Key=Value (repeatable): a line in the launcher's
-                                                         config.ini, laid last (e.g. --set Language=Polski)
+                                                         config.ini, laid last (e.g. --set Language=Polski);
+                                                         `start` lays updates=off unless given its own updates=
   python tools/vm/abvm.py sandbox tour <name> <outdir> [--diff PREV]   tools/ui_tour.py --attach on the sandbox's
                                                          driver, run inside this tool (the forwarded port is
                                                          reachable only there): every screen's shot, tour.png and,
@@ -180,7 +181,8 @@ Where things are comes from the environment, never from this file (no addresses 
   ABVM_WHO       who is testing - the lease's holder
   ABVM_REMOTE_TOOL  this tool's copy on the test machine (default: ~/.local/share/abvm/abvm.py) - another path
                  tries a branch's abvm there (`setup` copies to it) without touching the copy everyone uses.
-                 The copy there (this tool, ab_drive.py, make_usb.py) is compared by content hash with the PC's files
+                 The copy there (this tool, ab_drive.py, ui_tour.py, ui_diff.py, make_usb.py,
+                 unshipped_themes.py/.txt) is compared by content hash with the PC's files
                  before the first remote call of every run, and refreshed (atomically) when it differs.
 docs/pc-test-machine.md (autobleem-main) describes the machine, the VM and padsim.
 
@@ -807,6 +809,9 @@ def local_sources():
             ('ui_tour.py', os.path.join(tools, 'ui_tour.py')),
             ('ui_diff.py', os.path.join(tools, 'ui_diff.py')),
             ('make_usb.py', os.path.join(tools, 'make_usb.py')),
+            # make_usb.py imports unshipped_themes, which reads unshipped_themes.txt beside itself
+            ('unshipped_themes.py', os.path.join(tools, 'unshipped_themes.py')),
+            ('unshipped_themes.txt', os.path.join(tools, 'unshipped_themes.txt')),
             (os.path.basename(REMOTE_TOOL), os.path.abspath(__file__))]
 
 
@@ -1620,6 +1625,14 @@ def sb_set_config(name, sets):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(lines) + '\n')
     print(f'sandbox {name}: config.ini ' + ', '.join(sets))
+
+
+def start_sets(sets):
+    """`sandbox start`'s config lines: updates=off first (no update prompt over the first screen), unless the start
+    brought its own updates= line"""
+    if any(s.partition('=')[0].strip().lower() == 'updates' for s in sets):
+        return list(sets)
+    return ['updates=off'] + list(sets)
 
 
 def sb_lay(name, build=None, exts=(), package=None, games=0, sets=()):
@@ -2504,6 +2517,7 @@ def sandbox_command(args, out_dir):
         if sub == 'new':
             sb_new(name, **lay)
         elif sub == 'start':
+            lay['sets'] = start_sets(lay['sets'])
             sb_start(name, size, valgrind='--valgrind' in args, **lay)
         elif sub == 'drive':
             sb_drive(name, _script_from_args(args[2:]), out_dir)
@@ -2761,7 +2775,7 @@ def setup():
     # the tool, the DebugDriver's client (`sandbox drive` there) and the fake games and Apps (`--games N` there);
     # every remote call refreshes them by itself when they differ (ensure_remote_current) - this is the manual form
     push_remote()
-    print(f'copied to {HOST}:{REMOTE_TOOL} (and ab_drive.py, make_usb.py)')
+    print(f'copied to {HOST}:{REMOTE_TOOL} (and ab_drive.py, ui_tour.py, ui_diff.py, make_usb.py, unshipped_themes.py/.txt)')
 
 
 BATTERY_DROPIN = '/etc/systemd/system/autobleem.service.d/padsim-battery.conf'

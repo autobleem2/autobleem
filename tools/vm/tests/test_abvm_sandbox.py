@@ -274,5 +274,34 @@ class Tour(unittest.TestCase):
                 abvm.sb_tour('sb1', 'o')
 
 
+class TestMachineCopy(unittest.TestCase):
+    def test_copy_list_has_the_unshipped_themes_files(self):
+        names = [n for n, _ in abvm.local_sources()]
+        self.assertIn('unshipped_themes.py', names)
+        self.assertIn('unshipped_themes.txt', names)
+        self.assertEqual(names[-1], os.path.basename(abvm.REMOTE_TOOL))
+        self.assertTrue(all(os.path.exists(p) for _, p in abvm.local_sources()))
+        self.assertEqual(sorted(abvm.tool_version()), sorted(names))
+
+    def test_make_usb_imports_from_the_copy_alone(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as stage:
+            for name, path in abvm.local_sources():
+                shutil.copy(path, os.path.join(stage, name))
+            r = subprocess.run([sys.executable, '-I', '-c', 'import sys; sys.path.insert(0, sys.argv[1]); '
+                                'import make_usb', stage], capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+
+
+class StartSets(unittest.TestCase):
+    def test_updates_off_by_default(self):
+        self.assertEqual(abvm.start_sets([]), ['updates=off'])
+        self.assertEqual(abvm.start_sets(['Language=Polski']), ['updates=off', 'Language=Polski'])
+
+    def test_own_updates_line_wins(self):
+        self.assertEqual(abvm.start_sets(['updates=release']), ['updates=release'])
+        self.assertEqual(abvm.start_sets(['Updates = beta']), ['Updates = beta'])
+
+
 if __name__ == '__main__':
     unittest.main()
