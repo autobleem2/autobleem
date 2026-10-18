@@ -202,8 +202,8 @@ class Tour(unittest.TestCase):
 
         class FakeTour:
             @staticmethod
-            def main(argv, shot_path=None):
-                calls.append((argv, shot_path))
+            def main(argv, shot_path=None, ra_cores=True):
+                calls.append((argv, shot_path, ra_cores))
                 return rc
 
         with mock.patch.object(abvm, 'SB_HOST', host), mock.patch.object(abvm, 'import_ab_drive', lambda: None), \
@@ -217,7 +217,7 @@ class Tour(unittest.TestCase):
     def test_command_line_attach_port_out_folder_and_guest_path(self):
         with tempfile.TemporaryDirectory() as host:
             calls = self.run_tour(host, 'tour1')
-            argv, shot_path = calls[0]
+            argv, shot_path, _ = calls[0]
             out = os.path.join(host, 'sb1', '.abvm', 'out', 'tour1')
             self.assertEqual(argv, ['ui_tour.py', out, '--attach', '--port', '7801'])
             self.assertTrue(os.path.isdir(out))
@@ -249,11 +249,58 @@ class Tour(unittest.TestCase):
             with self.assertRaises(abvm.Fail):
                 abvm.sb_tour_args(bad)
 
+    def test_the_tour_is_told_whether_the_sandbox_has_a_core(self):
+        for cores in (False, True):
+            with tempfile.TemporaryDirectory() as host:
+                if cores:
+                    d = os.path.join(host, 'sb1', 'RetroArch', 'cores')
+                    os.makedirs(d)
+                    open(os.path.join(d, 'fceumm_libretro.so'), 'w').close()
+                self.assertEqual(self.run_tour(host, 'tour1')[0][2], cores)
+
+    def test_core_detection(self):
+        with tempfile.TemporaryDirectory() as host, mock.patch.object(abvm, 'SB_HOST', host):
+            self.assertFalse(abvm.sb_has_ra_core('sb1'))
+            cores = os.path.join(host, 'sb1', 'RetroArch', 'cores')
+            os.makedirs(cores)
+            self.assertFalse(abvm.sb_has_ra_core('sb1'))
+            open(os.path.join(cores, 'fceumm_libretro.so'), 'w').close()
+            self.assertTrue(abvm.sb_has_ra_core('sb1'))
+
     def test_not_running(self):
         with tempfile.TemporaryDirectory() as host, mock.patch.object(abvm, 'SB_HOST', host), \
                 mock.patch.object(abvm, 'sb_running', lambda n: None):
             with self.assertRaises(abvm.Fail):
                 abvm.sb_tour('sb1', 'o')
+
+
+class TestMachineCopy(unittest.TestCase):
+    def test_copy_list_has_the_unshipped_themes_files(self):
+        names = [n for n, _ in abvm.local_sources()]
+        self.assertIn('unshipped_themes.py', names)
+        self.assertIn('unshipped_themes.txt', names)
+        self.assertEqual(names[-1], os.path.basename(abvm.REMOTE_TOOL))
+        self.assertTrue(all(os.path.exists(p) for _, p in abvm.local_sources()))
+        self.assertEqual(sorted(abvm.tool_version()), sorted(names))
+
+    def test_make_usb_imports_from_the_copy_alone(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as stage:
+            for name, path in abvm.local_sources():
+                shutil.copy(path, os.path.join(stage, name))
+            r = subprocess.run([sys.executable, '-I', '-c', 'import sys; sys.path.insert(0, sys.argv[1]); '
+                                'import make_usb', stage], capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+
+
+class StartSets(unittest.TestCase):
+    def test_updates_off_by_default(self):
+        self.assertEqual(abvm.start_sets([]), ['updates=off'])
+        self.assertEqual(abvm.start_sets(['Language=Polski']), ['updates=off', 'Language=Polski'])
+
+    def test_own_updates_line_wins(self):
+        self.assertEqual(abvm.start_sets(['updates=release']), ['updates=release'])
+        self.assertEqual(abvm.start_sets(['Updates = beta']), ['Updates = beta'])
 
 
 if __name__ == '__main__':
