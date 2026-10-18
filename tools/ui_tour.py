@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """A screenshot of every screen the launcher can show, through the DebugDriver (tools/ab_drive.py):
 
-  python tools/ui_tour.py OUTDIR [--show] [--port N] [--diff PREV_DIR] [--attach [--host H]]
+  python tools/ui_tour.py OUTDIR [--show] [--port N] [--diff PREV_DIR] [--attach [--host H]] [--no-ra-core]
+
+--no-ra-core leaves the RetroArch screens out (no core installed); the JSON summary line lists them as skipped.
 
 --attach walks the driver already listening on --port (e.g. an abvm sandbox's): the launcher is neither started
 nor stopped.
@@ -27,9 +29,16 @@ sys.path.insert(0, os.path.join(REPO, 'tools'))
 import ab_drive  # noqa: E402
 
 
-def main(argv, shot_path=None):
-    """shot_path: turns a shot's file here into the name the driver is sent (abvm: the sandbox guest's path)"""
+NO_RA_CORE = 'no RetroArch core in the sandbox'
+
+
+def main(argv, shot_path=None, ra_cores=True):
+    """shot_path: turns a shot's file here into the name the driver is sent (abvm: the sandbox guest's path)
+    ra_cores: False (or --no-ra-core) when no RetroArch core is installed: the RetroArch screens are not walked,
+    they are listed under `skipped` in the JSON summary the tour prints"""
     shot_path = shot_path or (lambda p: p)
+    ra_cores = ra_cores and '--no-ra-core' not in argv
+    skipped = []
     if len(argv) < 2:
         print(__doc__)
         return 2
@@ -115,7 +124,7 @@ def main(argv, shot_path=None):
         shot('surprise-title')
         run('press start; wait 1500')
         shot('surprise-game')
-        run('press start; wait 300; press o; wait_screen GuiLauncher')
+        run('press start; wait 300; press o; wait 500; press o; wait_screen GuiLauncher')  # game -> scores -> launcher
         # the PS1 game editor, its rename keyboard and memory card picker
         run('press down; wait 400; press right; wait 300; press x; wait_screen GuiEditor; wait 200')
         shot('game-editor-ps1')
@@ -137,15 +146,20 @@ def main(argv, shot_path=None):
         shot('button-guide')
         run('press o; wait_screen GuiLauncher')
         # a RetroArch game's editor
-        run('press select; wait_screen GuiSetPicker; press r1; wait 200; press x; wait_screen GuiLauncher; wait 800')
-        shot('launcher-retroarch')
-        run('press down; wait 400; press right; wait 300; press x; wait 800')
-        if d.cmd('screen').endswith('GuiEditorRA'):
-            shot('game-editor-retroarch')
-            run('press o; wait 300')
-        run('wait_screen GuiLauncher')
-        # the Apps set and an app's start screen (the tabs wrap: from RetroArch one to the right)
-        run('press select; wait_screen GuiSetPicker; press r1; wait 200; press x; wait_screen GuiLauncher; wait 800')
+        if ra_cores:
+            run('press select; wait_screen GuiSetPicker; press r1; wait 200; press x; wait_screen GuiLauncher; wait 800')
+            shot('launcher-retroarch')
+            run('press down; wait 400; press right; wait 300; press x; wait 800')
+            if d.cmd('screen').endswith('GuiEditorRA'):
+                shot('game-editor-retroarch')
+                run('press o; wait 300')
+            run('wait_screen GuiLauncher')
+        else:  # the launcher has no RetroArch set to show: not waited for
+            for screen in ('launcher-retroarch', 'game-editor-retroarch'):
+                skipped.append({'screen': screen, 'reason': NO_RA_CORE})
+        # the Apps set and an app's start screen (the tabs wrap: from RetroArch one to the right, from PlayStation two)
+        run('press select; wait_screen GuiSetPicker; press r1; wait 200; ' + ('' if ra_cores else 'press r1; wait 200; ') +
+            'press x; wait_screen GuiLauncher; wait 800')
         shot('launcher-apps')
         run('press x; wait 800')
         if d.cmd('screen').endswith('GuiAppStart'):
@@ -158,13 +172,15 @@ def main(argv, shot_path=None):
             subprocess.call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'stop', '--port', str(port)])
     ab_drive.sheet(os.path.join(out, 'tour.png'), shots, columns=3, width=426)
     print(len(shots), 'screens in', out)
+    summary = {}
     if prev:
         try:
             import ui_diff
             summary = ui_diff.diff_tours(prev, out)
         except Exception as e:  # like ui_diff.main: the tour itself succeeded, so exit 0
             summary = {'changed': [], 'unchanged': 0, 'error': str(e)}
-        print(json.dumps(summary))
+    summary['skipped'] = skipped
+    print(json.dumps(summary))
     return 0
 
 

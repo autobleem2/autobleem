@@ -202,8 +202,8 @@ class Tour(unittest.TestCase):
 
         class FakeTour:
             @staticmethod
-            def main(argv, shot_path=None):
-                calls.append((argv, shot_path))
+            def main(argv, shot_path=None, ra_cores=True):
+                calls.append((argv, shot_path, ra_cores))
                 return rc
 
         with mock.patch.object(abvm, 'SB_HOST', host), mock.patch.object(abvm, 'import_ab_drive', lambda: None), \
@@ -217,7 +217,7 @@ class Tour(unittest.TestCase):
     def test_command_line_attach_port_out_folder_and_guest_path(self):
         with tempfile.TemporaryDirectory() as host:
             calls = self.run_tour(host, 'tour1')
-            argv, shot_path = calls[0]
+            argv, shot_path, _ = calls[0]
             out = os.path.join(host, 'sb1', '.abvm', 'out', 'tour1')
             self.assertEqual(argv, ['ui_tour.py', out, '--attach', '--port', '7801'])
             self.assertTrue(os.path.isdir(out))
@@ -249,10 +249,14 @@ class Tour(unittest.TestCase):
             with self.assertRaises(abvm.Fail):
                 abvm.sb_tour_args(bad)
 
-    def test_summary_lists_skipped_screens(self):
-        out = abvm.sb_tour_summary('3 screens in x\n{"changed": [], "unchanged": 3}\n', [{'screen': 'a', 'reason': 'r'}])
-        self.assertEqual(out, {'changed': [], 'unchanged': 3, 'skipped': [{'screen': 'a', 'reason': 'r'}]})
-        self.assertEqual(abvm.sb_tour_summary('3 screens in x\n', []), {'skipped': []})
+    def test_the_tour_is_told_whether_the_sandbox_has_a_core(self):
+        for cores in (False, True):
+            with tempfile.TemporaryDirectory() as host:
+                if cores:
+                    d = os.path.join(host, 'sb1', 'RetroArch', 'cores')
+                    os.makedirs(d)
+                    open(os.path.join(d, 'fceumm_libretro.so'), 'w').close()
+                self.assertEqual(self.run_tour(host, 'tour1')[0][2], cores)
 
     def test_core_detection(self):
         with tempfile.TemporaryDirectory() as host, mock.patch.object(abvm, 'SB_HOST', host):
@@ -262,49 +266,6 @@ class Tour(unittest.TestCase):
             self.assertFalse(abvm.sb_has_ra_core('sb1'))
             open(os.path.join(cores, 'fceumm_libretro.so'), 'w').close()
             self.assertTrue(abvm.sb_has_ra_core('sb1'))
-
-    def test_with_cores_the_ra_screens_are_tour_steps(self):
-        s = abvm.TourScripts(True)
-        for script in (abvm.TOUR_RA_PICK, abvm.TOUR_RA_EDITOR, abvm.TOUR_RA_PICK):
-            self.assertEqual(s.script(script), script)
-        self.assertEqual(s.skipped, [])
-        self.assertFalse(s.skips_shot('/o/12-launcher-retroarch.png'))
-
-    def test_without_cores_the_ra_screens_are_skipped_and_not_waited_for(self):
-        s = abvm.TourScripts(False)
-        self.assertIsNone(s.script(abvm.TOUR_RA_PICK))      # the RetroArch set is not opened
-        self.assertIsNone(s.script(abvm.TOUR_RA_EDITOR))
-        apps = s.script(abvm.TOUR_RA_PICK)                  # the Apps set: two tabs on, not one
-        self.assertEqual(apps.count('press r1'), 2)
-        self.assertEqual(s.script('press o; wait 100'), 'press o; wait 100')
-        self.assertEqual([k['screen'] for k in s.skipped], ['launcher-retroarch', 'game-editor-retroarch'])
-        self.assertTrue(all(k['reason'] == abvm.TOUR_NO_RA_CORE for k in s.skipped))
-        self.assertTrue(s.skips_shot('/o/12-launcher-retroarch.png'))
-        self.assertFalse(s.skips_shot('/o/11-set-picker-retroarch.png'))
-
-    def test_driver_sends_nothing_for_a_skipped_script(self):
-        sent = []
-
-        class Base:
-            def run(self, script):
-                sent.append(script)
-                return []
-
-            def cmd(self, line):
-                sent.append(line)
-                return 'ok'
-
-        def fake_placeholder(path, reason):  # PIL is not needed to test the decision
-            open(path, 'w').close()
-
-        with tempfile.TemporaryDirectory() as d, mock.patch.object(abvm, 'tour_placeholder', fake_placeholder):
-            drv = abvm.tour_driver_class(Base, abvm.TourScripts(False), lambda p: p)()
-            drv.run(abvm.TOUR_RA_PICK)
-            drv.cmd('shot ' + os.path.join(d, '12-launcher-retroarch.png'))
-            self.assertEqual(sent, [])
-            self.assertTrue(os.path.exists(os.path.join(d, '12-launcher-retroarch.png')))
-            drv.run('wait 5')
-            self.assertEqual(sent, ['wait 5'])
 
     def test_not_running(self):
         with tempfile.TemporaryDirectory() as host, mock.patch.object(abvm, 'SB_HOST', host), \
