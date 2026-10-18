@@ -87,7 +87,7 @@ class UiTourModeTest(unittest.TestCase):
         got = self.summary(ra_cores=False)
         self.assertEqual(got, {'skipped': [{'screen': 'launcher-retroarch', 'reason': ui_tour.NO_RA_CORE},
                                            {'screen': 'game-editor-retroarch', 'reason': ui_tour.NO_RA_CORE}]})
-        apps = [s for s in FakeDriver.scripts if s.endswith('press x; wait_screen GuiLauncher; wait 800')]
+        apps = [s for s in FakeDriver.scripts if s.endswith('press x; wait_screen GuiLauncher; wait_ready 10')]
         self.assertEqual(len(apps), 1)  # the Apps set only, two tabs to the right
         self.assertEqual(apps[0].count('press r1'), 2)
         self.assertFalse(any('press down; wait 400; press right; wait 300; press x; wait 800' == s
@@ -252,7 +252,7 @@ class UiTourModeTest(unittest.TestCase):
     def test_hardware_info_is_left_through_the_system_menu(self):
         self.summary()
         scripts = FakeDriver.scripts
-        i = scripts.index('press o; wait_screen GuiSystemMenu; press o; wait_screen GuiLauncher')
+        i = scripts.index('press o; wait_screen GuiSystemMenu; press o; wait_screen GuiLauncher; wait_ready 10')
         self.assertTrue(scripts[i - 1].startswith('press r2'))        # straight after the page-2 look
         self.assertTrue(scripts[i + 1].startswith('menu about'))
         self.assertNotIn('press o; wait_screen GuiLauncher', scripts[i - 3:i + 1])
@@ -266,7 +266,19 @@ class UiTourModeTest(unittest.TestCase):
 
     def test_about_is_left_with_two_backs(self):
         self.summary()
-        self.assertIn('press start; wait 300; press o; wait 500; press o; wait_screen GuiLauncher', FakeDriver.scripts)
+        self.assertIn('press start; wait 300; press o; wait 500; press o; wait_screen GuiLauncher; wait_ready 10',
+                      FakeDriver.scripts)
+
+    def test_every_return_to_the_launcher_is_followed_by_wait_ready(self):
+        self.summary()
+        returns = [s for s in FakeDriver.scripts if 'wait_screen GuiLauncher' in s]
+        self.assertGreater(len(returns), 8)
+        for s in returns:
+            self.assertTrue(s.endswith('wait_screen GuiLauncher; wait_ready 10'), s)
+
+    def test_the_error_text_keeps_now_busy_and_row(self):
+        err, _, _ = self.failing_tour('press x; wait_screen GuiEditor')
+        self.assertIn('[now: GuiOptions, busy: 0, row: 3;', err)
 
 
 if __name__ == '__main__':

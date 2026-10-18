@@ -99,6 +99,10 @@ def main(argv, shot_path=None, ra_cores=True):
         return state, spinner, row
 
     def run(script):
+        # a return to the launcher can start a game rescan: the screen already says GuiLauncher while the spinner
+        # drops every press, so such a script ends by waiting until the launcher is free
+        if script.split(';')[-1].strip() == 'wait_screen GuiLauncher':
+            script += '; wait_ready 10'
         d.run(script)
         if tracing[0]:
             state, spinner, row = look()
@@ -243,7 +247,7 @@ def main(argv, shot_path=None, ra_cores=True):
             run('press o; wait 200')
         run('press o; wait 300; press o; wait_screen GuiLauncher')
         # the memory card manager
-        run('wait 600; press down; wait 500; press right; wait 300; press right; wait 300; press x; wait 1500')
+        run('press down; wait 500; press right; wait 300; press right; wait 300; press x; wait 1500')
         if d.cmd('screen').endswith('GuiMcManager'):
             shot('memcard-manager')
             run('press o; wait 400')
@@ -254,7 +258,7 @@ def main(argv, shot_path=None, ra_cores=True):
         run('press o; wait_screen GuiLauncher')
         # a RetroArch game's editor
         if ra_cores:
-            run('press select; wait_screen GuiSetPicker; press r1; wait 200; press x; wait_screen GuiLauncher; wait 800')
+            run('press select; wait_screen GuiSetPicker; press r1; wait 200; press x; wait_screen GuiLauncher')
             shot('launcher-retroarch')
             run('press down; wait 400; press right; wait 300; press x; wait 800')
             if d.cmd('screen').endswith('GuiEditorRA'):
@@ -266,7 +270,7 @@ def main(argv, shot_path=None, ra_cores=True):
                 skipped.append({'screen': name, 'reason': NO_RA_CORE})
         # the Apps set and an app's start screen (the tabs wrap: from RetroArch one to the right, from PlayStation two)
         run('press select; wait_screen GuiSetPicker; press r1; wait 200; ' + ('' if ra_cores else 'press r1; wait 200; ') +
-            'press x; wait_screen GuiLauncher; wait 800')
+            'press x; wait_screen GuiLauncher')
         shot('launcher-apps')
         run('press x; wait 800')
         if d.cmd('screen').endswith('GuiAppStart'):
