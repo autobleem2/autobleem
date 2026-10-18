@@ -10,6 +10,10 @@ error naming the screen and the busy state otherwise), then closes whatever is o
 naming the screen, with a shot, if the home screen does not come) and needs games on the launcher (Up opens the Quick
 menu on an empty one): with none it stops with 'start the sandbox with games=30 (now: <screen>, busy: <n>)'.
 
+Every script of the walk is followed by a read of the screen, the busy state and the cursor row; they go to
+<OUTDIR>/trace.json. When a step fails the tour takes a shot 'fail-<n>', writes trace.json with the error, builds
+tour.png from the shots so far and ends with the error text carrying the screen, busy state and the last steps.
+
 --attach walks the driver already listening on --port (e.g. an abvm sandbox's): the launcher is neither started
 nor stopped.
 --diff PREV_DIR then compares the run with the earlier one (tools/ui_diff.py): <OUTDIR>/changed.html and
@@ -81,8 +85,24 @@ def main(argv, shot_path=None, ra_cores=True):
         d.cmd('shot ' + shot_path(path))
         shots.append(path)
 
+    trace = []         # one entry per script done: what it was and what the launcher showed right after it
+    tracing = [False]  # from the home screen on; the start-up reads belong to the wait for it
+
+    def look():
+        # screen, busy state and the cursor row (None on a driver without `selected`) - read-only calls
+        state, spinner = screen(), busy()
+        try:
+            index = d.cmd('selected')[3:].partition('|')[0]
+            row = int(index)
+        except (RuntimeError, ValueError):
+            row = None
+        return state, spinner, row
+
     def run(script):
         d.run(script)
+        if tracing[0]:
+            state, spinner, row = look()
+            trace.append({'step': len(trace) + 1, 'script': script, 'screen': state, 'busy': spinner, 'row': row})
 
     def screen():
         reply = d.cmd('screen')
@@ -125,19 +145,44 @@ def main(argv, shot_path=None, ra_cores=True):
         shot('not-home')
         raise RuntimeError(f'the launcher is not on its home screen after {HOME_TRIES} presses of Circle (now: {stuck})')
 
+    def save_trace(extra=None):
+        record = dict(extra or {}, steps=trace)
+        with open(os.path.join(out, 'trace.json'), 'w') as f:
+            json.dump(record, f, indent=1)
+
+    def failure(e):
+        # a failed step: the screen as it is, the steps done so far and what the launcher showed after each, and a
+        # contact sheet of the shots taken (the error text gets the way there appended)
+        text, now = str(e), {}
+        try:
+            shot('fail-%d' % (len(trace) + 1))
+            now = dict(zip(('screen', 'busy', 'row'), look()))
+        except (RuntimeError, OSError):
+            pass
+        save_trace({'error': text, 'now': now})
+        try:
+            ab_drive.sheet(os.path.join(out, 'tour.png'), shots, columns=3, width=426)
+            print(os.path.join(out, 'tour.png'))
+        except Exception:  # the sheet is a courtesy; the error below is the result
+            pass
+        last = ', '.join('%s -> %s/busy %s/row %s' % (t['script'][:40], t['screen'], t['busy'], t['row'])
+                         for t in trace[-3:])
+        return '%s [now: %s, busy: %s, row: %s; %d steps done, last: %s; trace.json in the out folder]' % (
+            text, now.get('screen'), now.get('busy'), now.get('row'), len(trace), last or 'none')
+
     try:
         # the launcher: first ready, then whatever an earlier run (or an attached sandbox) left open is closed
         wait_ready()
         ensure_home()
+        tracing[0] = True
         run('wait 800')
         shot('launcher')
         run('press down; wait 400')
         shot('launcher-icon-row')
         run('press up; wait 400')
-        state = screen()
+        state, spinner = trace[-1]['screen'], trace[-1]['busy']
         if state != 'GuiLauncher':
             # with no games the launcher has no row to come back from: Up opens the Quick menu instead
-            spinner = busy()
             ensure_home()
             raise RuntimeError(f'{NO_GAMES} (now: {state}, busy: {spinner})')
         # the set picker, each tab
@@ -214,8 +259,8 @@ def main(argv, shot_path=None, ra_cores=True):
                 run('press o; wait 300')
             run('wait_screen GuiLauncher')
         else:  # the launcher has no RetroArch set to show: not waited for
-            for screen in ('launcher-retroarch', 'game-editor-retroarch'):
-                skipped.append({'screen': screen, 'reason': NO_RA_CORE})
+            for name in ('launcher-retroarch', 'game-editor-retroarch'):
+                skipped.append({'screen': name, 'reason': NO_RA_CORE})
         # the Apps set and an app's start screen (the tabs wrap: from RetroArch one to the right, from PlayStation two)
         run('press select; wait_screen GuiSetPicker; press r1; wait 200; ' + ('' if ra_cores else 'press r1; wait 200; ') +
             'press x; wait_screen GuiLauncher; wait 800')
@@ -225,10 +270,13 @@ def main(argv, shot_path=None, ra_cores=True):
             shot('app-start')
             run('press o; wait 300')
         run('wait_screen GuiLauncher')
+    except RuntimeError as e:
+        raise RuntimeError(failure(e)) from None
     finally:
         d.close()
         if not attach:
             subprocess.call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'stop', '--port', str(port)])
+    save_trace()
     ab_drive.sheet(os.path.join(out, 'tour.png'), shots, columns=3, width=426)
     print(len(shots), 'screens in', out)
     summary = {}

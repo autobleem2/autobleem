@@ -157,7 +157,7 @@ class UiTourModeTest(unittest.TestCase):
 
     def test_no_games_is_a_clear_error(self):
         # home at the start, then Up opened the Quick menu; Circle closes it again
-        err = self.with_screens(['GuiSystemMenu', 'GuiSystemMenu', 'GuiLauncher'])
+        err = self.with_screens(['GuiLauncher', 'GuiLauncher', 'GuiSystemMenu', 'GuiSystemMenu', 'GuiLauncher'])
         self.assertTrue(err.startswith(ui_tour.NO_GAMES))
         self.assertIn('games=30', err)
         self.assertIn('now: GuiSystemMenu', err)
@@ -185,6 +185,69 @@ class UiTourModeTest(unittest.TestCase):
         err = self.with_screens(['GuiLauncher'], ready=['GuiUpdatePrompt'] * 1000, sticky='GuiLauncher')
         self.assertIsNone(err)
         self.assertEqual(FakeDriver.scripts[0], 'press o; wait 400')
+
+    def failing_tour(self, fail_on):
+        """a tour whose script containing `fail_on` raises like a failed wait_screen; the screen is GuiOptions"""
+        class Failing(FakeDriver):
+            def cmd(self, line):
+                if line == 'screen':
+                    return 'ok GuiOptions' if Failing.failed else 'ok GuiLauncher'
+                if line == 'selected':
+                    return 'ok 3|Some Game'
+                if line == 'busy':
+                    return 'ok 0'
+                return 'ok'
+
+            def run(self, script):
+                if fail_on in script:
+                    Failing.failed = True
+                    raise RuntimeError(f"step 6 'wait_screen GuiEditor' failed: screen GuiEditor did not show")
+                super().run(script)
+
+        Failing.failed = False
+        shots = []
+        with mock.patch.object(ui_tour.ab_drive, 'Driver', Failing), \
+                mock.patch.object(ui_tour.ab_drive, 'sheet') as sheet, \
+                contextlib.redirect_stdout(io.StringIO()):
+            try:
+                ui_tour.main(['ui_tour.py', self.out, '--attach'], shot_path=lambda p: shots.append(p) or p)
+                err = None
+            except RuntimeError as e:
+                err = str(e)
+        return err, shots, sheet
+
+    def test_a_failed_step_leaves_a_shot_a_trace_and_a_sheet(self):
+        err, shots, sheet = self.failing_tour('press x; wait_screen GuiEditor')
+        self.assertIn('GuiEditor did not show', err)
+        self.assertIn('now: GuiOptions, busy: 0, row: 3', err)
+        self.assertIn('trace.json', err)
+        with open(os.path.join(self.out, 'trace.json')) as f:
+            done = len(json.load(f)['steps'])
+        self.assertTrue(os.path.basename(shots[-1]).endswith('-fail-%d.png' % (done + 1)))
+        sheet.assert_called_once()
+        self.assertEqual(sheet.call_args[0][0], os.path.join(self.out, 'tour.png'))
+        self.assertIn(shots[-1], sheet.call_args[0][1])      # the sheet holds the failing screen too
+
+    def test_the_trace_lists_every_step_done_with_screen_busy_and_row(self):
+        self.failing_tour('press x; wait_screen GuiEditor')
+        with open(os.path.join(self.out, 'trace.json')) as f:
+            record = json.load(f)
+        self.assertEqual(record['now'], {'screen': 'GuiOptions', 'busy': 0, 'row': 3})
+        self.assertIn('GuiEditor did not show', record['error'])
+        steps = record['steps']
+        self.assertEqual([s['step'] for s in steps], list(range(1, len(steps) + 1)))
+        self.assertEqual(steps[0]['script'], 'wait 800')
+        self.assertEqual(steps[0], {'step': 1, 'script': 'wait 800', 'screen': 'GuiLauncher', 'busy': 0, 'row': 3})
+        self.assertFalse(any('press x; wait_screen GuiEditor' in s['script'] for s in steps))  # the failed one is not done
+        self.assertTrue(any('menu about' in s['script'] for s in steps))
+
+    def test_a_good_tour_writes_the_trace_too(self):
+        self.summary()
+        with open(os.path.join(self.out, 'trace.json')) as f:
+            steps = json.load(f)['steps']
+        self.assertGreater(len(steps), 20)
+        self.assertEqual(steps[0]['screen'], 'GuiLauncher')
+        self.assertIsNone(steps[0]['row'])   # a driver without `selected`
 
     def test_about_is_left_with_two_backs(self):
         self.summary()
