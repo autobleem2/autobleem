@@ -208,6 +208,9 @@ TEST_CASE("psc.cores.cfg: the picks of the plan, by system") {
     // a system no line names still gets one core, the same every time
     CHECK(stemFor("Atari - ST") == "km_hatari");
     CHECK(stemFor("Nintendo - Nintendo 64DD") == "km_mupen64_plus");
+    CHECK(stemFor("Nintendo - Game Boy Advance (e-Cards)") == "km_mgba");
+    CHECK(stemFor("Sega - PICO") == "km_genesis_plus_gx");
+    CHECK(stemFor("SNK - Neo Geo CD") == "km_neocd");
 }
 
 TEST_CASE("the folder pass on the whole pack makes the expected folders and no others") {
