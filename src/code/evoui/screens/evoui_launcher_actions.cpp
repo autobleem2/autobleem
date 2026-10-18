@@ -1154,7 +1154,9 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
 // runner does all the work; this only asks, follows and reports.
 void GuiLauncher::loop_raManager() {
     BackdropScope backdrop(*this); // the panel, the confirms and the progress draw over the launcher's snapshot
-    bool networkUp = true;
+    // only the PSC build gives the update service a network check: every other platform asks the default route itself
+    // (so the panel's "No network" row and the AB_FAKE_NO_ROUTE test switch work on the PC stick and the Pi too)
+    bool networkUp = System::hasDefaultRoute();
 #ifdef AB_ONLINE_UPDATE
     const UpdateService::Config &updateConfig = app.updates().config();
     if (updateConfig.networkUp)
