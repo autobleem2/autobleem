@@ -117,6 +117,44 @@ class Pool(unittest.TestCase):
         self.assertIn('sb3', self.stopped)
         self.assertNotIn('sb3', self.running)
 
+    def test_take_free_skip_passes_over_a_free_slot_untouched(self):
+        self.mkdir('sb2')
+        with open(os.path.join(self.host, 'sb2', 'parked'), 'w') as f:
+            f.write('x')
+        self.running.add('sb2')
+        code, out, err = self.sb('take-free', 'job', '5', '--skip', 'sb2')
+        self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb3'), err)
+        self.assertTrue(os.path.isfile(os.path.join(self.host, 'sb2', 'parked')))
+        self.assertIn('sb2', self.running)
+        self.assertNotIn('sb2', self.stopped)
+
+    def test_take_free_skipping_every_free_slot_is_busy(self):
+        code, _, err = self.sb('take-free', 'job', '--skip', 'sb2,sb3,sb4')
+        self.assertEqual(code, 3)
+        self.assertIn('skipped: sb2, sb3, sb4', err)
+        self.assertFalse(os.path.exists(os.path.join(self.host, 'sb2')))
+
+    def test_take_free_skip_malformed_name_fails_but_unknown_slot_is_ignored(self):
+        code, _, err = self.sb('take-free', 'job', '--skip', 'sb2,zzz')
+        self.assertEqual(code, 1)
+        self.assertIn('zzz', err)
+        self.assertFalse(os.path.exists(os.path.join(self.host, 'sb2')))
+        code, out, err = self.sb('take-free', 'job', '--skip', 'sb9')
+        self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb2'), err)
+
+    def test_take_free_skip_retired_slot_and_sb2_takes_sb3(self):
+        self.mkdir('sb2')
+        with open(os.path.join(self.host, 'sb2', 'parked'), 'w') as f:
+            f.write('x')
+        code, out, err = self.sb('take-free', 'job', '--skip', 'sb1,sb2')
+        self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb3'), err)
+        self.assertTrue(os.path.isfile(os.path.join(self.host, 'sb2', 'parked')))
+        self.assertNotIn('sb2', self.stopped)
+
+    def test_take_free_without_skip_is_unchanged(self):
+        code, out, _ = self.sb('take-free', 'job')
+        self.assertEqual((code, out.splitlines()[-1]), (0, 'slot: sb2'))
+
     def test_take_lays_the_slot_fresh_from_the_template(self):
         self.mkdir('sb3')
         with open(os.path.join(self.host, 'sb3', 'leftover'), 'w') as f:
