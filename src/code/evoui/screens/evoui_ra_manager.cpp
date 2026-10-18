@@ -186,6 +186,24 @@ string removeItemText(rajob::RemoveItem item) {
     }
     return "";
 }
+
+// A Remove package the runner names (RetroArch_itself, Emulator_cores, ...) in the language's words; any other name
+// is shown as the runner wrote it
+string packageNameText(const string &item) {
+    static const std::pair<const char *, rajob::RemoveItem> known[] = {
+        {"RetroArch_itself", rajob::RemoveItem::RetroArch},
+        {"Emulator_cores", rajob::RemoveItem::Cores},
+        {"Menu_assets", rajob::RemoveItem::MenuAssets},
+        {"Databases", rajob::RemoveItem::Databases},
+        {"Cheats", rajob::RemoveItem::Cheats},
+        {"Overlays", rajob::RemoveItem::Overlays},
+        {"Shaders", rajob::RemoveItem::Shaders},
+        {"BIOS_files", rajob::RemoveItem::Bios}};
+    for (const auto &entry : known)
+        if (item == entry.first)
+            return removeItemText(entry.second);
+    return rajob::displayName(item);
+}
 } // namespace
 
 //*******************************
@@ -702,6 +720,8 @@ void GuiRaProgress::draw() {
     string package;
     if (p.phase > 0) {
         package = rajob::packageWhat(phaseTitle(p.key), p.item, p.key);
+        if (package == rajob::displayName(p.item))
+            package = packageNameText(p.item);
         if (p.total > 0)
             package += " - " + amountText(rajob::amountFor(p));
     }
