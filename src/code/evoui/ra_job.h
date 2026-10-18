@@ -318,6 +318,18 @@ inline std::string packageWhat(const std::string &description, const std::string
     return displayName(item);
 }
 
+// Which package the unpack phase is on, for its "why" line: the cheats (a zip of tens of thousands of small files),
+// the emulator cores (cores-<date>.tar.gz), or any other.
+enum class UnpackKind { Cheats, Cores, Other };
+
+inline UnpackKind unpackKind(const std::string &item) {
+    if (item == "cheats" || item == "cheats.zip")
+        return UnpackKind::Cheats;
+    if (item.compare(0, 5, "cores") == 0)
+        return UnpackKind::Cores;
+    return UnpackKind::Other;
+}
+
 // A number written with the language's decimal sign: every '.' of `text` becomes `decimal` ("30.3 GB" -> "30,3 GB")
 inline std::string withDecimal(const std::string &text, char decimal) {
     std::string out = text;
@@ -325,6 +337,23 @@ inline std::string withDecimal(const std::string &text, char decimal) {
         if (c == '.')
             c = decimal;
     return out;
+}
+
+// The thousands of a whole number set apart with a non-breaking space ("12400" -> "12 400", "7400.5" -> "7 400.5"), so
+// a count never breaks across a line and reads the same in every language. Digits before the first '.' or ',' only.
+inline std::string withGrouping(const std::string &text) {
+    size_t end = 0;
+    while (end < text.size() && text[end] >= '0' && text[end] <= '9')
+        end++;
+    if (end < 4)
+        return text;
+    std::string out;
+    for (size_t i = 0; i < end; i++) {
+        if (i > 0 && (end - i) % 3 == 0)
+            out += "\xC2\xA0";
+        out += text[i];
+    }
+    return out + text.substr(end);
 }
 
 // `text` broken at spaces into at most `maxLines` lines, each at most `maxWidth` wide by `measure` (a word wider than
@@ -481,10 +510,13 @@ inline RemoveLists removeLists(bool withBios) {
     RemoveLists lists;
     lists.deleted = {RemoveItem::RetroArch, RemoveItem::Cores,    RemoveItem::MenuAssets, RemoveItem::Databases,
                      RemoveItem::Cheats,    RemoveItem::Overlays, RemoveItem::Shaders};
-    if (withBios)
-        lists.deleted.push_back(RemoveItem::Bios);
     lists.stays = {RemoveItem::Games, RemoveItem::Playlists,  RemoveItem::Covers,
                    RemoveItem::Saves, RemoveItem::SaveStates, RemoveItem::Settings};
+    // the BIOS files are on one side or the other: they stay unless the toggle says they go (ra-3a / ra-3b)
+    if (withBios)
+        lists.deleted.push_back(RemoveItem::Bios);
+    else
+        lists.stays.push_back(RemoveItem::Bios);
     return lists;
 }
 
@@ -643,19 +675,39 @@ struct Row {
 };
 
 // Install while absent, Update while installed (both need the network, greyed without), Remove always works
-// offline. "Also delete the BIOS files" is a row of its own, there only while Remove is the chosen row.
-inline bool biosRowShown(RowAction chosen) {
-    return chosen == RowAction::Remove || chosen == RowAction::DeleteBios;
-}
-
-inline std::vector<Row> panelRows(bool installed, bool networkUp, RowAction chosen) {
+// offline. "Also delete the BIOS files" is the toggle row under Remove, shown from the first frame (ra-1a); it is a
+// switch that Remove reads, not a run of its own.
+inline std::vector<Row> panelRows(bool installed, bool networkUp) {
     std::vector<Row> rows;
     rows.push_back({RowAction::Install, networkUp && !installed});
     rows.push_back({RowAction::Update, networkUp && installed});
     rows.push_back({RowAction::Remove, true});
-    if (biosRowShown(chosen))
-        rows.push_back({RowAction::DeleteBios, true});
+    rows.push_back({RowAction::DeleteBios, true});
     return rows;
+}
+
+//******************
+// What a failed run says
+//******************
+// The cause of a failure as the box words it. The runner's codes know the cause (no network, no space, a download, a
+// damaged file, the system's package manager); a Remove has no cause the runner names, its failure is its own box.
+enum class Failure { NoNetwork, NoSpace, Download, Checksum, AptProvided, RemoveIncomplete, Other };
+
+inline Failure failureFor(Op op, const std::string &code) {
+    const std::string known = knownCode(code);
+    if (known == "apt-provided")
+        return Failure::AptProvided;
+    if (op == Op::Remove)
+        return Failure::RemoveIncomplete;
+    if (known == "no-network")
+        return Failure::NoNetwork;
+    if (known == "no-space")
+        return Failure::NoSpace;
+    if (known == "download")
+        return Failure::Download;
+    if (known == "checksum")
+        return Failure::Checksum;
+    return Failure::Other;
 }
 
 // How the end of a run is shown: a plain message with one OK for what happened (Done, Stopped, every error), nothing

@@ -144,6 +144,9 @@ if (Python3_Interpreter_FOUND)
     # tools/unshipped_themes.txt: the theme folders no package ships (ab2) and the scripts that apply the list
     add_test(NAME test_unshipped_themes COMMAND ${Python3_EXECUTABLE}
              ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_unshipped_themes.py)
+    # tools/fake_ra_runner.sh: the scenarios (the mockups' states) write the contract's lines
+    add_test(NAME test_fake_ra_runner COMMAND ${Python3_EXECUTABLE}
+             ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_fake_ra_runner.py)
     # the Windows product's emunxt/ carries fonts/ beside pcsx-ab.exe (Chinese)
     add_test(NAME test_win_emulator_fonts COMMAND ${Python3_EXECUTABLE}
              ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_win_emulator_fonts.py)

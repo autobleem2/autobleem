@@ -360,30 +360,43 @@ TEST_CASE("the panel's rows: Install while absent, Update while installed, offli
         FAIL("row missing");
         return false;
     };
-    auto absent = panelRows(false, true, RowAction::Install);
+    auto absent = panelRows(false, true);
     CHECK(enabled(absent, RowAction::Install));
     CHECK_FALSE(enabled(absent, RowAction::Update));
     CHECK(enabled(absent, RowAction::Remove));
 
-    auto present = panelRows(true, true, RowAction::Install);
+    auto present = panelRows(true, true);
     CHECK_FALSE(enabled(present, RowAction::Install));
     CHECK(enabled(present, RowAction::Update));
 
     for (bool installed : {false, true}) {
-        auto offline = panelRows(installed, false, RowAction::Install);
+        auto offline = panelRows(installed, false);
         CHECK_FALSE(enabled(offline, RowAction::Install));
         CHECK_FALSE(enabled(offline, RowAction::Update));
         CHECK(enabled(offline, RowAction::Remove)); // Remove works offline
     }
 }
 
-TEST_CASE("the BIOS row is there only while Remove is the chosen row") {
-    CHECK(panelRows(true, true, RowAction::Install).size() == 3);
-    CHECK(panelRows(true, true, RowAction::Update).size() == 3);
-    const auto withBios = panelRows(true, true, RowAction::Remove);
-    REQUIRE(withBios.size() == 4);
-    CHECK(withBios.back().action == RowAction::DeleteBios);
-    CHECK(panelRows(true, true, RowAction::DeleteBios).size() == 4); // the cursor on it keeps it
+TEST_CASE("the BIOS toggle row is there from the first frame, last, and enabled") {
+    for (bool installed : {false, true}) {
+        const auto rows = panelRows(installed, true);
+        REQUIRE(rows.size() == 4);
+        CHECK(rows.back().action == RowAction::DeleteBios);
+        CHECK(rows.back().enabled);
+    }
+}
+
+TEST_CASE("a failed run's cause: the code's own, a Remove's incomplete, an unknown code other") {
+    CHECK(failureFor(Op::Install, "no-network") == Failure::NoNetwork);
+    CHECK(failureFor(Op::Update, "no-space") == Failure::NoSpace);
+    CHECK(failureFor(Op::Install, "download") == Failure::Download);
+    CHECK(failureFor(Op::Install, "checksum") == Failure::Checksum);
+    CHECK(failureFor(Op::Install, "apt-provided") == Failure::AptProvided);
+    CHECK(failureFor(Op::Install, "other") == Failure::Other);
+    CHECK(failureFor(Op::Install, "disk-on-fire") == Failure::Other);
+    CHECK(failureFor(Op::Remove, "other") == Failure::RemoveIncomplete);
+    CHECK(failureFor(Op::Remove, "") == Failure::RemoveIncomplete);
+    CHECK(failureFor(Op::Remove, "apt-provided") == Failure::AptProvided);
 }
 
 TEST_CASE("the Quick menu offers Install RetroArch only while it is absent, and where there is a runner") {
@@ -473,6 +486,30 @@ TEST_CASE("a size is written with the language's decimal sign") {
     CHECK(withDecimal("", ',') == "");
 }
 
+TEST_CASE("a count of thousands is grouped with a non-breaking space, a short one is left alone") {
+    const std::string nb = "\xC2\xA0";
+    CHECK(withGrouping("12400") == "12" + nb + "400");
+    CHECK(withGrouping("41000") == "41" + nb + "000");
+    CHECK(withGrouping("3120") == "3" + nb + "120");
+    CHECK(withGrouping("1234567") == "1" + nb + "234" + nb + "567");
+    CHECK(withGrouping("999") == "999");
+    CHECK(withGrouping("289") == "289");
+    CHECK(withGrouping("6.3") == "6.3");
+    CHECK(withGrouping("7400.5") == "7" + nb + "400.5");
+    CHECK(withGrouping("") == "");
+    // the decimal sign is applied after the grouping and does not touch it
+    CHECK(withDecimal(withGrouping("7400.5"), ',') == "7" + nb + "400,5");
+}
+
+TEST_CASE("a Remove's bar is its real value even when the count stands still") {
+    Progress p = parseLine("phase 1/1|remove-files|3120|7400|files|x|2|7").progress;
+    const Bar plain = barFor(p, 5000);
+    CHECK_FALSE(plain.indeterminate);
+    CHECK(plain.value == doctest::Approx(3120.0 / 7400.0));
+    // an install's bar in the same state would sweep over the real value
+    CHECK(barWithStall(p, 5000, 5000).overReal);
+}
+
 TEST_CASE("a why line wraps to at most two lines and is cut with an ellipsis only when it must") {
     const auto measure = [](const std::string &s) { return static_cast<int>(s.size()); }; // one unit a letter
     const std::string why = "We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.";
@@ -549,15 +586,27 @@ TEST_CASE("the stall clock: a change of phase, package or count starts the secon
     CHECK(clock.stalledMs(9000) == 0);
 }
 
-TEST_CASE("the Remove confirm lists: eight deleted with the BIOS files, seven without; six stay") {
+TEST_CASE("the Remove confirm lists: the BIOS files stay (seven each side) or go (eight deleted, six stay)") {
     RemoveLists lists = removeLists(false);
     CHECK(lists.deleted.size() == 7);
-    CHECK(lists.stays.size() == 6);
+    REQUIRE(lists.stays.size() == 7);
+    CHECK(lists.stays.back() == RemoveItem::Bios);
+    CHECK(std::count(lists.deleted.begin(), lists.deleted.end(), RemoveItem::Bios) == 0);
     lists = removeLists(true);
+    CHECK(lists.stays.size() == 6);
+    CHECK(std::count(lists.stays.begin(), lists.stays.end(), RemoveItem::Bios) == 0);
     REQUIRE(lists.deleted.size() == 8);
     CHECK(lists.deleted.back() == RemoveItem::Bios);
     CHECK(std::count(lists.stays.begin(), lists.stays.end(), RemoveItem::Playlists) == 1);
     CHECK(std::count(lists.stays.begin(), lists.stays.end(), RemoveItem::Covers) == 1);
+}
+
+TEST_CASE("the unpack phase's package kind picks its why line") {
+    CHECK(unpackKind("cheats") == UnpackKind::Cheats);
+    CHECK(unpackKind("cheats.zip") == UnpackKind::Cheats);
+    CHECK(unpackKind("cores-psc-20261003.tar.gz") == UnpackKind::Cores);
+    CHECK(unpackKind("assets.zip") == UnpackKind::Other);
+    CHECK(unpackKind("") == UnpackKind::Other);
 }
 
 TEST_CASE("the meter's words: speed with the language's decimal, time rounded") {

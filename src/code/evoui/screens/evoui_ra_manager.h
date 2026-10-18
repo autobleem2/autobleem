@@ -24,12 +24,14 @@ enum class RaChoice { None, Install, Update, Remove, RemoveWithBios };
 // GuiRaMessage
 //******************
 // A plain message with one OK (Cross, Enter or Circle, Escape): GuiConfirm's look with the one answer in the footer.
-// The caller sets `label` (the body) and `title`, then show(). A `tag` ("ERROR") is drawn in red above the body.
+// The caller sets `label` (the body), `detail` (a second, quieter line) and `title`, then show(). A `tag` ("ERROR") is
+// the chip right of the title.
 class GuiRaMessage : public GuiConfirm {
 public:
     explicit GuiRaMessage(ableem::GuiBase &g) : GuiConfirm(g) {}
 
     std::string tag;
+    std::string detail;
 
     void draw() override;
     void onAction(const abgui::ActionEvent &action) override;
@@ -77,6 +79,8 @@ public:
     rajob::RowAction chosenRow = rajob::RowAction::Install;
     rajob::RowAction startRow = rajob::RowAction::Install;
     bool keepRow = false;
+    // the "Also delete the BIOS files" switch, off at the first open; given back the same way as the row
+    bool deleteBios = false;
 
     explicit GuiRaManager(ableem::GuiBase &g) : GuiScreen(g) {}
 
@@ -88,7 +92,7 @@ public:
     static std::string spaceText(uint64_t bytes);
 
 private:
-    std::vector<rajob::Row> rows_; // panelRows() for the chosen row
+    std::vector<rajob::Row> rows_; // panelRows()
     int selected = 0;
     PanelStyle style;
 

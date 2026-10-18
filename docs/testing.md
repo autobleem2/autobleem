@@ -327,3 +327,7 @@ code:
    still running 5+ seconds later) - `stop` sends it anyway (in case a future build honours it) but relies on
    `os.killpg()` on the process group `cmd_start` creates with `start_new_session=True` - a bare PID kill only
    reaches `xvfb-run`'s own wrapper shell, never the `Xvfb`/`retroarch` children it spawns.
+
+## Test switches (environment)
+
+`AB_FAKE_DRIVE`, `AB_FAKE_NO_ROUTE=1` (no default route) and `AB_FAKE_RA_BINARY=<file>` (RetroArch counts as installed only if that file exists) exist for the tests and the VM sandbox and must never be set in production.
