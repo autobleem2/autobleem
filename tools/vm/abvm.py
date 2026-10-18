@@ -186,7 +186,9 @@ docs/pc-test-machine.md (autobleem-main) describes the machine, the VM and padsi
 
 Never pipes into ssh (on Windows the EOF never arrives): files go by scp, commands as arguments.
 """
+import contextlib
 import hashlib
+import io
 import json
 import os
 import posixpath  # the guest's paths, whatever this machine is
@@ -2198,10 +2200,97 @@ def sb_tour_args(rest):
     raise Fail('sandbox tour <name> <outdir> [--diff PREV]')
 
 
+TOUR_NO_RA_CORE = 'no RetroArch core in the sandbox'
+# ui_tour.py's scripts that this tool knows (the tour itself is not ours to change here)
+TOUR_RA_PICK = 'press select; wait_screen GuiSetPicker; press r1; wait 200; press x; wait_screen GuiLauncher; wait 800'
+TOUR_RA_EDITOR = 'press down; wait 400; press right; wait 300; press x; wait 800'
+TOUR_ABOUT_EXIT = 'press start; wait 300; press o; wait_screen GuiLauncher'
+
+
+def sb_has_ra_core(name):
+    """True when the sandbox has a RetroArch core (RetroArch/cores/*_libretro.so)"""
+    cores = os.path.join(sb_host(name), 'RetroArch', 'cores')
+    return os.path.isdir(cores) and any(f.endswith('.so') for f in os.listdir(cores))
+
+
+class TourScripts:
+    """What the tour does with each of ui_tour's scripts and shots: the RetroArch screens are left out - and listed
+    in `skipped` - when the sandbox has no RetroArch core (the launcher never shows them, so the tour would wait
+    for them until the timeout); the About exit needs its second Back (the surprise game ends on the scores)."""
+
+    def __init__(self, has_cores):
+        self.has_cores = has_cores
+        self.skipped = []
+        self.ra_picks = 0
+
+    def skip(self, screen):
+        self.skipped.append({'screen': screen, 'reason': TOUR_NO_RA_CORE})
+
+    def script(self, text):
+        """the script to send in place of `text`, or None to send nothing"""
+        if text == TOUR_ABOUT_EXIT:
+            return 'press start; wait 300; press o; wait 500; press o; wait_screen GuiLauncher'
+        if self.has_cores:
+            return text
+        if text == TOUR_RA_PICK:
+            self.ra_picks += 1
+            if self.ra_picks == 1:  # the RetroArch set: its launcher and a game's editor
+                self.skip('launcher-retroarch')
+                self.skip('game-editor-retroarch')
+                return None
+            # the Apps set: the picker opens on PlayStation, so two tabs to the right
+            return 'press select; wait_screen GuiSetPicker; press r1; wait 200; press r1; wait 200; press x; ' \
+                   'wait_screen GuiLauncher; wait 800'
+        if text == TOUR_RA_EDITOR:
+            return None
+        return text
+
+    def skips_shot(self, path):
+        return not self.has_cores and os.path.basename(path).endswith('-launcher-retroarch.png')
+
+
+def tour_placeholder(path, reason):
+    """a plain picture in place of a screen that was skipped (the tour sheet and the diff need every shot's file)"""
+    from PIL import Image, ImageDraw
+    img = Image.new('RGB', (1280, 720), (40, 40, 40))
+    ImageDraw.Draw(img).text((40, 40), 'skipped: ' + reason, fill=(255, 255, 0))
+    img.save(path)
+
+
+def tour_driver_class(base, scripts, to_host):
+    """base (ab_drive.Driver) with the tour's scripts and shots put through `scripts` (a TourScripts)"""
+    class TourDriver(base):
+        def run(self, script):
+            script = scripts.script(script)
+            return [] if script is None else super().run(script)
+
+        def cmd(self, line, *a, **kw):
+            if line.startswith('shot ') and scripts.skips_shot(line[5:]):
+                tour_placeholder(to_host(line[5:]), TOUR_NO_RA_CORE)
+                return 'ok'
+            return super().cmd(line, *a, **kw)
+
+    return TourDriver
+
+
+def sb_tour_summary(printed, skipped):
+    """the JSON line ui_tour printed (the diff's summary; none without --diff) with `skipped` in it"""
+    summary = {}
+    for line in printed.splitlines():
+        try:
+            found = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(found, dict):
+            summary = found
+    summary['skipped'] = skipped
+    return summary
+
+
 def sb_tour(name, outdir, prev=None):
     """ui_tour.py's tour of the running sandbox, in this process (the forwarded port is reachable only here):
     shots, tour.png and - with `prev`, an earlier tour's folder in the same out folder - changed.html, diff/ and the
-    JSON summary land in <sandbox>/.abvm/out/<outdir>/"""
+    JSON summary (with `skipped: [{screen, reason}]`) land in <sandbox>/.abvm/out/<outdir>/"""
     out = sb_tour_dir(name, outdir)
     prev_dir = sb_tour_dir(name, prev, 'diff') if prev else None
     if prev_dir and not os.path.isdir(prev_dir):
@@ -2217,17 +2306,33 @@ def sb_tour(name, outdir, prev=None):
     def to_guest(path):  # this machine's name for a file of the sandbox -> the guest's, where the launcher writes
         return guest_root + path[len(host_root):] if path.startswith(host_root) else path
 
-    import_ab_drive()
+    def to_host(path):
+        return host_root + path[len(guest_root):] if path.startswith(guest_root) else path
+
+    ab_drive = import_ab_drive()
     import ui_tour
+    scripts = TourScripts(sb_has_ra_core(name))
     argv = ['ui_tour.py', out, '--attach', '--port', str(st['port'])] + (['--diff', prev_dir] if prev_dir else [])
+    printed = io.StringIO()
+    real_driver = getattr(ui_tour, 'ab_drive', None) and ui_tour.ab_drive.Driver
+    if real_driver:
+        ui_tour.ab_drive.Driver = tour_driver_class(real_driver, scripts, to_host)
     try:
-        rc = ui_tour.main(argv, shot_path=to_guest)
+        with contextlib.redirect_stdout(printed):
+            rc = ui_tour.main(argv, shot_path=to_guest)
     except RuntimeError as e:
         raise Fail(str(e))
     finally:
+        if real_driver:
+            ui_tour.ab_drive.Driver = real_driver
+        for line in printed.getvalue().splitlines():  # all but the summary line, which is printed again below
+            if not (line.startswith('{') and line.endswith('}')):
+                print(line)
         sb_open_modes(out)
     if rc:
         raise Fail(f'ui_tour exited {rc}')
+    summary = sb_tour_summary(printed.getvalue(), scripts.skipped)
+    print(json.dumps(summary))
     print(f'out {out}')
 
 
