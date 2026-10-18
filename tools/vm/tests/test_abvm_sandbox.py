@@ -274,6 +274,157 @@ class Tour(unittest.TestCase):
                 abvm.sb_tour('sb1', 'o')
 
 
+class StopFast(unittest.TestCase):
+    """sb_stop on a fake guest: the launcher dies when the fake `kill` / `quit` says so"""
+
+    def stop(self, state, dies_on, quit_raises=None):
+        """dies_on: 'quit', 'TERM', 'KILL' or None (never); returns the log of what was done"""
+        log, alive = [], [True]
+
+        class Sock:
+            def settimeout(self, t):
+                log.append(f'timeout {t}')
+
+        class Driver:
+            sock = Sock()
+
+            def cmd(self, line):
+                log.append(line)
+                if quit_raises:
+                    raise quit_raises
+                if dies_on == 'quit':
+                    alive[0] = False
+
+            def close(self):
+                log.append('close')
+
+        def guest_run(cmd, check=True):
+            log.append(cmd)
+            if dies_on and cmd.startswith(f'kill -{dies_on} '):
+                alive[0] = False
+            return ''
+
+        def sleep(s):
+            log.append('sleep')
+
+        with mock.patch.object(abvm, 'sb_state', lambda n: dict(state)), \
+                mock.patch.object(abvm, 'sb_guest_pid_alive', lambda n, p: alive[0]), \
+                mock.patch.object(abvm, 'sb_driver', lambda n, **kw: log.append('driver') or Driver()), \
+                mock.patch.object(abvm, 'guest_run', guest_run), mock.patch.object(abvm.time, 'sleep', sleep), \
+                mock.patch.object(abvm, 'sb_stop_forward', lambda st: None), \
+                mock.patch.object(abvm, 'sb_save_state', lambda n, st: None), \
+                mock.patch.object(abvm, 'sb_orphans', lambda: {}), \
+                mock.patch.object(abvm, 'sb_core_saved', side_effect=AssertionError('stop waited for the core copy')), \
+                mock.patch('builtins.print'):
+            abvm.sb_stop('sb1')
+        return log
+
+    def test_quit_gets_a_short_timeout(self):
+        log = self.stop({'pid': 7, 'port': 5001, 'forward': 9}, 'quit')
+        self.assertLess(log.index(f'timeout {abvm.QUIT_WAIT_S}'), log.index('quit'))
+        self.assertLessEqual(abvm.QUIT_WAIT_S, 5)
+        self.assertIn('close', log)
+        self.assertFalse([c for c in log if str(c).startswith('kill')])
+
+    def test_a_quit_that_times_out_falls_through_to_term(self):
+        log = self.stop({'pid': 7, 'port': 5001, 'forward': 9}, 'TERM', quit_raises=TimeoutError('timed out'))
+        self.assertIn('kill -TERM 7', log)
+        self.assertIn('close', log)
+
+    def test_a_hung_launcher_is_killed_after_term(self):
+        log = self.stop({'pid': 7, 'port': 5001, 'forward': 9}, 'KILL')
+        self.assertLess(log.index('kill -TERM 7'), log.index('kill -KILL 7'))
+
+    def test_valgrind_goes_to_term_at_once(self):
+        log = self.stop({'pid': 7, 'port': 5001, 'forward': 9, 'valgrind': True}, 'TERM')
+        self.assertNotIn('driver', log)
+        self.assertNotIn('quit', log)
+        self.assertEqual(log[0], 'kill -TERM 7')
+
+    def test_valgrind_that_ignores_term_is_killed_after_ten_seconds(self):
+        log = self.stop({'pid': 7, 'port': 5001, 'forward': 9, 'valgrind': True}, 'KILL')
+        self.assertEqual(log.count('sleep'), 100)
+        self.assertLess(log.index('kill -TERM 7'), log.index('kill -KILL 7'))
+
+    def test_stop_never_waits_on_the_core_copy(self):
+        # sb_core_saved raises if called (see stop()); a core-saving mark on the share must not matter either
+        self.stop({'pid': 7, 'port': 5001, 'forward': 9, 'valgrind': True}, 'TERM')
+        self.stop({'pid': 7, 'port': 5001}, 'TERM')
+
+
+class StaleCore(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.host = self.tmp.name
+        self.ab = os.path.join(self.host, 'sb1', '.abvm')
+        os.makedirs(self.ab)
+        self.core = os.path.join(self.ab, 'core')
+
+    def test_run_script_fails_loudly_when_core_cannot_be_made(self):
+        t = abvm.RUN_SCRIPT_TEXT
+        guard = t.index('[ ! -d "$ab/core" ]')
+        self.assertLess(guard, t.index('cp -f "$c" "$ab/core/"'))
+        self.assertIn('cannot make $ab/core', t)
+        self.assertIn('>&2', t[guard:guard + 300])
+
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'runs the run script under sh')
+    def test_run_script_with_a_file_for_core_says_so_and_keeps_the_exit_record(self):
+        import subprocess
+        bindir = os.path.join(self.host, 'bin')
+        local = os.path.join(self.host, 'local')
+        os.makedirs(bindir)
+        os.makedirs(local)
+        write(os.path.join(bindir, 'autobleem-gui'), '#!/bin/sh\nexit 4\n')
+        os.chmod(os.path.join(bindir, 'autobleem-gui'), 0o755)
+        write(self.core, 'stale')
+        script = os.path.join(self.host, 'run.sh')
+        write(script, abvm.RUN_SCRIPT_TEXT)
+        env = dict(os.environ, ABVM_CORE_LOCAL=local, PATH='/usr/bin:/bin')
+        r = subprocess.run(['sh', script, os.path.join(self.host, 'sb1')], cwd=bindir, env=env, capture_output=True,
+                           text=True, timeout=60)
+        self.assertEqual(r.returncode, 4)
+        self.assertIn('cannot make', r.stderr)
+        self.assertEqual(abvm.parse_exit_record(read(os.path.join(self.ab, 'exit-status')))['launcher_exit'], 4)
+        self.assertFalse(os.path.exists(os.path.join(self.ab, abvm.CORE_SAVING)))
+
+    def test_clear_run_record_removes_a_core_that_is_a_file(self):
+        write(self.core, 'stale')
+        with mock.patch.object(abvm, 'SB_HOST', self.host):
+            abvm.sb_clear_run_record('sb1')
+        self.assertFalse(os.path.lexists(self.core))
+
+    def test_clear_run_record_still_removes_a_core_folder(self):
+        write(os.path.join(self.core, 'core.1'), 'x')
+        with mock.patch.object(abvm, 'SB_HOST', self.host):
+            abvm.sb_clear_run_record('sb1')
+        self.assertFalse(os.path.lexists(self.core))
+
+    def test_a_core_that_cannot_be_removed_is_a_failure(self):
+        write(self.core, 'stale')
+        with mock.patch.object(abvm, 'SB_HOST', self.host), mock.patch.object(abvm.os, 'remove', side_effect=PermissionError('no')):
+            with self.assertRaises(abvm.Fail):
+                abvm.sb_drop_stale_core('sb1')
+
+    def test_new_sandbox_from_a_template_with_a_stale_core_file_has_none(self):
+        os.makedirs(os.path.join(self.host, '_template', '.abvm'))
+        write(os.path.join(self.host, '_template', '.abvm', 'core'), 'stale')
+        with mock.patch.object(abvm, 'SB_HOST', self.host), mock.patch.object(abvm, 'sb_open_modes', lambda p: None), \
+                mock.patch.object(abvm.subprocess, 'run', side_effect=cp_r), mock.patch('builtins.print'):
+            abvm.sb_new('sb2')
+        self.assertFalse(os.path.lexists(os.path.join(self.host, 'sb2', '.abvm', 'core')))
+
+    def test_relay_removes_a_stale_core_file_left_in_the_old_slot(self):
+        write(self.core, 'stale')
+        os.makedirs(os.path.join(self.host, '_template'))
+        with mock.patch.object(abvm, 'SB_HOST', self.host), mock.patch.object(abvm, 'sb_open_modes', lambda p: None), \
+                mock.patch.object(abvm, 'sb_stop', lambda n: None), \
+                mock.patch.object(abvm, 'sb_remove', lambda n: shutil.rmtree(abvm.sb_host(n))), \
+                mock.patch.object(abvm.subprocess, 'run', side_effect=cp_r), mock.patch('builtins.print'):
+            abvm.sb_relay('sb1')
+        self.assertFalse(os.path.lexists(self.core))
+
+
 class TestMachineCopy(unittest.TestCase):
     def test_copy_list_has_the_unshipped_themes_files(self):
         names = [n for n, _ in abvm.local_sources()]

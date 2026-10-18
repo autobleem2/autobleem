@@ -1730,6 +1730,7 @@ def sb_new(name, **lay):
         raise Fail('no template yet: abvm.py sandbox template')
     subprocess.run(['cp', '-r', sb_host('_template'), sb_host(name)], check=True)
     sb_open_modes(sb_host(name))
+    sb_drop_stale_core(name)  # a template copied from a slot that kept one
     sb_make_store_dirs(name)
     sb_lay(name, **lay)
     print(f'sandbox {name} made' + (f' with {lay["build"]}' if lay.get('build') else ''))
@@ -1841,7 +1842,8 @@ EXIT_FILE = 'exit-status'
 CORE_DIR = 'core'
 CORE_SAVING = 'core-saving'   # there while the run script copies the core onto the share, after exit-status
 CORE_WAIT_S = 40              # how long crash-report waits for that copy (a caller's remote tool call ends at ~60 s)
-VALGRIND_PORT_WAIT_S = 40     # under valgrind the driver port opens ~11 s in, the launcher screen only ~75 s in
+QUIT_WAIT_S = 3               # how long sandbox stop waits for the driver's reply to `quit`
+VALGRIND_PORT_WAIT_S = 40    # under valgrind the driver port opens ~11 s in, the launcher screen only ~75 s in
 # the launcher's environment words a caller may pass (ABVM_SANDBOX_ENV): its own AB_* keys and the allocator/sanitizer
 # debug keys; never the loader's (LD_PRELOAD, LD_LIBRARY_PATH)
 DEBUG_ENV_KEYS = ('MALLOC_CHECK_', 'MALLOC_PERTURB_', 'MALLOC_ARENA_MAX', 'ASAN_OPTIONS', 'UBSAN_OPTIONS',
@@ -1881,7 +1883,11 @@ s=$?
 : > "$ab/core-saving"
 echo "$s $(date +%s)" > "$ab/exit-status.tmp" && mv -f "$ab/exit-status.tmp" "$ab/exit-status"
 pid=$(cat "$ab/launcher.pid" 2>/dev/null)
-mkdir -p "$ab/core"
+if ! mkdir -p "$ab/core" 2>/dev/null || [ ! -d "$ab/core" ]; then
+    echo "abvm: cannot make $ab/core (something that is not a folder is there) - the core is not kept" >&2
+    rm -f "$ab"/core-saving
+    exit "$s"
+fi
 for c in ${pid:+"$local"/core.*."$pid"} core core.*; do
     [ -s "$c" ] && { cp -f "$c" "$ab/core/" 2>/dev/null || sudo -n cp -f "$c" "$ab/core/"; }   # an empty core is no core
     [ -f "$c" ] && { rm -f "$c" 2>/dev/null || sudo -n rm -f "$c"; }
@@ -1915,7 +1921,22 @@ def sb_clear_run_record(name):
             os.remove(os.path.join(d, f))
         except OSError:
             pass
-    shutil.rmtree(os.path.join(d, CORE_DIR), ignore_errors=True)
+    sb_drop_stale_core(name)
+
+
+def sb_drop_stale_core(name):
+    """<sandbox>/.abvm/core removed whatever it is: a run that timed out can leave it a file, and the run script's
+    `mkdir -p` then fails for every later run of the slot. Fail when it cannot be removed"""
+    p = os.path.join(sb_host(name), '.abvm', CORE_DIR)
+    if os.path.islink(p) or not os.path.isdir(p):
+        try:
+            os.remove(p)
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            raise Fail(f'sandbox {name}: cannot remove {p} (not a folder): {e}')
+    else:
+        shutil.rmtree(p, ignore_errors=True)
 
 
 def parse_exit_record(text):
@@ -2084,6 +2105,8 @@ def sb_start(name, size=None, valgrind=False, **lay):
                    f'another process) - launcher stopped, see {sb_host(name)}/System/Logs/abvm-out.txt')
     pid = owner
     st = {'pid': pid, 'port': port, 'since': time.time()}
+    if valgrind:
+        st['valgrind'] = True  # stop sends SIGTERM at once: the driver's quit is too slow to wait for
     sb_save_state(name, st)  # saved before the forward, so a failure below never leaves an orphan behind
     try:
         st['forward'] = sb_forward(port)
@@ -2267,12 +2290,16 @@ def sb_tour(name, outdir, prev=None):
 def sb_stop(name, use_driver=True):
     st = sb_state(name)
     if st.get('pid') and sb_guest_pid_alive(name, st['pid']):
+        slow = bool(st.get('valgrind'))  # a launcher under valgrind unwinds far too slowly for the driver's quit
         try:
-            if use_driver and st.get('forward'):
+            if use_driver and st.get('forward') and not slow:
                 d = sb_driver(name)
-                d.cmd('quit')  # the clean way: the screens unwind, the databases close
-                d.close()
-        except (OSError, Fail):
+                try:
+                    d.sock.settimeout(QUIT_WAIT_S)  # the driver's own wait is minutes; a stuck reply must not hold stop
+                    d.cmd('quit')  # the clean way: the screens unwind, the databases close
+                finally:
+                    d.close()
+        except (OSError, Fail, RuntimeError):
             pass
         def gone(seconds):
             for _ in range(int(seconds * 10)):
@@ -2281,12 +2308,13 @@ def sb_stop(name, use_driver=True):
                 time.sleep(0.1)
             return False
 
-        if not gone(5):
+        # only the launcher's own pid is waited for, never the run script's copy of the core after it
+        if slow or not gone(5):
             # SIGTERM is a clean quit too (the screens unwind); a kill only when even that does not end it
             guest_run(f'kill -TERM {int(st["pid"])}', check=False)
-            if not gone(5):
+            if not gone(10 if slow else 5):
                 guest_run(f'kill -KILL {int(st["pid"])}', check=False)
-                print(f'sandbox {name}: did not quit in 10 s - killed')
+                print(f'sandbox {name}: did not quit in {10 if slow else 5 + 5} s - killed')
     sb_stop_forward(st)
     if st:
         sb_save_state(name, {})
