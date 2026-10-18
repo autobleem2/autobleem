@@ -339,6 +339,23 @@ inline std::string withDecimal(const std::string &text, char decimal) {
     return out;
 }
 
+// The thousands of a whole number set apart with a non-breaking space ("12400" -> "12 400", "7400.5" -> "7 400.5"), so
+// a count never breaks across a line and reads the same in every language. Digits before the first '.' or ',' only.
+inline std::string withGrouping(const std::string &text) {
+    size_t end = 0;
+    while (end < text.size() && text[end] >= '0' && text[end] <= '9')
+        end++;
+    if (end < 4)
+        return text;
+    std::string out;
+    for (size_t i = 0; i < end; i++) {
+        if (i > 0 && (end - i) % 3 == 0)
+            out += "\xC2\xA0";
+        out += text[i];
+    }
+    return out + text.substr(end);
+}
+
 // `text` broken at spaces into at most `maxLines` lines, each at most `maxWidth` wide by `measure` (a word wider than
 // a line is cut in letters). Whatever does not fit in the last line is cut off and ends with "...".
 template <typename Measure>

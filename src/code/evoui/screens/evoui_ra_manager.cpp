@@ -137,8 +137,8 @@ char decimalSign() {
 
 // "128 of 289 MB" / "1200 of 5400 files" / "2 of 4"
 string amountText(const rajob::Amount &amount) {
-    const vector<string> numbers = {rajob::withDecimal(amount.done, decimalSign()),
-                                    rajob::withDecimal(amount.total, decimalSign())};
+    const vector<string> numbers = {rajob::withDecimal(rajob::withGrouping(amount.done), decimalSign()),
+                                    rajob::withDecimal(rajob::withGrouping(amount.total), decimalSign())};
     switch (amount.kind) {
     case rajob::Amount::Kind::MB:
         return fill(_("%s of %s MB"), numbers);
@@ -181,8 +181,12 @@ string removeItemText(rajob::RemoveItem item) {
         return _("Saves (memory cards)");
     case rajob::RemoveItem::SaveStates:
         return _("Save states");
-    case rajob::RemoveItem::Settings:
-        return _("Settings (stays)");
+    case rajob::RemoveItem::Settings: {
+        // the key only keeps the translations apart from the upper case "Settings" header; English has no file of
+        // its own, so it would show the key
+        const string settings = _("Settings (stays)");
+        return settings == "Settings (stays)" ? "Settings" : settings;
+    }
     }
     return "";
 }
@@ -693,7 +697,10 @@ void GuiRaProgress::draw() {
     }
     if (downloading)
         meter.feed(now, p.done);
-    const rajob::Bar bar = rajob::barWithStall(p, now - barPhaseStartMs, stall.stalledMs(now));
+    // a Remove knows its count and shows it as it is: no moving mark over a bar that has a real value
+    const rajob::Bar bar = op == rajob::Op::Remove
+                               ? rajob::barFor(p, now - barPhaseStartMs)
+                               : rajob::barWithStall(p, now - barPhaseStartMs, stall.stalledMs(now));
 
     // the package line (bold): "<what> - 128 of 289 MB", "Package 3 of 9" at its right
     string package;
@@ -709,7 +716,7 @@ void GuiRaProgress::draw() {
     // the meter: nothing until the speed has three readings; a Remove has no speed, it has the wait
     string meterLine;
     if (op == rajob::Op::Remove)
-        meterLine = _("Please wait - this takes about half a minute");
+        meterLine = _("Please wait - this takes about half a minute.");
     else if (downloading && meter.known()) {
         const char decimal = decimalSign();
         const double secondsLeft = meter.secondsLeft(p.total - min(p.done, p.total));
@@ -748,8 +755,8 @@ void GuiRaProgress::draw() {
     y += 34;
     // the current package
     const int countWidth = gui->text().textWidth(fonts[FONT_22_MED], packageCount);
-    put(fonts[FONT_28_BOLD], package, left, y, inner - countWidth - 16, style.text);
-    put(fonts[FONT_22_MED], packageCount, right - countWidth, y + 4, countWidth, style.description);
+    put(fonts[FONT_20_BOLD], package, left, y + 2, inner - countWidth - 16, style.text);
+    put(fonts[FONT_22_MED], packageCount, right - countWidth, y, countWidth, style.description);
     y += 36;
     const ableem::Rect packageBar(left, y, inner, 22);
     style.progressBox(gui->uiContext(), packageBar, min(1.0, bar.value));

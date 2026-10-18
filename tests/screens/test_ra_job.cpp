@@ -486,6 +486,30 @@ TEST_CASE("a size is written with the language's decimal sign") {
     CHECK(withDecimal("", ',') == "");
 }
 
+TEST_CASE("a count of thousands is grouped with a non-breaking space, a short one is left alone") {
+    const std::string nb = "\xC2\xA0";
+    CHECK(withGrouping("12400") == "12" + nb + "400");
+    CHECK(withGrouping("41000") == "41" + nb + "000");
+    CHECK(withGrouping("3120") == "3" + nb + "120");
+    CHECK(withGrouping("1234567") == "1" + nb + "234" + nb + "567");
+    CHECK(withGrouping("999") == "999");
+    CHECK(withGrouping("289") == "289");
+    CHECK(withGrouping("6.3") == "6.3");
+    CHECK(withGrouping("7400.5") == "7" + nb + "400.5");
+    CHECK(withGrouping("") == "");
+    // the decimal sign is applied after the grouping and does not touch it
+    CHECK(withDecimal(withGrouping("7400.5"), ',') == "7" + nb + "400,5");
+}
+
+TEST_CASE("a Remove's bar is its real value even when the count stands still") {
+    Progress p = parseLine("phase 1/1|remove-files|3120|7400|files|x|2|7").progress;
+    const Bar plain = barFor(p, 5000);
+    CHECK_FALSE(plain.indeterminate);
+    CHECK(plain.value == doctest::Approx(3120.0 / 7400.0));
+    // an install's bar in the same state would sweep over the real value
+    CHECK(barWithStall(p, 5000, 5000).overReal);
+}
+
 TEST_CASE("a why line wraps to at most two lines and is cut with an ellipsis only when it must") {
     const auto measure = [](const std::string &s) { return static_cast<int>(s.size()); }; // one unit a letter
     const std::string why = "We keep your retroarch.cfg, add this version's keys and the AutoBleem theme.";
