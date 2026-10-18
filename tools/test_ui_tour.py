@@ -138,12 +138,22 @@ class UiTourModeTest(unittest.TestCase):
     def test_home_launcher_needs_no_presses(self):
         self.summary()
         self.assertNotIn('press o; wait 400', FakeDriver.scripts)
-        self.assertEqual(FakeDriver.scripts[0], 'wait 800')
+        self.assertEqual(FakeDriver.scripts[:2], ['wait_ready 10', 'wait 800'])
 
     def test_a_modal_is_closed_first(self):
         self.assertIsNone(self.with_screens(['GuiLauncher'], ready=['GuiUpdatePrompt'] * 1000))
+        self.assertEqual(FakeDriver.scripts[:3], ['press o; wait 400', 'wait_ready 10', 'wait 800'])
+
+    def test_arriving_home_waits_until_the_launcher_is_free_before_the_first_press_down(self):
+        self.summary()                                              # started on the launcher
+        first_down = next(i for i, s in enumerate(FakeDriver.scripts) if 'press down' in s)
+        self.assertIn('wait_ready 10', FakeDriver.scripts[:first_down])
+
+    def test_arriving_home_from_about_waits_until_the_launcher_is_free_before_the_first_press_down(self):
+        self.with_screens([], ready=['GuiAbout'] * 1000, sticky='GuiLauncher')  # started on About, Circle gets home
         self.assertEqual(FakeDriver.scripts[0], 'press o; wait 400')
-        self.assertEqual(FakeDriver.scripts[1], 'wait 800')
+        first_down = next(i for i, s in enumerate(FakeDriver.scripts) if 'press down' in s)
+        self.assertIn('wait_ready 10', FakeDriver.scripts[1:first_down])
 
     def test_a_menu_is_closed_first(self):
         self.assertIsNone(self.with_screens(['GuiOptions', 'GuiLauncher'], ready=['GuiSystemMenu'] * 1000))
@@ -162,17 +172,17 @@ class UiTourModeTest(unittest.TestCase):
         self.assertIn('games=30', err)
         self.assertIn('now: GuiSystemMenu', err)
         self.assertIn('busy: 0', err)
-        self.assertEqual(FakeDriver.scripts[-1], 'press o; wait 400')
+        self.assertEqual(FakeDriver.scripts[-2:], ['press o; wait 400', 'wait_ready 10'])
 
     def test_a_busy_launcher_is_waited_for_then_the_tour_goes_on(self):
         err = self.with_screens([], ready=['GuiLauncher', 'GuiLauncher', 'GuiLauncher', 'GuiLauncher'],
                                 busy=[1, 1, 0, 1, 0, 0])
         self.assertIsNone(err)
-        self.assertEqual(FakeDriver.scripts[0], 'wait 800')    # the first move came after the wait
+        self.assertEqual(FakeDriver.scripts[:2], ['wait_ready 10', 'wait 800'])    # the first move came after the wait
 
     def test_a_launcher_still_loading_is_waited_for(self):
         self.assertIsNone(self.with_screens([], ready=['GuiLoading', 'GuiLoading', 'GuiLauncher', 'GuiLauncher']))
-        self.assertEqual(FakeDriver.scripts[0], 'wait 800')
+        self.assertEqual(FakeDriver.scripts[:2], ['wait_ready 10', 'wait 800'])
 
     def test_a_launcher_busy_forever_times_out_naming_screen_and_busy(self):
         err = self.with_screens([], busy_sticky=1)

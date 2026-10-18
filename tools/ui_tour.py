@@ -139,11 +139,14 @@ def main(argv, shot_path=None, ra_cores=True):
 
     def ensure_home():
         # a modal (the update prompt: Circle is its "later"), a menu or an editor left open is closed with Circle
+        # arriving home can start a game rescan: the spinner drops every press, so both exits wait until it is free
         for _ in range(HOME_TRIES):
             if screen() == 'GuiLauncher':
+                run('wait_ready 10')
                 return
             run('press o; wait 400')
         if screen() == 'GuiLauncher':
+            run('wait_ready 10')
             return
         stuck = screen()
         shot('not-home')
