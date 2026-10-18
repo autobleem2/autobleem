@@ -32,7 +32,7 @@
 #   AB_NO_SCCACHE=1 no compiler cache (sccache is put in front of every compiler when the image has it)
 #   AB_NO_LINT=1    skip clang-tidy in the native target (it is the slow part)
 #   AB_NO_TESTS=1   neither build nor run the test suites (a quick build for a device check)
-#   AB_SANITIZE=L   native only: build and run the suites with -fsanitize=L, e.g. address,undefined (default: none)
+#   AB_SANITIZE=L   native and pcusb only (pcusb: ASan + -g in the 32-bit stick build, for a VM crash stack): build and run the suites with -fsanitize=L, e.g. address,undefined (default: none)
 #   AB_NO_UPX=1    leave the shipped binaries unpacked
 #   AB_CLEAN=1      wipe each target's build directory first
 #   AB_RENDER_GL=0  leave the loadable GLES 3 renderer out. Default (unset or 1) = built: -DABLEEM_RENDER_GL=ON, cargo
@@ -98,7 +98,7 @@ configure() { # configure BUILD_DIR ARGS...
     # sanitizers: AB_SANITIZE=address,undefined (native only; the CMake cache keeps the last value, so an empty
     # value is passed on to switch them off again)
     local san=()
-    [ "$dir" = build_sys ] && san=("-DAB_SANITIZE=${AB_SANITIZE:-}")
+    case "$dir" in build_sys | build_pcusb) san=("-DAB_SANITIZE=${AB_SANITIZE:-}") ;; esac
     cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "${tests[@]}" "${gl[@]}" ${san[@]+"${san[@]}"} "$@"
     # (a build directory reused from an ON run must not ship its backend file in an OFF package)
     if [ ${#gl[@]} -eq 0 ] || [ "${gl[0]}" = -DABLEEM_RENDER_GL=OFF ]; then
