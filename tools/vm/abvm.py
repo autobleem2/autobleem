@@ -51,7 +51,7 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          sha256 checked). _template/TEMPLATE_SOURCE records source,
                                                          version and date; `sandbox list` prints it
 ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except `rm` of an old folder:
-  python tools/vm/abvm.py sandbox take-free <task> [min] [--who W]   the first free slot, laid fresh from the template;
+  python tools/vm/abvm.py sandbox take-free <task> [min] [--who W] [--skip sb2,sbN]   the first free slot (not a skipped one), laid fresh from the template;
                                                          last line `slot: <name>`; none free: exit 3 "busy: ..."
   python tools/vm/abvm.py sandbox rm-legacy [--dry-run]  remove the stopped, unleased folders outside the pool
   python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the slot's lease (take lays it fresh; release stops a launcher left running)
@@ -1764,11 +1764,17 @@ def sb_take(name, task, minutes):
             raise
 
 
-def sb_take_free(task, minutes):
-    """the first pool slot with a free lease, laid fresh and leased to WHO; Busy when every slot is held"""
+def sb_take_free(task, minutes, skip=()):
+    """the first pool slot with a free lease, laid fresh and leased to WHO; Busy when every slot is held. A slot in
+    `skip` is passed over like a held one: no lease, no stop, no re-lay"""
     global LEASE_KEY
+    for n in skip:  # a well-formed name outside the pool (a retired slot) is ignored
+        if not re.fullmatch(r'sb\d+', n):
+            raise Fail(f'--skip {n}: not a slot name (sb<number>)')
     held = []
     for n in SB_POOL:
+        if n in skip:
+            continue
         LEASE_KEY = f'sb-{n}'
         holder = lease_op('show')
         if holder != 'free':
@@ -1781,6 +1787,8 @@ def sb_take_free(task, minutes):
             continue
         print(f'slot: {n}')
         return
+    if skip:
+        held.append(f'skipped: {", ".join(skip)}')
     raise Busy(f'busy: no free sandbox slot ({sb_pool_text()}: {"; ".join(held)})')
 
 
@@ -2498,9 +2506,16 @@ def sandbox_command(args, out_dir):
         finally:
             lease_op('release', WHO)
     elif sub == 'take-free':
-        if len(args) < 2:
-            raise Fail('sandbox take-free <task> [minutes] [--who <name>]')
-        sb_take_free(args[1], int(args[2]) if len(args) > 2 else LOCK_MINUTES)
+        rest, skip = list(args[1:]), []
+        if '--skip' in rest:
+            i = rest.index('--skip')
+            if i + 1 >= len(rest):
+                raise Fail('sandbox take-free <task> [minutes] [--who <name>] [--skip sb2,sbN]')
+            skip = [s for s in rest[i + 1].split(',') if s]
+            del rest[i:i + 2]
+        if not rest:
+            raise Fail('sandbox take-free <task> [minutes] [--who <name>] [--skip sb2,sbN]')
+        sb_take_free(rest[0], int(rest[1]) if len(rest) > 1 else LOCK_MINUTES, skip)
     elif sub == 'rm-legacy':
         if args[1:] not in ([], ['--dry-run']):
             raise Fail('sandbox rm-legacy [--dry-run]')
