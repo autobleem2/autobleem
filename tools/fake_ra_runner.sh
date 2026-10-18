@@ -16,8 +16,12 @@
 #                            checksum, apt-provided, other
 #   AB_FAKE_RA_DIE=1         die without an end line (kill -9 itself) after the first phase
 #   AB_FAKE_RA_STEPS=<n>     sleeps of 0.2 s per phase (default 10 - a full install is about 20 s)
-#   AB_FAKE_RA_BINARY=<path> install creates this file as its last step, remove deletes it first (a dev host's
-#                            Env::retroArchInstalled() sees it)
+#   AB_FAKE_RA_BINARY=<path> install creates this file as its last step, remove deletes it first. Give the same
+#                            variable to the LAUNCHER: Env::retroArchInstalled() then asks only this file, whatever
+#                            /usr/bin/retroarch the host has - no file = the "Not installed" panel (ra-1b / ra-1c)
+#   AB_FAKE_NO_ROUTE=1       (launcher, not the runner) System::hasDefaultRoute() says no network: the panel's Install
+#                            row reads "No network - connect in Network & Controllers" (T2); without it, with
+#                            AB_FAKE_RA_BINARY pointing at a missing file, the panel shows Install enabled (T3)
 #   AB_FAKE_RA_VERSION=<v>   with AB_FAKE_RA_BINARY: install writes <v> to VERSION next to it (the stamp the
 #                            launcher's "Version %s is ready" box reads when the binary sits in <root>/RetroArch/bin);
 #                            without a stamp the launcher falls back to AB_UPDATE_RETROARCH_VERSION. The free space of
