@@ -101,7 +101,7 @@ configure() { # configure BUILD_DIR ARGS...
     # sanitizers: AB_SANITIZE=address,undefined (native only; the CMake cache keeps the last value, so an empty
     # value is passed on to switch them off again)
     local san=()
-    case "$dir" in build_sys | build_pcusb | build_pcusb_dbg) san=("-DAB_SANITIZE=${AB_SANITIZE:-}") ;; esac
+    case "$dir" in build_sys | build_pcusb | build_pcusb_dbg | build_pcusb_san) san=("-DAB_SANITIZE=${AB_SANITIZE:-}") ;; esac
     local pmap=()
     [ ${#LAUNCHER[@]} -gt 0 ] && pmap=(-DAB_DEBUG_PREFIX_MAP=ON)
     cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" ${pmap[@]+"${pmap[@]}"} "${tests[@]}" "${gl[@]}" ${san[@]+"${san[@]}"} "$@"
@@ -330,6 +330,8 @@ build_pcusb() {
     # everything, and a release build never picks up the debug flags from a reused cache
     local dir=build_pcusb dbg=OFF
     if [ "${AB_PCUSB_DEBUG:-0}" = 1 ]; then dir=build_pcusb_dbg; dbg=ON; fi
+    # AB_SANITIZE: own directory too (a release build never gets the sanitizer flags from a reused cache), symbols kept
+    if [ -n "${AB_SANITIZE:-}" ]; then dir=build_pcusb_san; dbg=ON; fi
     banner "pcusb: configure + build ($dir)"
     configure "$dir" -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=$dbg -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake ${EXT_ARGS[@]+"${EXT_ARGS[@]}"}
     ninja -C "$dir" -j "$JOBS"
@@ -342,7 +344,13 @@ build_pcusb() {
     fi
     # i386 runs on this host: the suites are a gate here too (their scratch dirs carry the pid, -j is safe)
     banner "pcusb: tests"
-    run_ctest --test-dir "$dir" --output-on-failure -j "$JOBS"
+    if [ -n "${AB_SANITIZE:-}" ]; then
+        # the 32-bit sanitizer binaries fail every suite under this image (build 1756: ~120 of ~170 Failed, 0 findings);
+        # the native target runs the suites with the sanitizer, this build is for the stick's exit runs in the VM
+        echo "    AB_SANITIZE on pcusb: the suites are not run here (the native target runs them)"
+    else
+        run_ctest --test-dir "$dir" --output-on-failure -j "$JOBS"
+    fi
     banner "pcusb: stage"
     stage_launcher "$dir" pcusb
 }

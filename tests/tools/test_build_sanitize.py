@@ -20,7 +20,7 @@ class BuildSanitizeTest(unittest.TestCase):
         self.assertIsNotNone(m)
         dirs = [d.strip() for d in m.group(1).split("|")]
         # (the symbols build of the stick, AB_PCUSB_DEBUG=1, has its own directory and takes the switch too)
-        self.assertEqual(sorted(dirs), ["build_pcusb", "build_pcusb_dbg", "build_sys"])
+        self.assertEqual(sorted(dirs), ["build_pcusb", "build_pcusb_dbg", "build_pcusb_san", "build_sys"])
 
     def test_unset_means_empty_default(self):
         self.assertIn('-DAB_SANITIZE=${AB_SANITIZE:-}', self.text)
