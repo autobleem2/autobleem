@@ -525,7 +525,6 @@ Select slot to save state=KAYDETMEK İÇİN SLOT SEÇİN
 SERIAL=SERİ NO
 Serial:=Seri no:
 Settings=AYARLAR
-Settings (stays)=Ayarlar
 Shaders=Gölgelendiriciler
 Shadow Warrior data=Shadow Warrior verisi
 Share memory card=Hafıza kartını paylaş

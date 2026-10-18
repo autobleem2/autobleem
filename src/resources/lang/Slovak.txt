@@ -525,7 +525,6 @@ Select slot to save state=VYBERTE POZÍCIU, NA KTORÚ SA ULOŽÍ ROZOHRANÁ HRA
 SERIAL=SERIAL
 Serial:=Serial:
 Settings=NASTAVENIA
-Settings (stays)=Nastavenia
 Shaders=Shadery
 Shadow Warrior data=Dáta Shadow Warrior
 Share memory card=Zdieľať pamäťovú kartu

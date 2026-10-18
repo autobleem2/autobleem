@@ -525,7 +525,6 @@ Select slot to save state=SELECIONE O SLOT ONDE SALVAR
 SERIAL=SERIAL
 Serial:=Serial:
 Settings=CONFIGURAÇÕES
-Settings (stays)=Configurações
 Shaders=Shaders
 Shadow Warrior data=Dados de Shadow Warrior
 Share memory card=Compartilhar cartão de memória

@@ -181,12 +181,8 @@ string removeItemText(rajob::RemoveItem item) {
         return _("Saves (memory cards)");
     case rajob::RemoveItem::SaveStates:
         return _("Save states");
-    case rajob::RemoveItem::Settings: {
-        // the key only keeps the translations apart from the upper case "Settings" header; English has no file of
-        // its own, so it would show the key
-        const string settings = _("Settings (stays)");
-        return settings == "Settings (stays)" ? "Settings" : settings;
-    }
+    case rajob::RemoveItem::Settings:
+        return _("Your settings");
     }
     return "";
 }

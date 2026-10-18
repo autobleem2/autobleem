@@ -525,7 +525,6 @@ Select slot to save state=VÄLJ PLATS ATT SPARA TILL
 SERIAL=SERIENUMMER
 Serial:=Serienummer:
 Settings=INSTÄLLNINGAR
-Settings (stays)=Inställningar
 Shaders=Shaders
 Shadow Warrior data=Shadow Warrior-data
 Share memory card=Dela minneskort

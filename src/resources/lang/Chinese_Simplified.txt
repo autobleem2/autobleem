@@ -525,7 +525,6 @@ Select slot to save state=选择保存状态的槽位
 SERIAL=序列号
 Serial:=序列号：
 Settings=设置
-Settings (stays)=设置
 Shaders=着色器
 Shadow Warrior data=Shadow Warrior 数据
 Share memory card=共享记忆卡

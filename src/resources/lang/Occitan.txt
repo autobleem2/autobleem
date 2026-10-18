@@ -525,7 +525,6 @@ Select slot to save state=CAUSISSÈTZ UN EMPLAÇAMENT PER ENREGISTRAR L'ESTAT
 SERIAL=NUMÈRO DE SERIA
 Serial:=Numèro de seria :
 Settings=PARAMÈTRES
-Settings (stays)=Paramètres
 Shaders=Shaders
 Shadow Warrior data=Donadas Shadow Warrior
 Share memory card=Partejar la carta memòria

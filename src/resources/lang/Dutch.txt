@@ -525,7 +525,6 @@ Select slot to save state=SELECTEER SLOT OM OP TE SLAAN
 SERIAL=SERIENUMMER
 Serial:=Serienummer:
 Settings=INSTELLINGEN
-Settings (stays)=Instellingen
 Shaders=Shaders
 Shadow Warrior data=Shadow Warrior-data
 Share memory card=Memory card delen

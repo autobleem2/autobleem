@@ -525,7 +525,6 @@ Select slot to save state=VALITSE PAIKKA JATKOPISTEELLE
 SERIAL=SARJA
 Serial:=Sarja:
 Settings=ASETUKSET
-Settings (stays)=Asetukset
 Shaders=Varjostimet
 Shadow Warrior data=Shadow Warrior -data
 Share memory card=Jaa muistikortti

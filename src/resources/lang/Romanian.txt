@@ -525,7 +525,6 @@ Select slot to save state=Selectează SLOT pentru a salva starea curentă
 SERIAL=SERIE
 Serial:=Serie:
 Settings=SETĂRI
-Settings (stays)=Setări
 Shaders=Shadere
 Shadow Warrior data=Date Shadow Warrior
 Share memory card=Partajează cardul de memorie
