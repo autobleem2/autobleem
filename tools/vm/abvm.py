@@ -77,7 +77,8 @@ ONLY the pool sb2..sb4 exists (ABVM_SB_POOL); any other name is refused, except 
                                                          stick (~/abvm/testgames: Games/, RetroArch/roms/;
                                                          ABVM_TESTGAMES), big files hard-linked;
                                                          --set Key=Value (repeatable): a line in the launcher's
-                                                         config.ini, laid last (e.g. --set Language=Polski)
+                                                         config.ini, laid last (e.g. --set Language=Polski);
+                                                         `start` lays updates=off unless given its own updates=
   python tools/vm/abvm.py sandbox tour <name> <outdir> [--diff PREV]   tools/ui_tour.py --attach on the sandbox's
                                                          driver, run inside this tool (the forwarded port is
                                                          reachable only there): every screen's shot, tour.png and,
@@ -180,8 +181,11 @@ Where things are comes from the environment, never from this file (no addresses 
   ABVM_WHO       who is testing - the lease's holder
   ABVM_REMOTE_TOOL  this tool's copy on the test machine (default: ~/.local/share/abvm/abvm.py) - another path
                  tries a branch's abvm there (`setup` copies to it) without touching the copy everyone uses.
-                 The copy there (this tool, ab_drive.py, make_usb.py) is compared by content hash with the PC's files
+                 The copy there (this tool, ab_drive.py, ui_tour.py, ui_diff.py, make_usb.py,
+                 unshipped_themes.py/.txt) is compared by content hash with the PC's files
                  before the first remote call of every run, and refreshed (atomically) when it differs.
+  ABVM_PYTHONPATH  python packages for the test machine's runs (e.g. a Pillow the system python lacks): every call
+                 of the test machine's copy, `sandbox tour` included, gets it as PYTHONPATH (unset: nothing is added).
 docs/pc-test-machine.md (autobleem-main) describes the machine, the VM and padsim.
 
 Never pipes into ssh (on Windows the EOF never arrives): files go by scp, commands as arguments.
@@ -203,6 +207,7 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REMOTE_TOOL = os.environ.get('ABVM_REMOTE_TOOL', '~/.local/share/abvm/abvm.py')
+PYTHONPATH = os.environ.get('ABVM_PYTHONPATH', '')
 
 HOST = os.environ.get('ABVM_HOST', 'bleemmachine')
 DOMAIN = os.environ.get('ABVM_DOMAIN', 'pcusb-test')
@@ -807,6 +812,9 @@ def local_sources():
             ('ui_tour.py', os.path.join(tools, 'ui_tour.py')),
             ('ui_diff.py', os.path.join(tools, 'ui_diff.py')),
             ('make_usb.py', os.path.join(tools, 'make_usb.py')),
+            # make_usb.py imports unshipped_themes, which reads unshipped_themes.txt beside itself
+            ('unshipped_themes.py', os.path.join(tools, 'unshipped_themes.py')),
+            ('unshipped_themes.txt', os.path.join(tools, 'unshipped_themes.txt')),
             (os.path.basename(REMOTE_TOOL), os.path.abspath(__file__))]
 
 
@@ -881,6 +889,8 @@ def remote_tool(args, partial=False):
     # the sandbox settings given here count there too
     env = [f'{k}={os.environ[k]}' for k in ('ABVM_SANDBOX_SLOTS', 'ABVM_SANDBOX_SIZE', 'ABVM_SANDBOX_ENV')
            if k in os.environ]
+    if PYTHONPATH:
+        env.append(f'PYTHONPATH={PYTHONPATH}')
     prefix = ('env ' + ' '.join(shlex.quote(e) for e in env) + ' ') if env else ''
     command = prefix + f'python3 {REMOTE_TOOL} --local ' + ' '.join(shlex.quote(a) for a in who + key + args)
     if partial:
@@ -1240,7 +1250,16 @@ def sb_kill_launcher(name, pid=None):
 def sb_open_modes(path):
     """the guest checks permissions itself against the host's owner, so a sandbox tree is open to everyone - it is a
     disposable test tree on a test machine; the ACLs give this user and QEMU the rest"""
-    subprocess.run(['chmod', '-R', 'a+rwX', path], check=False)
+    r = subprocess.run(['chmod', '-R', 'a+rwX', path], check=False, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.PIPE, text=True, errors='replace')
+    denied = 0
+    for line in r.stderr.splitlines():
+        if line.endswith('Operation not permitted'):
+            denied += 1  # what QEMU's user owns: the guest pass opens it
+        elif line.strip():
+            print(line, file=sys.stderr)
+    if denied:
+        print(f'abvm: {denied} files could not be opened up (not ours); ignored', file=sys.stderr)
 
 
 def sb_open_tree(name, acl=False):
@@ -1620,6 +1639,14 @@ def sb_set_config(name, sets):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(lines) + '\n')
     print(f'sandbox {name}: config.ini ' + ', '.join(sets))
+
+
+def start_sets(sets):
+    """`sandbox start`'s config lines: updates=off first (no update prompt over the first screen), unless the start
+    brought its own updates= line"""
+    if any(s.partition('=')[0].strip().lower() == 'updates' for s in sets):
+        return list(sets)
+    return ['updates=off'] + list(sets)
 
 
 def sb_lay(name, build=None, exts=(), package=None, games=0, sets=()):
@@ -2221,10 +2248,16 @@ def sb_tour_args(rest):
     raise Fail('sandbox tour <name> <outdir> [--diff PREV]')
 
 
+def sb_has_ra_core(name):
+    """True when the sandbox has a RetroArch core (RetroArch/cores/*_libretro.so)"""
+    cores = os.path.join(sb_host(name), 'RetroArch', 'cores')
+    return os.path.isdir(cores) and any(f.endswith('.so') for f in os.listdir(cores))
+
+
 def sb_tour(name, outdir, prev=None):
     """ui_tour.py's tour of the running sandbox, in this process (the forwarded port is reachable only here):
     shots, tour.png and - with `prev`, an earlier tour's folder in the same out folder - changed.html, diff/ and the
-    JSON summary land in <sandbox>/.abvm/out/<outdir>/"""
+    JSON summary (with `skipped: [{screen, reason}]`) land in <sandbox>/.abvm/out/<outdir>/"""
     out = sb_tour_dir(name, outdir)
     prev_dir = sb_tour_dir(name, prev, 'diff') if prev else None
     if prev_dir and not os.path.isdir(prev_dir):
@@ -2243,8 +2276,8 @@ def sb_tour(name, outdir, prev=None):
     import_ab_drive()
     import ui_tour
     argv = ['ui_tour.py', out, '--attach', '--port', str(st['port'])] + (['--diff', prev_dir] if prev_dir else [])
-    try:
-        rc = ui_tour.main(argv, shot_path=to_guest)
+    try:  # ui_tour prints the JSON summary, `skipped` in it, last
+        rc = ui_tour.main(argv, shot_path=to_guest, ra_cores=sb_has_ra_core(name))
     except RuntimeError as e:
         raise Fail(str(e))
     finally:
@@ -2526,6 +2559,7 @@ def sandbox_command(args, out_dir):
         if sub == 'new':
             sb_new(name, **lay)
         elif sub == 'start':
+            lay['sets'] = start_sets(lay['sets'])
             sb_start(name, size, valgrind='--valgrind' in args, **lay)
         elif sub == 'drive':
             sb_drive(name, _script_from_args(args[2:]), out_dir)
@@ -2783,7 +2817,7 @@ def setup():
     # the tool, the DebugDriver's client (`sandbox drive` there) and the fake games and Apps (`--games N` there);
     # every remote call refreshes them by itself when they differ (ensure_remote_current) - this is the manual form
     push_remote()
-    print(f'copied to {HOST}:{REMOTE_TOOL} (and ab_drive.py, make_usb.py)')
+    print(f'copied to {HOST}:{REMOTE_TOOL} (and ab_drive.py, ui_tour.py, ui_diff.py, make_usb.py, unshipped_themes.py/.txt)')
 
 
 BATTERY_DROPIN = '/etc/systemd/system/autobleem.service.d/padsim-battery.conf'

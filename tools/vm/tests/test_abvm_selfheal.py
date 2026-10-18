@@ -54,10 +54,11 @@ class SelfHeal(unittest.TestCase):
             abvm.remote_tool(['lock', 'show'])
         self.assertEqual(len(self.refreshes()), 1)           # once per invocation
         self.assertIn('ab_drive.py', err.getvalue())
-        self.assertEqual(len(self.copied), 3)                # all three files are sent...
+        files = len(abvm.local_sources())
+        self.assertEqual(len(self.copied), files)            # every file is sent...
         self.assertTrue(all('.new' in c for c in self.copied))  # ...under temp names
         mv = [c for c in self.calls if c.startswith('mv -f')][0]
-        self.assertEqual(mv.count('mv -f'), 3)               # ...and renamed into place
+        self.assertEqual(mv.count('mv -f'), files)           # ...and renamed into place
         self.assertTrue(mv.rstrip().split('&&')[-1].strip().endswith('abvm.py'))  # the tool last
         order = [i for i, c in enumerate(self.calls) if c.startswith('mkdir -p') or 'lock show' in c]
         self.assertLess(order[0], order[1])                  # refreshed before the real call
@@ -67,6 +68,30 @@ class SelfHeal(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()):
             abvm.remote_tool(['lock', 'show'])
         self.assertEqual(len(self.refreshes()), 1)
+
+    def tool_command(self):
+        abvm.remote_tool(['lock', 'show'])
+        return [c for c in self.calls if 'lock show' in c][0]
+
+    def test_pythonpath_is_added_only_when_set(self):
+        with mock.patch.object(abvm, 'PYTHONPATH', ''):
+            self.assertNotIn('PYTHONPATH', self.tool_command())
+
+    def test_pythonpath_is_quoted_into_the_remote_command(self):
+        with mock.patch.object(abvm, 'PYTHONPATH', '/opt/py libs'):
+            command = self.tool_command()
+        self.assertTrue(command.startswith("env 'PYTHONPATH=/opt/py libs' python3 "))
+
+    def test_chmod_noise_is_one_summary_line(self):
+        noise = ''.join(f"chmod: changing permissions of '/x/{i}': Operation not permitted\n" for i in range(50))
+        done = mock.Mock(stderr=noise + "chmod: cannot access '/x/gone': No such file or directory\n")
+        err = io.StringIO()
+        with mock.patch.object(abvm.subprocess, 'run', return_value=done), contextlib.redirect_stderr(err):
+            abvm.sb_open_modes('/x')
+        lines = err.getvalue().splitlines()
+        self.assertEqual(len(lines), 2)
+        self.assertIn('50 files could not be opened up', lines[-1])
+        self.assertIn('No such file', lines[0])              # a different error stays visible
 
     def test_on_the_test_machine_itself_nothing_is_checked(self):
         with mock.patch.object(abvm, 'LOCAL', True):
