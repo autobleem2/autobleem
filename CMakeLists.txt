@@ -44,6 +44,14 @@ string(TOUPPER "${AB_TARGET}" _ab_target_upper)
 message(STATUS "Building for target ${AB_TARGET} (AB_PLATFORM_${_ab_target_upper})")
 add_compile_definitions(AB_PLATFORM_${_ab_target_upper})
 
+# ci/build.sh: debug info names the checkout as "." instead of its absolute path, so an object compiled from
+# one clone path is the same bytes (and the same compiler-cache entry) from another. Debug info only - no code
+# or __FILE__ changes. Off by default: a debugger on a dev build wants the real source path.
+option(AB_DEBUG_PREFIX_MAP "map the source dir to . in debug info (compiler-cache hits across clone paths)" OFF)
+if (AB_DEBUG_PREFIX_MAP AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.)
+endif()
+
 # MSYS2 UCRT64 packaging regression (seen from mingw-w64-ucrt-x86_64-gcc 16.2.0-3, 2026-09): the gcc driver's
 # own specs only add -D_UCRT when -mcrtdll=ucrt is passed explicitly (`gcc -dumpspecs`'s `*cpp:` rule) - there
 # is no `self_spec` defaulting that in for the ucrt64 environment any more, so mingw-w64's <cstdlib> (which

@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """A screenshot of every screen the launcher can show, through the DebugDriver (tools/ab_drive.py):
 
-  python tools/ui_tour.py OUTDIR [--show] [--port N]
+  python tools/ui_tour.py OUTDIR [--show] [--port N] [--diff PREV_DIR] [--attach [--host H]]
+
+--attach walks the driver already listening on --port (e.g. an abvm sandbox's): the launcher is neither started
+nor stopped.
+--diff PREV_DIR then compares the run with the earlier one (tools/ui_diff.py): <OUTDIR>/changed.html and
+<OUTDIR>/diff/ hold only the screens that changed.
 
 Starts the dev build on usb/ (a tree from `tools/make_usb.py usb --games 30` has enough in it to open
 everything), walks the screens, writes <OUTDIR>/<nn>-<screen>.png for each and a contact sheet
@@ -11,6 +16,7 @@ keyboard, Hardware Information (two pages), About and the surprise game, the PS1
 rename keyboard and memory card picker, the memory card manager, the button guide, a RetroArch game's editor,
 the Apps set and an app's start screen.
 """
+import json
 import os
 import subprocess
 import sys
@@ -21,7 +27,9 @@ sys.path.insert(0, os.path.join(REPO, 'tools'))
 import ab_drive  # noqa: E402
 
 
-def main(argv):
+def main(argv, shot_path=None):
+    """shot_path: turns a shot's file here into the name the driver is sent (abvm: the sandbox guest's path)"""
+    shot_path = shot_path or (lambda p: p)
     if len(argv) < 2:
         print(__doc__)
         return 2
@@ -29,16 +37,29 @@ def main(argv):
     os.makedirs(out, exist_ok=True)
     show = '--show' in argv
     port = int(argv[argv.index('--port') + 1]) if '--port' in argv else 7789
-    subprocess.check_call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'start', '--port', str(port)]
-                          + (['--show'] if show else []))
-    d = ab_drive.Driver(port)
+    prev = None
+    if '--diff' in argv:
+        i = argv.index('--diff')
+        if i + 1 >= len(argv) or argv[i + 1].startswith('--'):
+            print(__doc__)
+            return 2
+        prev = os.path.abspath(argv[i + 1])
+    attach = '--attach' in argv
+    if attach:
+        # a driver is already listening on --port (an abvm sandbox): no start, no stop
+        host = argv[argv.index('--host') + 1] if '--host' in argv else ab_drive.DEFAULT_HOST
+    else:
+        subprocess.check_call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'start', '--port',
+                               str(port)] + (['--show'] if show else []))
+        host = ab_drive.DEFAULT_HOST
+    d = ab_drive.Driver(port, host=host)
     shots = []
     n = [0]
 
     def shot(name):
         n[0] += 1
         path = os.path.join(out, '%02d-%s.png' % (n[0], name))
-        d.cmd('shot ' + path)
+        d.cmd('shot ' + shot_path(path))
         shots.append(path)
 
     def run(script):
@@ -133,9 +154,17 @@ def main(argv):
         run('wait_screen GuiLauncher')
     finally:
         d.close()
-        subprocess.call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'stop', '--port', str(port)])
+        if not attach:
+            subprocess.call([sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py'), 'stop', '--port', str(port)])
     ab_drive.sheet(os.path.join(out, 'tour.png'), shots, columns=3, width=426)
     print(len(shots), 'screens in', out)
+    if prev:
+        try:
+            import ui_diff
+            summary = ui_diff.diff_tours(prev, out)
+        except Exception as e:  # like ui_diff.main: the tour itself succeeded, so exit 0
+            summary = {'changed': [], 'unchanged': 0, 'error': str(e)}
+        print(json.dumps(summary))
     return 0
 
 

@@ -98,12 +98,12 @@ class Strict(unittest.TestCase):
         self.assertIn("unknown command 'frobnicate'", err)
 
     def test_an_unknown_sandbox_flag_is_an_error(self):
-        rc, _, err = self.run_main(['--local', 'sandbox', 'start', 'sb1', '--gamez', '12'])
+        rc, _, err = self.run_main(['--local', 'sandbox', 'start', 'sb2', '--gamez', '12'])
         self.assertEqual(rc, 1)
         self.assertIn('--gamez', err)
 
     def test_a_flag_without_its_value_is_an_error(self):
-        rc, _, err = self.run_main(['--local', 'sandbox', 'new', 'sb1', '--games'])
+        rc, _, err = self.run_main(['--local', 'sandbox', 'new', 'sb2', '--games'])
         self.assertEqual(rc, 1)
         self.assertIn('needs a value', err)
 
