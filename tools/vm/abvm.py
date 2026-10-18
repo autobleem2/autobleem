@@ -184,6 +184,8 @@ Where things are comes from the environment, never from this file (no addresses 
                  The copy there (this tool, ab_drive.py, ui_tour.py, ui_diff.py, make_usb.py,
                  unshipped_themes.py/.txt) is compared by content hash with the PC's files
                  before the first remote call of every run, and refreshed (atomically) when it differs.
+  ABVM_PYTHONPATH  python packages for the test machine's runs (e.g. a Pillow the system python lacks): every call
+                 of the test machine's copy, `sandbox tour` included, gets it as PYTHONPATH (unset: nothing is added).
 docs/pc-test-machine.md (autobleem-main) describes the machine, the VM and padsim.
 
 Never pipes into ssh (on Windows the EOF never arrives): files go by scp, commands as arguments.
@@ -205,6 +207,7 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REMOTE_TOOL = os.environ.get('ABVM_REMOTE_TOOL', '~/.local/share/abvm/abvm.py')
+PYTHONPATH = os.environ.get('ABVM_PYTHONPATH', '')
 
 HOST = os.environ.get('ABVM_HOST', 'bleemmachine')
 DOMAIN = os.environ.get('ABVM_DOMAIN', 'pcusb-test')
@@ -886,6 +889,8 @@ def remote_tool(args, partial=False):
     # the sandbox settings given here count there too
     env = [f'{k}={os.environ[k]}' for k in ('ABVM_SANDBOX_SLOTS', 'ABVM_SANDBOX_SIZE', 'ABVM_SANDBOX_ENV')
            if k in os.environ]
+    if PYTHONPATH:
+        env.append(f'PYTHONPATH={PYTHONPATH}')
     prefix = ('env ' + ' '.join(shlex.quote(e) for e in env) + ' ') if env else ''
     command = prefix + f'python3 {REMOTE_TOOL} --local ' + ' '.join(shlex.quote(a) for a in who + key + args)
     if partial:
@@ -1245,7 +1250,16 @@ def sb_kill_launcher(name, pid=None):
 def sb_open_modes(path):
     """the guest checks permissions itself against the host's owner, so a sandbox tree is open to everyone - it is a
     disposable test tree on a test machine; the ACLs give this user and QEMU the rest"""
-    subprocess.run(['chmod', '-R', 'a+rwX', path], check=False)
+    r = subprocess.run(['chmod', '-R', 'a+rwX', path], check=False, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.PIPE, text=True, errors='replace')
+    denied = 0
+    for line in r.stderr.splitlines():
+        if line.endswith('Operation not permitted'):
+            denied += 1  # what QEMU's user owns: the guest pass opens it
+        elif line.strip():
+            print(line, file=sys.stderr)
+    if denied:
+        print(f'abvm: {denied} files could not be opened up (not ours); ignored', file=sys.stderr)
 
 
 def sb_open_tree(name, acl=False):
