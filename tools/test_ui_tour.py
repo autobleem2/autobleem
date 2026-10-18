@@ -249,6 +249,21 @@ class UiTourModeTest(unittest.TestCase):
         self.assertEqual(steps[0]['screen'], 'GuiLauncher')
         self.assertIsNone(steps[0]['row'])   # a driver without `selected`
 
+    def test_hardware_info_is_left_through_the_system_menu(self):
+        self.summary()
+        scripts = FakeDriver.scripts
+        i = scripts.index('press o; wait_screen GuiSystemMenu; press o; wait_screen GuiLauncher')
+        self.assertTrue(scripts[i - 1].startswith('press r2'))        # straight after the page-2 look
+        self.assertTrue(scripts[i + 1].startswith('menu about'))
+        self.assertNotIn('press o; wait_screen GuiLauncher', scripts[i - 3:i + 1])
+
+    def test_the_game_editor_is_opened_by_moves_that_are_waited_for(self):
+        self.summary()
+        editor = [s for s in FakeDriver.scripts if 'wait_screen GuiEditor' in s]
+        self.assertEqual(editor, ['press down; wait_ready 10; press right; wait_ready 10; press x; '
+                                  'wait_screen GuiEditor; wait 200'])
+        self.assertNotIn('wait 300; press x', editor[0])             # no fixed pause before Cross
+
     def test_about_is_left_with_two_backs(self):
         self.summary()
         self.assertIn('press start; wait 300; press o; wait 500; press o; wait_screen GuiLauncher', FakeDriver.scripts)

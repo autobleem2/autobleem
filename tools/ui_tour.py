@@ -220,7 +220,8 @@ def main(argv, shot_path=None, ra_cores=True):
         shot('hardware-info')
         run('press r2; wait 300')
         shot('hardware-info-page-2')
-        run('press o; wait_screen GuiLauncher')
+        # Circle goes back to the System menu, on the Hardware Information row (the launcher's design): leave it too
+        run('press o; wait_screen GuiSystemMenu; press o; wait_screen GuiLauncher')
         # About and the surprise game
         run('menu about; wait_screen GuiAbout; wait 300')
         shot('about')
@@ -230,7 +231,9 @@ def main(argv, shot_path=None, ra_cores=True):
         shot('surprise-game')
         run('press start; wait 300; press o; wait 500; press o; wait_screen GuiLauncher')  # game -> scores -> launcher
         # the PS1 game editor, its rename keyboard and memory card picker
-        run('press down; wait 400; press right; wait 300; press x; wait_screen GuiEditor; wait 200')
+        # each move is waited for until the picture rests and no spinner shows (the launcher gives no cursor row to
+        # read on the icon row): Down lands on the Settings icon, Right on Game, and only then Cross
+        run('press down; wait_ready 10; press right; wait_ready 10; press x; wait_screen GuiEditor; wait 200')
         shot('game-editor-ps1')
         run('press t; wait_screen GuiKeyboard; wait 200')
         shot('keyboard-rename')
