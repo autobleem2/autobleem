@@ -25,7 +25,8 @@ public:
     // an extension reports bytes, and a download past 2 GB must not turn negative on the 32-bit console
     void show(const std::string &title, const std::string &detail, int64_t done, int64_t total, long holdMs);
     // show() with a hold that counts from the END of the first render after it, not from this call: for what is set
-    // while the launcher loads, or right after a slow theme load, before a first frame that is slow itself (StartupToast)
+    // while the launcher loads, or right after a slow theme load, before a first frame that is slow itself
+    // (StartupToast)
     void showFromFirstRender(const std::string &title, long holdMs);
     // the fade-out starts now (a scan that finished, its summary shown for holdMs, then this)
     void hide();
