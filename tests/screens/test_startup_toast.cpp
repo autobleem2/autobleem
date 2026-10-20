@@ -22,6 +22,15 @@ TEST_CASE("a start-up hold counts from the first render, not from the show") {
     CHECK(hold.start(8040) == 0); // later frames do not move it
 }
 
+TEST_CASE("the Options toast is held 4 seconds, counted from the end of the frame that first draws it") {
+    CHECK(StartupToast::OptionsHoldTicks == 4000);
+    StartupToast::DeferredHold hold;
+    hold.arm(StartupToast::OptionsHoldTicks); // show() at t = 1000
+    // the theme's first frame takes 3 s on the VM and ends at t = 4000: the toast must last to 8000, not to 5000
+    // (a hold counted from show() left 1 s of 4)
+    CHECK(hold.start(4000) == 4000 + StartupToast::OptionsHoldTicks);
+}
+
 TEST_CASE("a hold that was not armed, or was cancelled, never ends the bubble") {
     StartupToast::DeferredHold hold;
     CHECK(hold.start(500) == 0);

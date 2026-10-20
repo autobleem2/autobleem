@@ -12,6 +12,10 @@ namespace StartupToast {
 
 constexpr long HoldTicks = 10 * TicksPerSecond;
 
+// The Options theme-fallback toast (4 s): set right after a slow theme load, and its own first frame is slow too -
+// the same hold-from-the-first-frame rule applies (GuiOptions::loadFor).
+constexpr long OptionsHoldTicks = 2 * DefaultShowingTimeout;
+
 // A hold that starts at the first render after it was asked for. arm() on the show(), start() on every render:
 // it answers the time the hold ends the first time (0 = nothing pending / never ends) and nothing after that.
 class DeferredHold {

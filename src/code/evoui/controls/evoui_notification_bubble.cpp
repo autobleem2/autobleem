@@ -103,10 +103,6 @@ void NotificationBubble::render(Gui &gui, long now) {
     now_ = now;
     if (state_ == State::Hidden)
         return;
-    // the platform's clock, not `now`: the launcher's own time is still 0 in the very first frame (drawn before its
-    // loop has set it), which made the hold end 10 s from tick 0 - the load's seconds short again
-    if (firstRenderHold_.pending())
-        hideAt_ = firstRenderHold_.start(Gui::getInstance()->platform().ticks());
     // the slides end in the tweens (before the frame); the hold ends here
     if (state_ == State::Shown && hideAt_ != 0 && now >= hideAt_)
         hide();
@@ -144,4 +140,10 @@ void NotificationBubble::render(Gui &gui, long now) {
                        static_cast<unsigned long long>(total_), abgui::Tone::Secondary, abgui::Style::StyleAlpha,
                        abgui::Tone::Text, abgui::Style::OwnAlpha);
     }
+    // The hold of showFromFirstRender() starts HERE, when the first frame that draws the bubble is done: that frame is
+    // the slow one (the new theme's or the launcher's fonts and textures are made as they are first drawn, seconds on
+    // the VM), and a hold counted from show() or from the start of the frame had it used up before anyone saw the
+    // toast. The platform's clock, not `now`: the launcher's own time is still 0 in its very first frame.
+    if (firstRenderHold_.pending())
+        hideAt_ = firstRenderHold_.start(Gui::getInstance()->platform().ticks());
 }
