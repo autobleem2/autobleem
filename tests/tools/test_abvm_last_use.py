@@ -71,6 +71,17 @@ class LastUseTest(unittest.TestCase):
         self.abvm.touch_last_use()
         self.assertFalse(os.path.exists(stale))
 
+    def test_pid_alive_never_signals_on_windows(self):
+        with mock.patch.object(os, "name", "nt"), mock.patch.object(os, "kill") as kill:
+            self.assertTrue(self.abvm.pid_alive(2147483646))
+            os.makedirs(self.state)
+            stale = os.path.join(self.state, "last-use.2147483646.abc.tmp")
+            with open(stale, "w") as f:
+                f.write("x")
+            self.abvm.clean_stale_temps(self.state)
+            self.assertTrue(os.path.exists(stale))
+        kill.assert_not_called()
+
     def test_lock_take_survives_failed_temp_write(self):
         real_open = open
 

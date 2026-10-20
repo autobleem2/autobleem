@@ -2653,11 +2653,15 @@ def atomic_write(path, text, attempts=5):
 
 
 def pid_alive(pid):
+    """POSIX only: signal 0 probes the pid. On Windows os.kill(pid, 0) would send CTRL_C_EVENT, so there it is never
+    called and every pid counts as alive (its temp file is kept; unique temp names make that harmless)"""
+    if os.name == 'nt':
+        return True
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
-    except OSError:  # exists, or cannot tell (Windows): keep its file
+    except OSError:  # exists but is not ours (PermissionError): keep its file
         return True
     return True
 
