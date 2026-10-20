@@ -951,9 +951,7 @@ def lease_op(op, who='', task='', minutes=LOCK_MINUTES):
             lease = None
 
         def save(value):
-            with open(path + '.tmp', 'w') as f:
-                json.dump(value, f)
-            os.replace(path + '.tmp', path)
+            atomic_write(path, json.dumps(value))
 
         if op == 'show':
             return f'held by {lease_describe(lease, now)}' if lease else 'free'
@@ -2632,12 +2630,69 @@ def state_path(name):
     return os.path.expanduser(f'{STATE_DIR}/{name}')
 
 
+def atomic_write(path, text, attempts=5):
+    """write text to path through a temp file of its own (<name>.<pid>.<uuid>.tmp) in the same folder, so two callers
+    never share a temp name; os.replace is retried a few times (a rename over a file another caller holds open)"""
+    tmp = f'{path}.{os.getpid()}.{uuid.uuid4().hex}.tmp'
+    try:
+        with open(tmp, 'w') as f:
+            f.write(text)
+        for attempt in range(attempts):
+            try:
+                os.replace(tmp, path)
+                return
+            except OSError:  # PermissionError, FileNotFoundError, ...
+                if attempt == attempts - 1:
+                    raise
+                time.sleep(0.02 * (attempt + 1))
+    finally:
+        try:
+            os.remove(tmp)  # still there only when the write or the replace failed
+        except OSError:
+            pass
+
+
+def pid_alive(pid):
+    """POSIX only: signal 0 probes the pid. On Windows os.kill(pid, 0) would send CTRL_C_EVENT, so there it is never
+    called and every pid counts as alive (its temp file is kept; unique temp names make that harmless)"""
+    if os.name == 'nt':
+        return True
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:  # exists but is not ours (PermissionError): keep its file
+        return True
+    return True
+
+
+def clean_stale_temps(folder, prefix='last-use.'):
+    """remove <prefix><pid>.<uuid>.tmp files left by callers that died"""
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return
+    for name in names:
+        parts = name.split('.')
+        if not (name.startswith(prefix) and name.endswith('.tmp') and len(parts) >= 4 and parts[-3].isdigit()):
+            continue
+        if int(parts[-3]) == os.getpid() or pid_alive(int(parts[-3])):
+            continue
+        try:
+            os.remove(os.path.join(folder, name))
+        except OSError:
+            pass
+
+
 def touch_last_use():
-    path = state_path('last-use')
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path + '.tmp', 'w') as f:
-        f.write(str(int(time.time())))
-    os.replace(path + '.tmp', path)
+    """record the use; this is bookkeeping and never fails the command (a lock take included)"""
+    try:
+        path = state_path('last-use')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        atomic_write(path, str(int(time.time())))
+        clean_stale_temps(os.path.dirname(path))
+    except Exception as e:
+        print(f'abvm: could not record the last use ({e}); continuing', file=sys.stderr)
 
 
 def last_use():
