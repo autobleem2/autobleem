@@ -39,7 +39,8 @@ void NotificationBubble::show(const string &title, const string &detail, int64_t
     hold_.show(now_, holdMs);
     logged_ = holdMs > 0 && total_ == 0; // not the scan's / extension's progress, which show() every update
     if (logged_)
-        PLOG_INFO << "toast show: '" << title << "' platform=" << now_ << " hold=" << holdMs << " hideAt=" << hold_.hideAt();
+        PLOG_INFO << "toast show: '" << title << "' platform=" << now_ << " hold=" << holdMs
+                  << " hideAt=" << hold_.hideAt();
 }
 
 //*******************************
@@ -64,8 +65,8 @@ void NotificationBubble::hide() {
         const long platform = Gui::getInstance()->platform().ticks();
         PLOG_INFO << "toast hide: '" << title_ << "' platform=" << platform << " shownAt=" << hold_.shownAt()
                   << " holdStart=" << hold_.holdStartAt() << " hideAt=" << hold_.hideAt() << " renderNow=" << now_
-                  << " visible=" << (platform - hold_.shownAt()) << "ms held=" << (platform - hold_.holdStartAt()) << "ms of "
-                  << hold_.holdMs() << "ms";
+                  << " visible=" << (platform - hold_.shownAt()) << "ms held=" << (platform - hold_.holdStartAt())
+                  << "ms of " << hold_.holdMs() << "ms";
         logged_ = false;
     }
     startSlide(State::FadingOut, now_);

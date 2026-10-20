@@ -63,13 +63,13 @@ TEST_CASE("HoldTimer: a hold of 0 never ends") {
 TEST_CASE("HoldTimer: a first-render hold starts at the end of the first frame") {
     StartupToast::HoldTimer t;
     t.showFromFirstRender(1735, StartupToast::HoldTicks);
-    CHECK(t.hideAt() == 0);          // nothing runs before the frame
+    CHECK(t.hideAt() == 0); // nothing runs before the frame
     CHECK_FALSE(t.expired(60000));
-    CHECK(t.frameDone(4735));        // the first frame took 3 s
+    CHECK(t.frameDone(4735)); // the first frame took 3 s
     CHECK(t.holdStartAt() == 4735);
-    CHECK(t.hideAt() == 14735);      // a full ten seconds from there, not 11735
+    CHECK(t.hideAt() == 14735); // a full ten seconds from there, not 11735
     CHECK_FALSE(t.expired(11735));
-    CHECK_FALSE(t.frameDone(4800));  // later frames do not move it
+    CHECK_FALSE(t.frameDone(4800)); // later frames do not move it
     CHECK(t.hideAt() == 14735);
     CHECK(t.expired(14735));
 }
