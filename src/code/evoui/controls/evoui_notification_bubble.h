@@ -57,14 +57,11 @@ private:
 
     State state_ = State::Hidden;
     long stateSince_ = 0; // when the slide began (for a slide that resumes: when it would have)
-    long hideAt_ = 0;     // Shown: when to start fading (0 = never) - a timestamp, not a tween: the hold is not busy
+    // Shown: when to start fading - a timestamp, not a tween: the hold is not busy. On the platform's clock only.
+    StartupToast::HoldTimer hold_;
 
     // for the launcher log (UIREV-54): a message toast with a hold logs its show and hide with the platform clock
     bool logged_ = false;
-    long shownAt_ = 0;      // the platform ms of show()
-    long holdStartAt_ = 0;  // the platform ms the hold was set to count from
-    long holdMs_ = 0;       // the hold asked for
-    StartupToast::DeferredHold firstRenderHold_; // armed by showFromFirstRender, started by the next render()
 
     std::string title_, detail_;
     int64_t done_ = 0, total_ = 0;

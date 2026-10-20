@@ -34,4 +34,43 @@ private:
     long pending_ = 0;
 };
 
+// The timing of one toast, on ONE clock: every time handed in is the platform's (SDL ticks, ms), never the caller's
+// own per-pass time (the launcher sets that once a pass, so it lags by a slow pass and is 0 in the first frame).
+// NotificationBubble feeds it Gui::platform().ticks(); the tests feed a fake clock.
+class HoldTimer {
+public:
+    // a plain show() at `platformNow`: the hold counts from now (0 = until hide)
+    void show(long platformNow, long holdMs) {
+        deferred_.cancel();
+        shownAt_ = holdStartAt_ = platformNow;
+        holdMs_ = holdMs;
+        hideAt_ = holdMs > 0 ? platformNow + holdMs : 0;
+    }
+    // a show whose hold counts from the end of the first frame that draws it (frameDone)
+    void showFromFirstRender(long platformNow, long holdMs) {
+        show(platformNow, 0);
+        holdMs_ = holdMs;
+        deferred_.arm(holdMs);
+    }
+    // the first frame that draws the toast is done at `platformNow`: starts a deferred hold; true when it did
+    bool frameDone(long platformNow) {
+        if (!deferred_.pending())
+            return false;
+        holdStartAt_ = platformNow;
+        hideAt_ = deferred_.start(platformNow);
+        return true;
+    }
+    // the hold is over at `platformNow`
+    bool expired(long platformNow) const { return hideAt_ != 0 && platformNow >= hideAt_; }
+
+    long shownAt() const { return shownAt_; }
+    long holdStartAt() const { return holdStartAt_; }
+    long hideAt() const { return hideAt_; }
+    long holdMs() const { return holdMs_; }
+
+private:
+    DeferredHold deferred_;
+    long shownAt_ = 0, holdStartAt_ = 0, hideAt_ = 0, holdMs_ = 0;
+};
+
 } // namespace StartupToast

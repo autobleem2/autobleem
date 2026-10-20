@@ -36,13 +36,10 @@ void NotificationBubble::show(const string &title, const string &detail, int64_t
         const long elapsed = state_ == State::FadingOut ? max(0L, SlideMs - (now_ - stateSince_)) : 0;
         startSlide(State::SlidingIn, now_ - elapsed);
     }
-    hideAt_ = holdMs > 0 ? now_ + holdMs : 0;
-    firstRenderHold_.cancel();
+    hold_.show(now_, holdMs);
     logged_ = holdMs > 0 && total_ == 0; // not the scan's / extension's progress, which show() every update
-    shownAt_ = holdStartAt_ = now_;
-    holdMs_ = holdMs;
     if (logged_)
-        PLOG_INFO << "toast show: '" << title << "' platform=" << now_ << " hold=" << holdMs << " hideAt=" << hideAt_;
+        PLOG_INFO << "toast show: '" << title << "' platform=" << now_ << " hold=" << holdMs << " hideAt=" << hold_.hideAt();
 }
 
 //*******************************
@@ -50,11 +47,10 @@ void NotificationBubble::show(const string &title, const string &detail, int64_t
 //*******************************
 void NotificationBubble::showFromFirstRender(const string &title, long holdMs) {
     show(title, "", 0, 0, 0);
-    firstRenderHold_.arm(holdMs);
+    hold_.showFromFirstRender(now_, holdMs);
     logged_ = holdMs > 0;
-    holdMs_ = holdMs;
     if (logged_)
-        PLOG_INFO << "toast show: '" << title << "' platform=" << shownAt_ << " hold=" << holdMs
+        PLOG_INFO << "toast show: '" << title << "' platform=" << hold_.shownAt() << " hold=" << holdMs
                   << " counted from the end of the first frame";
 }
 
@@ -66,10 +62,10 @@ void NotificationBubble::hide() {
         return;
     if (logged_) {
         const long platform = Gui::getInstance()->platform().ticks();
-        PLOG_INFO << "toast hide: '" << title_ << "' platform=" << platform << " shownAt=" << shownAt_
-                  << " holdStart=" << holdStartAt_ << " hideAt=" << hideAt_ << " renderNow=" << now_
-                  << " visible=" << (platform - shownAt_) << "ms held=" << (platform - holdStartAt_) << "ms of "
-                  << holdMs_ << "ms";
+        PLOG_INFO << "toast hide: '" << title_ << "' platform=" << platform << " shownAt=" << hold_.shownAt()
+                  << " holdStart=" << hold_.holdStartAt() << " hideAt=" << hold_.hideAt() << " renderNow=" << now_
+                  << " visible=" << (platform - hold_.shownAt()) << "ms held=" << (platform - hold_.holdStartAt()) << "ms of "
+                  << hold_.holdMs() << "ms";
         logged_ = false;
     }
     startSlide(State::FadingOut, now_);
@@ -82,7 +78,7 @@ void NotificationBubble::hide() {
 // (abgui::transition::bubbleProgress) - so it lands where the hand-written timer did at every moment, also when it
 // begins late (hide() from a frame after the last render: `since` is that render's time) or resumes (a show() on the
 // way out).
-// Its end is what moves the state on: a slide in ends Shown, a slide out Hidden. The hold between them is hideAt_,
+// Its end is what moves the state on: a slide in ends Shown, a slide out Hidden. The hold between them is hold_,
 // looked at in render() - no tween, so a bubble that stays for seconds is not busy; only the two slides are.
 void NotificationBubble::startSlide(State slide, long since) {
     slideOwner_.cancel();
@@ -123,10 +119,9 @@ void NotificationBubble::render(Gui &gui, long now) {
     if (state_ == State::Hidden)
         return;
     // the slides end in the tweens (before the frame); the hold ends here
-    // (hideAt_ is on the platform's clock, so it is compared with that and not with `now`, which is the caller's own
+    // (the hold is on the platform's clock, so it is compared with that and not with `now`, which is the caller's own
     // time and may be older - the launcher sets its once a pass)
-    if (state_ == State::Shown && hideAt_ != 0 &&
-        static_cast<long>(Gui::getInstance()->platform().ticks()) >= hideAt_)
+    if (state_ == State::Shown && hold_.expired(Gui::getInstance()->platform().ticks()))
         hide();
     if (state_ == State::Hidden)
         return;
@@ -166,10 +161,8 @@ void NotificationBubble::render(Gui &gui, long now) {
     // the slow one (the new theme's or the launcher's fonts and textures are made as they are first drawn, seconds on
     // the VM), and a hold counted from show() or from the start of the frame had it used up before anyone saw the
     // toast. The platform's clock, not `now`: the launcher's own time is still 0 in its very first frame.
-    if (firstRenderHold_.pending()) {
-        holdStartAt_ = Gui::getInstance()->platform().ticks();
-        hideAt_ = firstRenderHold_.start(holdStartAt_);
-        PLOG_INFO << "toast first frame done: '" << title_ << "' platform=" << holdStartAt_ << " (show " << shownAt_
-                  << ", +" << (holdStartAt_ - shownAt_) << "ms) renderNow=" << now << " hideAt=" << hideAt_;
-    }
+    const long frameEnd = Gui::getInstance()->platform().ticks();
+    if (hold_.frameDone(frameEnd))
+        PLOG_INFO << "toast first frame done: '" << title_ << "' platform=" << frameEnd << " (show " << hold_.shownAt()
+                  << ", +" << (frameEnd - hold_.shownAt()) << "ms) renderNow=" << now << " hideAt=" << hold_.hideAt();
 }
