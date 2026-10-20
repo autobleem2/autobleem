@@ -160,7 +160,12 @@ from ours at package time, under the 128 KB limit of one environment string) bin
 `payload_linux/`), the trimmed `rc/pe_gamecontrollerdb.txt` and `abdialog`; the appliance's `assemble.sh` bundles `proc_pe` into
 the `rpi-armhf` package. What the console has and the Pi lacks (`/data/power`, `/tmp/lib`, the dialogs' console stand-ins in
 `rc/pe/`, gl4es in `rc/pe/lib`) is only logged by `pe_env.sh`, the mods bring their own GL layer where they need one.
-`tests/tools/test_pe_rpi_package.py` guards the staging.
+`tests/tools/test_pe_linux_package.py` guards the staging.
+
+**Pi 64-bit (the runner ships there).** The `rpi64` launcher artifact carries exactly what `rpi` does: the same
+`publish-launcher.yml` blocks stage `rc/pe_run.sh`, `rc/pe_env.sh`, `rc/pe_compat.ini`, `rc/pe/`, the trimmed pad table and
+`abdialog` for `rpi` and `rpi64` (still one copy of the scripts, in `payload/`). `pcusb`, `psc` and `win` are not on that
+list; the package test names the two targets exactly.
 
 **An App ends whole (2026-10-05).** `rc/pe_run.sh` and `rc/app_run.sh` start the App's program with
 `ab_app_start` (`rc/app_env.sh`, "The App's processes") and stay its parent: the program gets a mark in its

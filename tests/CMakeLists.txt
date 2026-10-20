@@ -148,8 +148,8 @@ if (Python3_Interpreter_FOUND)
     add_test(NAME test_win_emulator_fonts COMMAND ${Python3_EXECUTABLE}
              ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_win_emulator_fonts.py)
     # the PE runner in the Raspberry Pi 32-bit package (one copy in payload/, copied by publish-launcher.yml's rpi branch)
-    add_test(NAME test_pe_rpi_package COMMAND ${Python3_EXECUTABLE}
-             ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_pe_rpi_package.py)
+    add_test(NAME test_pe_linux_package COMMAND ${Python3_EXECUTABLE}
+             ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_pe_linux_package.py)
 endif()
 
 # abdialog (src/tools/abdialog), the PE dialogs: the options, the command file the scripts write, the answer codes
