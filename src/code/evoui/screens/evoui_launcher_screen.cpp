@@ -1068,7 +1068,7 @@ void GuiLauncher::loadAssets() {
     // was the classic menu's gamepadNotice - shown once here since there is no classic menu screen to carry it
     // - pointing at Network & Controllers (its controller mapping wizard) where an extension provides it
     if (gui->input().joystickCount() > gui->input().activePadCount()) {
-        notificationLines[1].setText(
+        notificationLines[1].setStartupText(
             networkProvided()
                 ? _("NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.")
                 : _("NOTICE: At least one connected gamepad is not recognized."),
@@ -1081,7 +1081,7 @@ void GuiLauncher::loadAssets() {
     {
         const string why = GuiOptions::themeFallbackText(Theme::takeFallbackReason());
         if (!why.empty())
-            notificationLines[1].setText(why, StartupToast::HoldTicks); // like the gamepad notice above
+            notificationLines[1].setStartupText(why, StartupToast::HoldTicks); // like the gamepad notice above
     }
 
     // every element below is built at rest in the Games layout (the menu row closed, the play button shown,

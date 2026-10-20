@@ -8,6 +8,7 @@
 //
 #pragma once
 
+#include "../startup_toast.h"
 #include "gui/panel_style.h"
 
 #include <ab_gui/tween.h>
@@ -23,6 +24,10 @@ public:
     // holdMs: how long it stays after this call (0 = until hide() or the next show). done/total are 64-bit:
     // an extension reports bytes, and a download past 2 GB must not turn negative on the 32-bit console
     void show(const std::string &title, const std::string &detail, int64_t done, int64_t total, long holdMs);
+    // show() with a hold that counts from the END of the first render after it, not from this call: for what is set
+    // while the launcher loads, or right after a slow theme load, before a first frame that is slow itself
+    // (StartupToast)
+    void showFromFirstRender(const std::string &title, long holdMs);
     // the fade-out starts now (a scan that finished, its summary shown for holdMs, then this)
     void hide();
     bool visible() const { return state_ != State::Hidden; }
@@ -52,7 +57,11 @@ private:
 
     State state_ = State::Hidden;
     long stateSince_ = 0; // when the slide began (for a slide that resumes: when it would have)
-    long hideAt_ = 0;     // Shown: when to start fading (0 = never) - a timestamp, not a tween: the hold is not busy
+    // Shown: when to start fading - a timestamp, not a tween: the hold is not busy. On the platform's clock only.
+    StartupToast::HoldTimer hold_;
+
+    // for the launcher log (UIREV-54): a message toast with a hold logs its show and hide with the platform clock
+    bool logged_ = false;
 
     std::string title_, detail_;
     int64_t done_ = 0, total_ = 0;

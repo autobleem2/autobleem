@@ -500,7 +500,7 @@ void GuiOptions::loadFor(int id, const string &nextValue) {
     if (theme) {
         const string why = themeFallbackText(Theme::takeFallbackReason());
         if (!why.empty())
-            themeToast.show(why, "", 0, 0, 2 * DefaultShowingTimeout);
+            themeToast.showFromFirstRender(why, StartupToast::OptionsHoldTicks); // the theme's first frame is slow
     }
     // the language and the fonts change what the launcher under the panel shows: the snapshot is taken again, once,
     // into a render target (no readback); after endBusy(), as the launcher's frame ends the busy state itself

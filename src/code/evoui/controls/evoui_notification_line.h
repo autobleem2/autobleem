@@ -22,6 +22,8 @@ struct NotificationLine {
 
     // timeLimit is in milliseconds; 0 = stays until the next setText
     void setText(const std::string &text, long timeLimit);
+    // the same, the hold counted from the first render after this call (set while the launcher loads: StartupToast)
+    void setStartupText(const std::string &text, long timeLimit) { bubble.showFromFirstRender(text, timeLimit); }
     void render(Gui &gui, long now, int top);
     bool visible() const { return bubble.visible(); }
     bool animating() const { return bubble.animating(); }
