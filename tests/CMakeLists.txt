@@ -144,6 +144,9 @@ if (Python3_Interpreter_FOUND)
     # tools/unshipped_themes.txt: the theme folders no package ships (ab2) and the scripts that apply the list
     add_test(NAME test_unshipped_themes COMMAND ${Python3_EXECUTABLE}
              ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_unshipped_themes.py)
+    # the Sony-hash guard: no Sony BIOS image is tracked, the biospack manifests hold hashes only
+    add_test(NAME test_no_sony_bios COMMAND ${Python3_EXECUTABLE}
+             ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_no_sony_bios.py)
     # the Windows product's emunxt/ carries fonts/ beside pcsx-ab.exe (Chinese)
     add_test(NAME test_win_emulator_fonts COMMAND ${Python3_EXECUTABLE}
              ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_win_emulator_fonts.py)
