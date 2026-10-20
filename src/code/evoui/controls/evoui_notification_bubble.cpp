@@ -36,6 +36,15 @@ void NotificationBubble::show(const string &title, const string &detail, int64_t
         startSlide(State::SlidingIn, now_ - elapsed);
     }
     hideAt_ = holdMs > 0 ? now_ + holdMs : 0;
+    firstRenderHold_.cancel();
+}
+
+//*******************************
+// NotificationBubble::showFromFirstRender
+//*******************************
+void NotificationBubble::showFromFirstRender(const string &title, long holdMs) {
+    show(title, "", 0, 0, 0);
+    firstRenderHold_.arm(holdMs);
 }
 
 //*******************************
@@ -94,6 +103,10 @@ void NotificationBubble::render(Gui &gui, long now) {
     now_ = now;
     if (state_ == State::Hidden)
         return;
+    // the platform's clock, not `now`: the launcher's own time is still 0 in the very first frame (drawn before its
+    // loop has set it), which made the hold end 10 s from tick 0 - the load's seconds short again
+    if (firstRenderHold_.pending())
+        hideAt_ = firstRenderHold_.start(Gui::getInstance()->platform().ticks());
     // the slides end in the tweens (before the frame); the hold ends here
     if (state_ == State::Shown && hideAt_ != 0 && now >= hideAt_)
         hide();
