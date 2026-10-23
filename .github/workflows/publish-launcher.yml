@@ -231,8 +231,8 @@ jobs:
             esac
             cp "$D/autobleem-gui" "$BIN/autobleem/"
             upx -q --best --lzma "$BIN/autobleem/autobleem-gui" || true
-            if [ "${{ matrix.target }}" = rpi ] || [ "${{ matrix.target }}" = rpi64 ]; then
-                # the Raspberry Pi (32 and 64-bit) runs the PE ports: the two dialogs a PE mod's launch.sh calls
+            if [ "${{ matrix.target }}" = rpi ] || [ "${{ matrix.target }}" = rpi64 ] || [ "${{ matrix.target }}" = pcusb ]; then
+                # the Raspberry Pi (32 and 64-bit) and the PC USB stick run the PE ports: the two dialogs a PE mod's launch.sh calls
                 cp "$D/abdialog" "$BIN/autobleem/"
                 upx -q --best --lzma "$BIN/autobleem/abdialog" || true
             fi
@@ -286,8 +286,8 @@ jobs:
             # of THIS repository is their only source - autobleem-appliance keeps no copy and takes them from here
             # (assemble.sh extracts this artifact over its skeleton; tools/make_rpi_package.sh reads the checkout)
             cp -a payload_linux/Autobleem/rc stage/Autobleem/rc
-            if [ "${{ matrix.target }}" = rpi ] || [ "${{ matrix.target }}" = rpi64 ]; then
-              # the PE runner for the Raspberry Pi, 32 and 64-bit (pcusb gets none): the console payload's own files - one copy, no
+            if [ "${{ matrix.target }}" = rpi ] || [ "${{ matrix.target }}" = rpi64 ] || [ "${{ matrix.target }}" = pcusb ]; then
+              # the PE runner for the Raspberry Pi, 32 and 64-bit, and the PC USB stick: the console payload's own files - one copy, no
               # duplicate in payload_linux - and the pad table trimmed under the environment-string limit, as
               # tools/make_psc_package.sh does. rc/pe/ holds the three dialog scripts (sdl_text_display,
               # sdl_input_text_display and the sdl_display stand-in: shell scripts, not console binaries) that

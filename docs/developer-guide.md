@@ -164,8 +164,9 @@ the `rpi-armhf` package. What the console has and the Pi lacks (`/data/power`, `
 
 **Pi 64-bit (the runner ships there).** The `rpi64` launcher artifact carries exactly what `rpi` does: the same
 `publish-launcher.yml` blocks stage `rc/pe_run.sh`, `rc/pe_env.sh`, `rc/pe_compat.ini`, `rc/pe/`, the trimmed pad table and
-`abdialog` for `rpi` and `rpi64` (still one copy of the scripts, in `payload/`). `pcusb`, `psc` and `win` are not on that
-list; the package test names the two targets exactly.
+`abdialog` for `rpi`, `rpi64` and `pcusb` (still one copy of the scripts, in `payload/`; the PC USB stick's launcher
+artifact ships the runner too). `psc` (has it in its own payload) and `win` are not on that list; the package test names
+the three targets exactly.
 
 **An App ends whole (2026-10-05).** `rc/pe_run.sh` and `rc/app_run.sh` start the App's program with
 `ab_app_start` (`rc/app_env.sh`, "The App's processes") and stay its parent: the program gets a mark in its
