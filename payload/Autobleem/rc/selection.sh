@@ -588,6 +588,45 @@ stick_after_wake() {
 # own storage. A wake with no stick (AUTOBLEEM-28) shows the insert-stick picture and sleeps again after 5 minutes,
 # or at once on POWER (stick_after_wake, sleep_again). Returns 0 with the stick mounted again, 1 only when /media
 # could not be unmounted (the reboot follows).
+safe_full_poweroff() {
+    # USB-only test: avoid leaving the rear OTG stick mounted in suspend-to-RAM.
+    # If it cannot be unmounted, return to the launcher instead of halting with it mounted.
+    ab_watch_stop
+    DEV=$(awk '$2 == "/media" { print $1 }' /proc/mounts | head -1)
+    SLOG=/tmp/standby.log
+    BT_UNITS=""
+    down_picture
+    if [ -n "$DEV" ]; then
+        echo "$(date) full shutdown requested: dev=$DEV" >> $FAILLOG
+        bt_release
+        rm -f /media/System/.session
+        sync
+        echo "$(date) full shutdown: unmounting /media next" >> $FAILLOG
+        sync
+        n=0
+        until umount /media; do
+            n=$((n + 1))
+            if [ $n -ge 10 ]; then
+                echo "$(date) full shutdown cancelled: /media would not unmount" >> $FAILLOG
+                touch /media/System/.session
+                sync
+                rm -f /tmp/.abdown
+                [ -n "$BT_UNITS" ] && systemctl start $BT_UNITS > /dev/null 2>&1
+                return 0
+            fi
+            sleep 1
+        done
+        if [ -f /tmp/ab_stick_owned ] && [ -x /tmp/abfatflag ]; then
+            /tmp/abfatflag "$DEV" clean
+        fi
+        sync
+    fi
+    echo "$(date) full shutdown: USB unmounted; halting" >> $SLOG
+    shutdown -h now
+    sleep 120
+    return 1
+}
+
 standby() {
     ab_watch_stop # the watch log (CONSOLE-15) must not touch /media or run through the suspend
     # the last wake's background part (rear_wake) still running - a power off right after a wake - ends first
@@ -805,7 +844,7 @@ case "$AB_SELECTION" in
     exit 0
     ;;
 "$SEL_POWEROFF")
-    if standby; then
+    if safe_full_poweroff; then
         exit 0
     fi
     # /media busy: the reboot brings whatever is plugged in back up

@@ -18,15 +18,14 @@ rm -f /tmp/ab_stick_owned
 cp -f $BIN/abfatflag /tmp/abfatflag && chmod +x /tmp/abfatflag
 mkdir -p /media/System/Logs 2> /dev/null
 
-# AUTOBLEEM-29: the last session did not end through the standby (System/.session is still there: the stick pulled
-# while the launcher ran, the power cut) and the filesystem says so - a FAT's dirty flag, or any stick the kernel
-# already put read-only after an error - so it is checked and repaired before anything of ours writes to it: the
+# AUTOBLEEM-29: check any FAT whose dirty flag survives a read-only remount, regardless of the session marker.
+# A power loss after .session is removed but before unmount would otherwise skip fsck and only clear the flag.
+# Any stick the kernel already put read-only after an error is checked as well, before launcher writes to it: the
 # check-stick screen with its bar (rc/ab_fsck.sh), the stick unmounted for the check and mounted again after it.
 # boot.sh runs this with the cwd on tmpfs, so nothing of ours holds the stick. A stick that cannot be unmounted or
 # checked is mounted as it was and left for Windows' own "scan and fix", as before.
 stick_needs_check() {
     grep -q " /media [^ ]* ro[, ]" /proc/mounts && return 0
-    [ -f /media/System/.session ] || return 1
     case "$(ab_fsck_type "$DEV")" in
     vfat | msdos | fat)
         # read with the stick read-only: mounted rw the kernel has set the flag itself (see below)
@@ -38,9 +37,11 @@ stick_needs_check() {
         return 1
         ;;
     esac
+    [ -f /media/System/.session ] || return 1
     return 0 # exFAT / ext: their checkers are quick on a clean filesystem
 }
 [ -f /tmp/ab_fsck.sh ] && . /tmp/ab_fsck.sh
+AB_FSCK_FAILED=0
 if [ -n "$DEV" ] && [ -f /tmp/ab_fsck.sh ] && stick_needs_check; then
     rm -f $ABFSCK_LOG
     sync
@@ -61,7 +62,7 @@ if [ -n "$DEV" ] && [ -f /tmp/ab_fsck.sh ] && stick_needs_check; then
         # read-only for the flag's reading (stick_needs_check): rw again, the launcher writes to it
         mount -o remount,rw /media
     else
-        ab_fsck "$DEV"
+        ab_fsck "$DEV" || AB_FSCK_FAILED=1
         mount "$DEV" /media || echo "$(date) boot: $DEV did not mount again after the check" >> $ABFSCK_LOG
     fi
     if grep -q ' /media ' /proc/mounts; then
@@ -70,7 +71,7 @@ if [ -n "$DEV" ] && [ -f /tmp/ab_fsck.sh ] && stick_needs_check; then
     fi
 fi
 
-if [ -x /tmp/abfatflag ] && [ -n "$DEV" ] && [ ! -f /media/System/.session ]; then
+if [ "$AB_FSCK_FAILED" = 0 ] && [ -x /tmp/abfatflag ] && [ -n "$DEV" ] && [ ! -f /media/System/.session ]; then
     sync
     if mount -o remount,ro /media; then
         # a clean volume was cleared by the remount itself (the kernel owned it); a dirty one is ours from
