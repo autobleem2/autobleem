@@ -6,6 +6,7 @@ A game launcher and front-end for the **PlayStation Classic** (and the **Raspber
 
 - On the PlayStation Classic, check a FAT32 USB drive when its dirty flag is set and unmount the drive before a full shutdown. See the [field test and limitations](docs/rtl8188eu-fat32-field-test.md).
 - Include the tested RTL8188EU WEXT `wpa_supplicant` binary, Windows installer, verification and rollback scripts, license, and source patch in [Autobleem/wifi-fix](payload/Autobleem/wifi-fix/README.txt). PlayStation Classic packages built from this fork contain these files. The Wi-Fi module is **opt-in** and is not installed on the console merely by copying the package to a USB drive.
+- Include the tested ABFlashKit restore preflight binary in `Apps/abflashkit/abflashkit`, with its [source patch](docs/patches/ABFlashKit-Restore-Preflight-Patch.diff). The patch limits restore preflight extraction to the boot and root filesystem images so a large console backup does not exhaust `/tmp`. Keep your own `LBOOT.EPB` backup before any flash or restore operation.
 
 The separate PS Classic Store app is not added to this fork. AutoBleem's upstream built-in Store extension is unchanged.
 
