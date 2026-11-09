@@ -2,6 +2,12 @@
 
 A game launcher and front-end for the **PlayStation Classic** (and the **Raspberry Pi**). AutoBleem replaces the stock SonyUI, scans a USB stick or SD card for PS1 games, keeps their metadata and cover art in SQLite, and launches games in `pcsx-ab`, `pcsx-abnxt` (the next emulator), or RetroArch.
 
+## Changes in this fork
+
+- On the PlayStation Classic, check a FAT32 USB drive when its dirty flag is set and unmount the drive before a full shutdown. See the [field test and limitations](docs/rtl8188eu-fat32-field-test.md).
+- Include the tested RTL8188EU WEXT `wpa_supplicant` binary, Windows installer, optional USB boot installer, verification and rollback scripts, license, and source patch in [Autobleem/wifi-fix](payload/Autobleem/wifi-fix/README.txt). PlayStation Classic packages built from this fork contain these files. To opt in on a USB drive, create `Autobleem/wifi-fix/install-on-boot` before booting; otherwise the module is not installed merely by copying the package.
+- Include the tested ABFlashKit restore preflight binary in `Apps/abflashkit/abflashkit`, with its [source patch](docs/patches/ABFlashKit-Restore-Preflight-Patch.diff). The patch limits restore preflight extraction to the boot and root filesystem images so a large console backup does not exhaust `/tmp`. Keep your own `LBOOT.EPB` backup before any flash or restore operation.
+
 ## Platforms
 
 **Products**: PlayStation Classic (`psc`), Raspberry Pi 32-bit and 64-bit (`rpi`, `rpi64` - appliances on the SD card), 32-bit Debian PC USB stick (`pcusb`), Windows (`win` - NSIS installer). Development builds on Linux/macOS (`make_sys.sh`) and Windows MSYS2 (`make_win.sh`).

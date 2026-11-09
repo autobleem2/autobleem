@@ -78,6 +78,10 @@ boot_once() {
     # this cwd, and the stick check below (checkstick.sh) unmounts the stick - Sony's start.sh left us in rc/
     cd /tmp
     fix_exec_bits
+    # Optional one-time RTL8188EU WEXT setup from the USB package.
+    if [ -f /media/Autobleem/wifi-fix/install-on-boot ] && [ -f /media/Autobleem/wifi-fix/install.sh ]; then
+        sh /media/Autobleem/wifi-fix/install.sh || bt "Wi-Fi setup returned status $?"
+    fi
     # Sony's UI first, at once (the stock logo held the screen until killsony.sh, far below), and again after a
     # second for the late forks (killsony.sh without "now" sleeps one) - in the background, the boot goes on
     $RC/killsony.sh now

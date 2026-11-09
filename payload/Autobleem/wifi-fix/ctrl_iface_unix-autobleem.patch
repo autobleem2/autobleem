@@ -1,0 +1,9 @@
+--- a/wpa_supplicant/ctrl_iface_unix.c
++++ b/wpa_supplicant/ctrl_iface_unix.c
+@@ -522,0 +523,3 @@
++	/* AutoBleem PSC: avoid glibc NSS group lookup in this static ARM build.
++	 * The launcher and wpa_cli use the control socket as root. */
++	gid_str = NULL;
+@@ -1215 +1218 @@
+-	if (global->params.ctrl_interface_group) {
++	if (0 && global->params.ctrl_interface_group) {

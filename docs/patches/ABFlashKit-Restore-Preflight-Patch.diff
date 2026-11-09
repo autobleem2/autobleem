@@ -1,0 +1,60 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 42de6da..31b601e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -66,7 +66,10 @@ set(AB_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+ set(AB_TARGET "${AB_TARGET}" CACHE STRING "" FORCE)
+ add_subdirectory(autobleem-core)
+ 
+-add_subdirectory(apps/pscbios)
++option(AB_BUILD_PSCBIOS "Build PSC-Bios extension" ON)
++if (AB_BUILD_PSCBIOS)
++    add_subdirectory(apps/pscbios)
++endif()
+ # the console's kernel flasher: nothing to flash on a Pi or a PC
+ if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
+     add_subdirectory(apps/abflashkit)
+diff --git a/apps/abflashkit/src/core/flash_actions.cpp b/apps/abflashkit/src/core/flash_actions.cpp
+index 6b7ccf6..44f3483 100644
+--- a/apps/abflashkit/src/core/flash_actions.cpp
++++ b/apps/abflashkit/src/core/flash_actions.cpp
+@@ -202,9 +202,10 @@ FlashKitActions::Outcome FlashKitActions::restore() {
+         vector<ableem::ZipEntry> entries;
+         ableem::ZipArchive::listEntries(paths_.backup, entries);
+         for (const ableem::ZipEntry &entry : entries) {
+-            unpacked += entry.size;
+-            if (entry.name == "boot.img" || entry.name == "rootfs.ext4")
++            if (entry.name == "boot.img" || entry.name == "rootfs.ext4") {
++                unpacked += entry.size;
+                 hashed += entry.size;
++            }
+         }
+         const uint64_t whole = unpacked + hashed;
+         ableem::ByteProgress shown = bar();
+@@ -219,6 +220,11 @@ FlashKitActions::Outcome FlashKitActions::restore() {
+         LbootBackup::Contents contents =
+             LbootBackup::inspect(paths_.scratchDir, [&](uint64_t done, uint64_t) { shown(unpacked + done, whole); });
+         noBar();
++        if (!contents.hasBoot) {
++            ui_.status(_("Recovery interrupted: backup has no boot image"));
++            ui_.wait(3000);
++            return Outcome::Failed;
++        }
+         if (contents.hasBoot) {
+             PLOG_INFO << "backup: boot " << (contents.bootIsVanilla ? "vanilla" : "modified") << ", rootfs "
+                       << (contents.hasRootfs ? (contents.rootfsIsVanilla ? "vanilla" : "modified") : "absent");
+diff --git a/apps/abflashkit/src/core/flasher.cpp b/apps/abflashkit/src/core/flasher.cpp
+index f21312e..b6fd2bb 100644
+--- a/apps/abflashkit/src/core/flasher.cpp
++++ b/apps/abflashkit/src/core/flasher.cpp
+@@ -96,7 +96,9 @@ bool kernelIsValid(const string &kernelDir) {
+ bool extractInto(const string &path, const string &dir, const ableem::ByteProgress &bytes) {
+     DirEntry::removeDirAndContents(dir);
+     DirEntry::createDir(dir);
+-    return ableem::ZipArchive::extract(path, dir, bytes);
++    // Restore preflight only hashes these images. The larger userdata image
++    // must not be unpacked into the console's small /tmp filesystem.
++    return ableem::ZipArchive::extractSelected(path, dir, {"boot.img", "rootfs.ext4"}, bytes);
+ }
+ } // namespace
+ 

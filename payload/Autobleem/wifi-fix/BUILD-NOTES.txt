@@ -1,0 +1,9 @@
+Build: wpa_supplicant 2.6, official upstream source archive from w1.fi
+Source archive SHA-256: b4936d34c4e6cdd44954beba74296d964bc2c9668ecaa5255e499636fe2b1450
+Target: ARMv7 hard-float, static, PlayStation Classic Linux kernel 4.4.22
+Enabled: CONFIG_DRIVER_WEXT, CONFIG_CTRL_IFACE, CONFIG_TLS=internal, CONFIG_INTERNAL_LIBTOMMATH
+CONFIG_NO_WPA_CLI=y (the console's existing wpa_cli is used)
+Local source adjustment: ignore per-interface and global CTRL_INTERFACE GROUP= group lookups to avoid static glibc/NSS crashes on this root-only AutoBleem use. See ctrl_iface_unix-autobleem.patch. Both no-group and GROUP= configurations were tested on the target console.
+The patch has zero context to keep whitespace-clean Git diffs; apply it in the upstream source root with `git apply --unidiff-zero ctrl_iface_unix-autobleem.patch`.
+SHA-256: f691fd38d3f3efcd6df7c3454daab961162adf07296ff3b582f9fe9ca065e0dc
+Verified on AutoBleem 2.0 alpha1.1, r8188eu USB ID 0bda:8179, systemd 229; Wi-Fi reached wpa_state=COMPLETED and received DHCP address, and service remained active after reboot.
