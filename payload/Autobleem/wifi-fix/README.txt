@@ -9,13 +9,14 @@ This package supplies a WEXT-enabled wpa_supplicant 2.6 binary and a systemd ser
   * USB Wi-Fi device ID 0bda:8179, Realtek RTL8188EU, kernel module r8188eu
   * systemd 229, root SSH access, and a Wi-Fi network already configured in /etc/wpa_supplicant.conf
 
-This fork includes the module as an opt-in tool. Building AutoBleem does not automatically install it on a console. Other adapters keep AutoBleem's original path until a user explicitly runs the installer. The tested installer adds a global dhcpcd nohook setting, so rollback before switching to another Wi-Fi adapter.
+This fork includes the module as an opt-in tool. Building AutoBleem does not automatically install it on a console. Users can choose the Windows SSH installer below or enable the USB boot installer. Other adapters keep AutoBleem's original path unless a user opts in. The installer adds a global dhcpcd nohook setting, so rollback before switching to another Wi-Fi adapter.
 
 Other adapters with a similar product name, different USB ID, AutoBleem release, kernel, or systemd configuration have not been tested. Use only if your console reports the same hardware/kernel details. This does not install a kernel driver; it fixes the supplicant startup/driver selection path for the tested setup.
 
 Package contents
 ----------------
   AutoBleem2-WiFi-Install-Service.ps1   Windows installer, dry run supported
+  install.sh                             Optional USB boot installer
   AutoBleem2-WiFi-Verify-Service.ps1    Read-only service and Wi-Fi check
   AutoBleem2-WiFi-Rollback-Service.ps1  Restore previous binary/configuration
   wpa_supplicant-wext-armv7-autobleem   Tested ARMv7 static binary
@@ -34,6 +35,9 @@ Requirements
 
 Install
 -------
+USB boot option: after copying the AutoBleem package to the USB drive, create an empty file named `install-on-boot` inside `Autobleem/wifi-fix` on that drive. Safely eject the drive and boot the console with it. AutoBleem runs `install.sh` during boot only when that file exists. The script backs up the original system files under `/root/autobleem-wifi-build-backup-...`, installs the WEXT binary and service, and skips later boots once the service exists. Remove `install-on-boot` from the USB drive after a successful installation. This option requires the same tested console setup listed above; it does not flash a kernel or install a kernel driver.
+
+Windows SSH option:
 Open PowerShell in this extracted folder. First check the console details and run a no-change preflight:
 
   .\AutoBleem2-WiFi-Install-Service.ps1 -ConsoleAddress YOUR_CONSOLE_IP -DryRun
